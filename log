@@ -1,0 +1,15 @@
+# Environment variables
+. "/nix/store/gwazkz6xmbzzqhap63kkicd0pjcfrq1c-hm-session-vars.sh/etc/profile.d/hm-session-vars.sh"
+# Only source this once.
+if [ -n "$__HM_SESS_VARS_SOURCED" ]; then return; fi
+export __HM_SESS_VARS_SOURCED=1
+
+export LOCALE_ARCHIVE_2_27="/nix/store/9whrn8kh4r39pf52zlbn7vim0s74qi19-glibc-locales-2.42-47/lib/locale/locale-archive"
+
+
+# Only source this once
+if [[ -z "$__HM_ZSH_SESS_VARS_SOURCED" ]]; then
+  export __HM_ZSH_SESS_VARS_SOURCED=1
+  
+fi
+zsh: can't open input file: 2

@@ -1,0 +1,112 @@
+{
+  "blocks": [
+    {
+      "alignment": "left",
+      "segments": [
+        {
+          "foreground": "#ffffff",
+          "background": "transparent",
+          "leading_diamond": "\ue0b6",
+          "trailing_diamond": "\ue0b4",
+          "style": "diamond",
+          "template": "{{ if .WSL }}WSL at{{ end }} {{.Icon}} ",
+          "type": "os",
+          "min_width": 30
+        },
+        {
+          "foreground": "#458588",
+          "background": "transparent",
+          "leading_diamond": "\ue0b6",
+          "trailing_diamond": "\ue0b4",
+          "style": "diamond",
+          "template": " {{ .Path }} ",
+          "type": "path",
+          "min_width": 45,
+          "options": {
+            "style": "full"
+          }
+        },
+        {
+          "foreground": "#458588",
+          "background": "transparent",
+          "leading_diamond": "\ue0b6",
+          "trailing_diamond": "\ue0b4",
+          "style": "diamond",
+          "template": " {{ .Path }} ",
+          "type": "path",
+          "max_width": 44,
+          "options": {
+            "style": "folder"
+          }
+        },
+        {
+          "foreground": "#98971A",
+          "foreground_templates": [
+            "{{ if or (.Working.Changed) (.Staging.Changed) }}#FF9248{{ end }}",
+            "{{ if and (gt .Ahead 0) (gt .Behind 0) }}#ff4500{{ end }}",
+            "{{ if gt .Ahead 0 }}#B388FF{{ end }}",
+            "{{ if gt .Behind 0 }}#B388FF{{ end }}"
+          ],
+          "background": "transparent",
+          "leading_diamond": "\ue0b6",
+          "trailing_diamond": "\ue0b4",
+          "style": "diamond",
+          "options": {
+            "fetch_status": false,
+            "branch_icon": "\uE0A0 ",
+            "branch_template": "{{ if matchP \"HA-[0-9]+\" .Branch }}{{ replaceP \".*?(HA-[0-9]+).*\" .Branch \"$1\" }}{{ else }}{{ trunc 25 .Branch }}{{ end }}"
+          },
+          "template": " {{ .HEAD }} ",
+          "type": "git",
+          "min_width": 40
+        },
+        {
+          "foreground": "#ffff66",
+          "background": "transparent",
+          "leading_diamond": "\ue0b6",
+          "trailing_diamond": "\ue0b4",
+          "style": "diamond",
+          "template": " \uf0ad ",
+          "type": "root"
+        }
+      ],
+      "type": "prompt"
+    },
+    {
+      "alignment": "right",
+      "segments": [
+        {
+          "foreground": "#cc241d",
+          "style": "plain",
+          "template": "{{ if .Env.HALCONROOT }} \udb80\udfd2 {{ .Env.HALCONROOT | trimSuffix \"/\" | splitList \"/\" | last }} {{ end }}",
+          "type": "text",
+          "min_width": 55
+        },
+        {
+          "foreground": "#d79921",
+          "style": "plain",
+          "template": " \uf252 {{ .FormattedMs }} ",
+          "type": "executiontime",
+          "min_width": 70
+        }
+      ],
+      "type": "prompt"
+    },
+    {
+      "alignment": "left",
+      "newline": true,
+      "segments": [
+        {
+          "foreground": "#d65d0e",
+          "style": "plain",
+          "template": " \u276f ",
+          "type": "text"
+        }
+      ],
+      "type": "prompt"
+    }
+  ],
+  "console_title_template": "{{ .Folder }}",
+  "final_space": true,
+  "version": 4
+}

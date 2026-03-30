@@ -1,0 +1,91 @@
+#!/bin/zsh
+
+###############################################################################
+# ls, grep, rsync and find
+###############################################################################
+
+alias ll='ls -alhF'
+alias la='ls -A'
+alias l='ls -CF'
+
+if command -v dircolors &>/dev/null; then
+  test -r "$HOME"/.dircolors && eval "$(dircolors -b "$HOME"/.dircolors)" || eval "$(dircolors -b)"
+  alias ls='ls --color=auto'
+  alias vdir='vdir --color=auto'
+  alias grep='grep --color=auto'
+  alias fgrep='fgrep --color=auto'
+  alias egrep='egrep --color=auto'
+fi
+
+alias rsync_update='rsync -a --info=progress2 --delete'
+alias rsync_copy='rsync -a --info=progress2'
+
+alias untargz="tar -xvzf"
+alias untarxz="tar -xvf"
+
+###############################################################################
+# pathways and shortcuts
+###############################################################################
+
+alias q="exit"
+alias c="clear"
+
+export CONFIG_HOME="$HOME/.config"
+alias zshrc="source $HOME/.zshrc"
+
+alias brc="code $HOME/.zshrc"
+alias bls="code $HOME/.zsh-aliases"
+alias bdx="code $HOME/.bash_display"
+alias gconf="code $HOME/.gitconfig"
+
+cf() {
+  local pattern=$1
+  code $(find . -type f -iname "$pattern")
+}
+
+###############################################################################
+# VS Code
+###############################################################################
+
+alias code="code-insiders"
+
+
+###############################################################################
+# Python Environments
+###############################################################################
+
+vact() {
+  local dir
+  if [[ -z $1 ]]; then
+    dir='.'
+  else
+    dir="$1"
+  fi
+  source "$dir/bin/activate"
+}
+
+###############################################################################
+# ssh
+###############################################################################
+
+waitfor() {
+  local host=$1
+  local first_check=true
+
+  while ! ping -c 1 -W 1 "$host" >/dev/null 2>&1; do
+    if $first_check; then
+      echo -n "Waiting for workstation ($host)"
+      first_check=false
+    fi
+    echo -n "."
+    sleep 2
+  done
+
+  log_success "Workstation ($host) is available!"
+}
+
+_waitfor() {
+  local hosts=(${(f)"$(awk '{print $1}' ~/.ssh/known_hosts 2>/dev/null | cut -d',' -f1 | sort -u)"})
+  compadd -a hosts
+}
+compdef _waitfor waitfor
