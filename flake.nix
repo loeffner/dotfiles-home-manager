@@ -19,6 +19,10 @@
       hasWork = builtins.pathExists (self + "/home/work/default.nix");
     in
     {
+      # Reusable module — importable by other flakes (e.g. NixOS configs)
+      homeManagerModules.default = ./home/common.nix;
+
+      # Standalone config — for `home-manager switch --flake .#loesela`
       homeConfigurations = {
         loesela = home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
