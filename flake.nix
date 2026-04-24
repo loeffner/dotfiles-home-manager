@@ -4,6 +4,7 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    flake-utils.url = "github:numtide/flake-utils";
   };
 
   outputs =
@@ -11,15 +12,15 @@
       self,
       nixpkgs,
       home-manager,
+      flake-utils,
     }:
     let
-      system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
+      lib = nixpkgs.lib;
 
       mkConfig =
-        modules:
+        system: modules:
         home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
+          pkgs = nixpkgs.legacyPackages.${system};
           modules = [
             {
               home.username = "loesela";
@@ -28,7 +29,7 @@
 
               programs.home-manager.enable = true;
 
-              home.packages = with pkgs; [
+              home.packages = with nixpkgs.legacyPackages.${system}; [
                 nixfmt
                 fd
                 bat
@@ -43,19 +44,27 @@
           ]
           ++ modules;
         };
+
+      # name -> extra modules
+      configs = {
+        # Personal setup (no work stuff)
+        personal = [ ];
+
+        # Work setup (includes MVTec/HALCON submodule)
+        work = [ ./home/home-manager ];
+      };
     in
     {
       homeManagerModules.default = ./home/common.nix;
-
-      homeConfigurations = {
-        # Personal setup (no work stuff)
-        personal = mkConfig [ ];
-
-        # Work setup (includes MVTec/HALCON submodule)
-        # Activate with: home-manager switch --flake "git+file://$PWD?submodules=1#work"
-        work = mkConfig [
-          ./home/home-manager
-        ];
-      };
-    };
+    }
+    # Expose homeConfigurations under legacyPackages.<system> so that
+    # `home-manager switch --flake .#work` auto-detects the current system.
+    # The home-manager CLI looks up
+    #   packages.<system>.homeConfigurations.<name>.activationPackage
+    #   legacyPackages.<system>.homeConfigurations.<name>.activationPackage
+    #   homeConfigurations.<name>.activationPackage
+    # in that order.
+    // flake-utils.lib.eachDefaultSystem (system: {
+      legacyPackages.homeConfigurations = lib.mapAttrs (_: modules: mkConfig system modules) configs;
+    });
 }
