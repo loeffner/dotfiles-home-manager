@@ -10,7 +10,6 @@
     settings = {
       user = {
         name = "Andreas Lösel";
-        email = "andreas.loesel@outlook.com";
       };
 
       alias = {
@@ -61,6 +60,8 @@
       branch.sort = "-committerdate";
       tag.sort = "version:refname";
       init.defaultBranch = "master";
+
+      push.autoSetupRemote = true;
 
       fetch = {
         prune = true;

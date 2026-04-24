@@ -12,9 +12,6 @@
     initContent = lib.mkMerge [
       (lib.mkBefore ''
 
-        # Work environment
-        umask 0027
-
         # Tell zoxide to sit down and be quiet
         export _ZO_DOCTOR=0
       '')
@@ -28,6 +25,8 @@
         # Keybindings for line navigation
         bindkey "^[[H" beginning-of-line # Pos1
         bindkey "^[[F" end-of-line # End
+        bindkey "^[[1~" beginning-of-line # Pos1 (alternate)
+        bindkey "^[[4~" end-of-line # End (alternate)
 
         # Keybindings for delete
         bindkey "^[[3~" delete-char     # Delete
@@ -90,5 +89,6 @@
 
   imports = [
     ./git
+    ./tmux
   ];
 }

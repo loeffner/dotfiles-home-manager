@@ -1,5 +1,6 @@
 {
   inputs = {
+    self.submodules = true;
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
@@ -14,19 +15,11 @@
     let
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
-      # Work config (git submodule: ssh://git@stash.mvtec.com:7999/~loesela/home-manager.git)
-      # Included when the submodule is checked out, silently skipped otherwise.
-      hasWork = builtins.pathExists (self + "/home/work/default.nix");
-    in
-    {
-      # Reusable module — importable by other flakes (e.g. NixOS configs)
-      homeManagerModules.default = ./home/common.nix;
 
-      # Standalone config — for `home-manager switch --flake .#loesela`
-      homeConfigurations = {
-        loesela = home-manager.lib.homeManagerConfiguration {
+      mkConfig =
+        modules:
+        home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
-
           modules = [
             {
               home.username = "loesela";
@@ -47,10 +40,22 @@
               ];
             }
             ./home/common.nix
-          ] ++ pkgs.lib.optionals hasWork [
-            ./home/work
-          ];
+          ]
+          ++ modules;
         };
+    in
+    {
+      homeManagerModules.default = ./home/common.nix;
+
+      homeConfigurations = {
+        # Personal setup (no work stuff)
+        personal = mkConfig [ ];
+
+        # Work setup (includes MVTec/HALCON submodule)
+        # Activate with: home-manager switch --flake "git+file://$PWD?submodules=1#work"
+        work = mkConfig [
+          ./home/home-manager
+        ];
       };
     };
 }
