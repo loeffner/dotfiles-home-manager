@@ -10,6 +10,7 @@
     settings = {
       user = {
         name = "Andreas Lösel";
+        email = "andreas.loesel@outlook.com";
       };
 
       alias = {
