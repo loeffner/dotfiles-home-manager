@@ -89,6 +89,7 @@
     enable = true;
     enableZshIntegration = true;
     attachExistingSession = false;
+    exitShellOnExit = true;
     settings.theme = "gruvbox-dark";
     # settings.pane_frames = false;
   };
