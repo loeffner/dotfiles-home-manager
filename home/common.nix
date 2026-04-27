@@ -11,12 +11,12 @@
     syntaxHighlighting.enable = true;
     initContent = lib.mkMerge [
       (lib.mkBefore ''
+        source ${./.zsh-aliases}
 
         # Tell zoxide to sit down and be quiet
         export _ZO_DOCTOR=0
       '')
       ''
-        source ${./.zsh-aliases}
 
         # Keybindings for word navigation
         bindkey "^[[1;5C" forward-word   # Ctrl+Right
@@ -104,5 +104,6 @@
   imports = [
     ./git
     ./tmux
+    ./vim
   ];
 }
