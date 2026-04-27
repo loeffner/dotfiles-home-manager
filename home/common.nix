@@ -91,6 +91,7 @@
     attachExistingSession = false;
     exitShellOnExit = true;
     settings.theme = "gruvbox-dark";
+    settings.show_startup_tips =false;
     # settings.pane_frames = false;
   };
 
