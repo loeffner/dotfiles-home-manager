@@ -11,12 +11,13 @@
     syntaxHighlighting.enable = true;
     initContent = lib.mkMerge [
       (lib.mkBefore ''
-        source ${./.zsh-aliases}
 
         # Tell zoxide to sit down and be quiet
         export _ZO_DOCTOR=0
       '')
       ''
+
+        source ${./.zsh-aliases}
 
         # Keybindings for word navigation
         bindkey "^[[1;5C" forward-word   # Ctrl+Right
@@ -29,7 +30,9 @@
         bindkey "^[[4~" end-of-line # End (alternate)
 
         # Keybindings for delete
+        bindkey "^[[3;5~" kill-word  # Ctrl+Delete
         bindkey "^[[3~" delete-char     # Delete
+
       ''
       (lib.mkAfter ''
         if [[ -z "$ZELLIJ" ]]; then
@@ -88,8 +91,6 @@
     attachExistingSession = false;
     settings.theme = "gruvbox-dark";
     # settings.pane_frames = false;
-    # settings.default_layout = "compact";
-    # settings.scrollback_lines = 10000;
   };
 
   services.ssh-agent.enable = true;
