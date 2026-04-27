@@ -31,6 +31,11 @@
         # Keybindings for delete
         bindkey "^[[3~" delete-char     # Delete
       ''
+      (lib.mkAfter ''
+        if [[ -z "$ZELLIJ" ]]; then
+          exec zellij
+        fi
+      '')
     ];
   };
 
@@ -57,7 +62,6 @@
       theme = "gruvbox-dark-hard";
     };
   };
-
   programs.zoxide = {
     enable = true;
     enableZshIntegration = true;
@@ -70,12 +74,22 @@
     enable = true;
     enableZshIntegration = true;
     icons = "auto";
-    git = false;
+    git = true;
     theme = "gruvbox-dark";
     extraOptions = [
       "--group-directories-first"
       "--header"
     ];
+  };
+
+  programs.zellij = {
+    enable = true;
+    enableZshIntegration = true;
+    attachExistingSession = false;
+    settings.theme = "gruvbox-dark";
+    # settings.pane_frames = false;
+    # settings.default_layout = "compact";
+    # settings.scrollback_lines = 10000;
   };
 
   services.ssh-agent.enable = true;

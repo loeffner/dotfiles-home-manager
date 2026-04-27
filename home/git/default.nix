@@ -22,7 +22,7 @@
         changed = "!git diff --color --stat --find-renames $(git symbolic-ref --short refs/remotes/origin/HEAD | cut -d/ -f2)...";
 
         # Fuzzy switch
-        fzfswitch = ''!git switch "$(git for-each-ref --format='%(refname:short)' refs/heads | fzf --preview 'git lg --color=always {} | head -50')"'';
+        fswitch = ''!git switch "$(git for-each-ref --format='%(refname:short)' refs/heads | fzf --preview 'git lg --color=always {} | head -50')"'';
 
         # Open files
         fzffile = ''!f() { f=$(git ls-files | fzf --preview 'highlight -O ansi {} | head -50'); [ -n "$f" ] && ''${EDITOR:-vim} "$f"; }; f'';
