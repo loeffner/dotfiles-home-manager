@@ -16,6 +16,12 @@
       # LazyVim
       lua-language-server
       stylua
+      # Formatters
+      nixfmt-rfc-style
+      clang-tools
+      black
+      ruff
+      prettierd
       # Treesitter
       tree-sitter
       gcc
