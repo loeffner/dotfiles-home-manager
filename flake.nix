@@ -33,12 +33,10 @@
                 bat
                 ripgrep
                 tealdeer
-                tmux
-		zellij
-                vim
+            		zellij
                 nerd-fonts.meslo-lg
               ];
-            
+
               home.sessionVariables.SHELL = "${pkgs.zsh}/bin/zsh";
            }
             ./home/common.nix

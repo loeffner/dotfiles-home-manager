@@ -48,8 +48,7 @@ require("neo-tree").setup({
       ["p"]       = "paste_from_clipboard",
       ["q"]       = "close_window",
       ["?"]       = "show_help",
-      ["<C-v>"]   = "open_vsplit",
-      ["<C-x>"]   = "open_split",
+      ["<r>"]   = "open_vsplit",
     },
   },
   filesystem = {
