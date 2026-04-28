@@ -105,7 +105,6 @@
 
   imports = [
     ./git
-    ./tmux
     ./vim
   ];
 }
