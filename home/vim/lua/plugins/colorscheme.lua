@@ -1,25 +1,77 @@
-return {
-  -- add the plugin spec so LazyVim/lazy.nvim knows about it
-  {
-    "ellisonleao/gruvbox.nvim",
-    lazy = false,
-    priority = 1000,
-    opts = {
-      contrast = "hard", -- "hard" | "soft" | ""
-      transparent_mode = false,
-    },
-    config = function(_, opts)
-      require("gruvbox").setup(opts)
-      vim.o.background = "dark"
-      vim.cmd.colorscheme("gruvbox")
-    end,
+-- Catppuccin Macchiato — softer than Mocha, warmer than Frappe.
+-- See https://catppuccin.com for the full palette.
+require("catppuccin").setup({
+  flavour = "macchiato",
+  background = { dark = "macchiato" },
+  transparent_background = false,
+  term_colors = true,
+  styles = {
+    comments    = { "italic" },
+    conditionals= { "italic" },
+    keywords    = { "bold" },
+    functions   = { "bold" },
+    types       = {},
+    operators   = {},
   },
+  integrations = {
+    cmp            = true,
+    gitsigns       = true,
+    telescope      = { enabled = true },
+    treesitter     = true,
+    native_lsp     = {
+      enabled = true,
+      underlines = {
+        errors      = { "undercurl" },
+        hints       = { "undercurl" },
+        warnings    = { "undercurl" },
+        information = { "undercurl" },
+      },
+    },
+    mini           = { enabled = true },
+    flash          = true,
+    indent_blankline = { enabled = true },
+    which_key      = true,
+    diffview       = true,
+    illuminate     = { enabled = false },
+    notify         = false,
+    mason          = false,
+    neotree        = false,
+  },
+  custom_highlights = function(C)
+    return {
+      ["@variable"]              = { fg = C.text },
+      ["@variable.member"]       = { fg = C.lavender },
+      ["@variable.parameter"]    = { fg = C.maroon, style = { "italic" } },
+      ["@property"]              = { fg = C.lavender },
+      ["@field"]                 = { fg = C.lavender },
+      ["@function"]              = { fg = C.yellow, style = { "bold" } },
+      ["@function.call"]         = { fg = C.yellow },
+      ["@function.method"]       = { fg = C.yellow, style = { "bold" } },
+      ["@function.method.call"] = { fg = C.yellow },
+      ["@function.builtin"]      = { fg = C.peach, style = { "bold" } },
+      ["@constructor"]           = { fg = C.flamingo, style = { "bold" } },
+      ["@type"]                  = { fg = C.blue },
+      ["@type.builtin"]          = { fg = C.blue, style = { "italic" } },
+      ["@type.qualifier"]        = { fg = C.mauve, style = { "italic" } },
+      ["@constant"]              = { fg = C.peach },
+      ["@constant.builtin"]      = { fg = C.peach, style = { "bold" } },
+      ["@string"]                = { fg = C.green },
+      ["@string.escape"]         = { fg = C.pink, style = { "bold" } },
+      ["@number"]                = { fg = C.peach },
+      ["@boolean"]               = { fg = C.peach, style = { "bold" } },
+      ["@keyword"]               = { fg = C.mauve, style = { "bold" } },
+      ["@keyword.return"]        = { fg = C.mauve, style = { "bold", "italic" } },
+      ["@keyword.operator"]      = { fg = C.mauve },
+      ["@keyword.import"]        = { fg = C.mauve, style = { "italic" } },
+      ["@operator"]              = { fg = C.sky },
+      ["@punctuation.bracket"]   = { fg = C.overlay2 },
+      ["@punctuation.delimiter"] = { fg = C.overlay2 },
+      ["@namespace"]             = { fg = C.teal, style = { "italic" } },
+      ["@module"]                = { fg = C.teal, style = { "italic" } },
+      ["@comment"]               = { fg = C.overlay1, style = { "italic" } },
+    }
+  end,
+})
 
-  -- make LazyVim default to gruvbox
-  {
-    "LazyVim/LazyVim",
-    opts = {
-      colorscheme = "gruvbox",
-    },
-  },
-}
+vim.o.background = "dark"
+vim.cmd.colorscheme("catppuccin-macchiato")

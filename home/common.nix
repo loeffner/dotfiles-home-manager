@@ -62,7 +62,7 @@
 
   programs.bat = {
     config = {
-      theme = "gruvbox-dark-hard";
+      theme = "catppuccin-macchiato";
     };
   };
   programs.zoxide = {
@@ -78,7 +78,7 @@
     enableZshIntegration = true;
     icons = "auto";
     git = true;
-    theme = "gruvbox-dark";
+    theme = "catppuccin-macchiato";
     extraOptions = [
       "--group-directories-first"
       "--header"
@@ -90,9 +90,8 @@
     enableZshIntegration = true;
     attachExistingSession = false;
     exitShellOnExit = true;
-    settings.theme = "gruvbox-dark";
-    settings.show_startup_tips =false;
-    # settings.pane_frames = false;
+    settings.theme = "catppuccin-macchiato";
+    settings.show_startup_tips = false;
   };
 
   services.ssh-agent.enable = true;

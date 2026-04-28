@@ -1,0 +1,12 @@
+-- Eagerly load every plugin module. Order matters for colorscheme.
+require("plugins.colorscheme")
+require("plugins.ui")
+require("plugins.noice")
+require("plugins.editing")
+require("plugins.treesitter")
+require("plugins.telescope")
+require("plugins.git")
+require("plugins.lsp")
+require("plugins.cmp")
+require("plugins.format")
+require("plugins.explorer")

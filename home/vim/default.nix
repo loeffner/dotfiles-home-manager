@@ -4,8 +4,13 @@
   pkgs,
   ...
 }:
-
 {
+  # A from-scratch Neovim configuration.
+  # No LazyVim, no lazy.nvim, no plugin manager.
+  # Plugins come from nixpkgs and are loaded eagerly; each is configured
+  # in its own lua file under ./lua/plugins/.
+  #
+
   programs.neovim = {
     enable = true;
     defaultEditor = true;
@@ -13,170 +18,177 @@
     vimAlias = true;
 
     extraPackages = with pkgs; [
-      # LazyVim
+      # Build / parser tools
+      tree-sitter
+      gcc
+
+      # Telescope deps
+      ripgrep
+      fd
+
+      # LSP servers
       lua-language-server
-      stylua
+      nil # Nix LSP
+      clang-tools # clangd + clang-format
+      pyright
+
       # Formatters
-      nixfmt-rfc-style
-      clang-tools
+      stylua
+      nixfmt
       black
       ruff
       prettierd
-      # Treesitter
-      tree-sitter
-      gcc
-      # Telescope
-      ripgrep
     ];
 
     plugins = with pkgs.vimPlugins; [
-      lazy-nvim
+      # Colorscheme
+      catppuccin-nvim
+
+      # UI
+      lualine-nvim
+      nvim-web-devicons
+      nvim-scrollbar
+      nvim-hlslens
+      noice-nvim
+      nvim-notify
+
+      # Editor
+      mini-nvim
+      flash-nvim
+      which-key-nvim
+      todo-comments-nvim
+      indent-blankline-nvim
+
+      # Treesitter
+      nvim-treesitter
+      nvim-treesitter-textobjects
+
+      # Telescope
+      plenary-nvim
+      telescope-nvim
+      telescope-fzf-native-nvim
+
+      # Git
+      gitsigns-nvim
+      diffview-nvim
+
+      # LSP + completion
+      nvim-lspconfig
+      nvim-cmp
+      cmp-nvim-lsp
+      cmp-buffer
+      cmp-path
+      cmp_luasnip
+      luasnip
+      friendly-snippets
+
+      # Format
+      conform-nvim
+
+      # File explorer (sidebar)
+      neo-tree-nvim
+      nui-nvim
     ];
 
-    initLua =
-      let
-        plugins = with pkgs.vimPlugins; [
-          # LazyVim
-          LazyVim
-          bufferline-nvim
-          cmp-buffer
-          cmp-nvim-lsp
-          cmp-path
-          cmp_luasnip
-          conform-nvim
-          dashboard-nvim
-          dressing-nvim
-          flash-nvim
-          friendly-snippets
-          gitsigns-nvim
-          indent-blankline-nvim
-          lualine-nvim
-          neo-tree-nvim
-          neoconf-nvim
-          neodev-nvim
-          noice-nvim
-          nui-nvim
-          nvim-cmp
-          nvim-lint
-          nvim-lspconfig
-          nvim-notify
-          nvim-spectre
-          nvim-treesitter
-          nvim-treesitter-context
-          nvim-treesitter-textobjects
-          nvim-ts-autotag
-          nvim-ts-context-commentstring
-          nvim-web-devicons
-          persistence-nvim
-          plenary-nvim
-          telescope-fzf-native-nvim
-          telescope-nvim
-          todo-comments-nvim
-          tokyonight-nvim
-          gruvbox-nvim
-          trouble-nvim
-          vim-illuminate
-          vim-startuptime
-          which-key-nvim
-          {
-            name = "LuaSnip";
-            path = luasnip;
-          }
-          {
-            name = "catppuccin";
-            path = catppuccin-nvim;
-          }
-          {
-            name = "mini.ai";
-            path = mini-nvim;
-          }
-          {
-            name = "mini.bufremove";
-            path = mini-nvim;
-          }
-          {
-            name = "mini.comment";
-            path = mini-nvim;
-          }
-          {
-            name = "mini.indentscope";
-            path = mini-nvim;
-          }
-          {
-            name = "mini.pairs";
-            path = mini-nvim;
-          }
-          {
-            name = "mini.surround";
-            path = mini-nvim;
-          }
-        ];
-        mkEntryFromDrv =
-          drv:
-          if lib.isDerivation drv then
-            {
-              name = "${lib.getName drv}";
-              path = drv;
-            }
-          else
-            drv;
-        lazyPath = pkgs.linkFarm "lazy-plugins" (builtins.map mkEntryFromDrv plugins);
-      in
-      ''
-        require("lazy").setup({
-          defaults = {
-            lazy = true,
-          },
-          dev = {
-            -- reuse files from pkgs.vimPlugins.*
-            path = "${lazyPath}",
-            patterns = { "" },
-            -- fallback to download
-            fallback = true,
-          },
-          spec = {
-            { "LazyVim/LazyVim", import = "lazyvim.plugins" },
-            -- The following configs are needed for fixing lazyvim on nix
-            -- force enable telescope-fzf-native.nvim
-            { "nvim-telescope/telescope-fzf-native.nvim", enabled = true },
-            -- disable mason.nvim, use programs.neovim.extraPackages
-            { "mason-org/mason-lspconfig.nvim", enabled = false },
-            { "mason-org/mason.nvim", enabled = false },
-            -- import/override with your plugins
-            { import = "plugins" },
-            -- treesitter handled by xdg.configFile."nvim/parser", put this line at the end of spec to clear ensure_installed
-            { "nvim-treesitter/nvim-treesitter", opts = { ensure_installed = {} } },
-          },
-        })
-      '';
+    initLua = ''
+      require("config.options")
+      require("config.keymaps")
+      require("config.autocmds")
+      require("plugins")
+    '';
   };
 
-  # https://github.com/nvim-treesitter/nvim-treesitter#i-get-query-error-invalid-node-type-at-position
+  # Treesitter parsers — symlinked into runtimepath as ~/.config/nvim/parser/.
+  #
+  # Main-branch nvim-treesitter (the rewrite shipped in current nixpkgs) does
+  # NOT compile parsers; its `withPlugins` output contains only queries under
+  # `runtime/queries/`. So we source the compiled `<lang>.so` files from
+  # `pkgs.tree-sitter.withPlugins` instead. Queries come from the
+  # `nvim-treesitter` plugin already on runtimepath.
+  # Treesitter parsers — sourced from nvim-treesitter's *own* pinned grammars
+  # (`passthru.builtGrammars`). Using these (instead of `pkgs.tree-sitter`'s
+  # independently-versioned grammars) guarantees the parsers match the
+  # queries the plugin ships with — no `Invalid field name "operator"` style
+  # crashes from version drift.
+  #
+  # Each `builtGrammars.<lang>` derivation has the layout:
+  #   $out/parser           ← the compiled ELF (single file, not a dir)
+  #   $out/queries/<lang>/  ← upstream queries (we ignore these; the plugin
+  #                           ships a curated set under runtime/queries/)
+  #
+  # Neovim looks up `parser/<lang>.so` on the runtimepath, so we rename each
+  # `parser` ELF to `<lang>.so` in a small derivation.
   xdg.configFile."nvim/parser".source =
     let
-      parsers = pkgs.symlinkJoin {
-        name = "treesitter-parsers";
-        paths =
-          (pkgs.vimPlugins.nvim-treesitter.withPlugins (
-            plugins: with plugins; [
-              bash
-              c
-              cpp
-              lua
-              nix
-              python
-              markdown
-              markdown_inline
-              vim
-              yaml
-              json
-
-            ]
-          )).dependencies;
-      };
+      tsParsers = with pkgs.vimPlugins.nvim-treesitter.passthru.builtGrammars; [
+        {
+          name = "bash";
+          drv = bash;
+        }
+        {
+          name = "c";
+          drv = c;
+        }
+        {
+          name = "cpp";
+          drv = cpp;
+        }
+        {
+          name = "lua";
+          drv = lua;
+        }
+        {
+          name = "nix";
+          drv = nix;
+        }
+        {
+          name = "python";
+          drv = python;
+        }
+        {
+          name = "markdown";
+          drv = markdown;
+        }
+        {
+          name = "markdown_inline";
+          drv = markdown_inline;
+        }
+        {
+          name = "vim";
+          drv = vim;
+        }
+        {
+          name = "vimdoc";
+          drv = vimdoc;
+        }
+        {
+          name = "yaml";
+          drv = yaml;
+        }
+        {
+          name = "json";
+          drv = json;
+        }
+        {
+          name = "toml";
+          drv = toml;
+        }
+        {
+          name = "cmake";
+          drv = cmake;
+        }
+      ];
     in
-    "${parsers}/parser";
+    pkgs.runCommand "nvim-ts-parsers" { } ''
+      mkdir -p $out
+      ${lib.concatMapStringsSep "\n" (p: "ln -s ${p.drv}/parser $out/${p.name}.so") tsParsers}
+    '';
 
-  # Normal LazyVim config here, see https://github.com/LazyVim/starter/tree/main/lua
+  # Treesitter queries — main-branch nvim-treesitter ships them under
+  # `<plugin>/runtime/queries/`, but Neovim only searches `<plugin>/queries/`.
+  # Bridge that gap with a direct symlink.
+  xdg.configFile."nvim/queries".source = "${pkgs.vimPlugins.nvim-treesitter}/runtime/queries";
+
+  # Lua config tree.
   xdg.configFile."nvim/lua".source = ./lua;
 }
