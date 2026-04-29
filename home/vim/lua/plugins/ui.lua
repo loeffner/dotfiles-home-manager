@@ -1,7 +1,7 @@
 -- Statusline
 require("lualine").setup({
   options = {
-    theme = "catppuccin",
+    theme = "auto",
     icons_enabled = true,
     globalstatus = true,
     section_separators = "",
@@ -12,7 +12,7 @@ require("lualine").setup({
     lualine_b = { "branch", "diff", "diagnostics" },
     lualine_c = { { "filename", path = 1 } },
     lualine_x = { "filetype" },
-    lualine_y = { "progress" },
+    lualine_y = { "lsp_status" },
     lualine_z = { "location" },
   },
 })
@@ -37,6 +37,7 @@ scrollbar.setup({
   handle = {
     text = " ",
     color = "#494d64", -- surface1
+    blend = 100,
     hide_if_all_visible = true,
   },
   marks = {

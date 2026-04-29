@@ -92,6 +92,17 @@
     exitShellOnExit = true;
     settings.theme = "catppuccin-macchiato";
     settings.show_startup_tips = false;
+    settings.ui.pane_frames.rounded_corners = true;
+    extraConfig = ''
+      keybinds {
+          shared_except "move" "locked" {
+              unbind "Ctrl h"
+              bind "Alt m" {
+                  SwitchToMode "Move";
+                }
+            }
+        }
+    '';
   };
 
   services.ssh-agent.enable = true;

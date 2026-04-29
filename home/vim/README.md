@@ -132,6 +132,49 @@ If syntax highlighting looks broken, check in this order:
 - **Theme** is Catppuccin Macchiato with token overrides in
   [lua/plugins/colorscheme.lua](lua/plugins/colorscheme.lua).
 
+## Source-control workflow (VS Code-style)
+
+The closest analogue to VS Code's Source Control sidebar is **Diffview**,
+not the file tree. `<leader>gs` opens it: a panel on the left lists every
+modified file (working tree vs index), and the main area shows the diff for
+the currently selected entry. Edit directly in the right pane — saving the
+working-tree buffer updates the diff live.
+
+Inside the Diffview file panel:
+
+| key      | action                                        |
+| -------- | --------------------------------------------- |
+| `j` / `k`| move between changed files                    |
+| `<cr>`   | open diff for the selected file               |
+| `-`      | stage / unstage hunk under cursor             |
+| `s`      | stage the whole file                          |
+| `u`      | unstage the whole file                        |
+| `X`      | restore (discard) the file                    |
+| `q`      | close Diffview (`<leader>gx` also works)      |
+
+Inside a diff buffer: `]c` / `[c` jump between hunks, `do` / `dp` pull/push
+the change across the split.
+
+If you prefer the **neo-tree** flavour, `<leader>gE` toggles the `git_status`
+source as a left-side sidebar. `<cr>` on a file there opens a Diffview for
+that file (custom `diff_node` command in
+[lua/plugins/explorer.lua](lua/plugins/explorer.lua)); `o` opens the plain
+file instead.
+
+Other related bindings (see [lua/plugins/git.lua](lua/plugins/git.lua)):
+
+| binding         | action                                       |
+| --------------- | -------------------------------------------- |
+| `<leader>gs`    | Diffview SCM panel (working tree vs index)   |
+| `<leader>gd`    | same as `<leader>gs`                         |
+| `<leader>gx`    | close Diffview                               |
+| `<leader>gh`    | file history of the current buffer           |
+| `<leader>ghV`   | diff current buffer against an arbitrary ref |
+| `<leader>gD`    | change Gitsigns inline base ref              |
+| `]h` / `[h`     | next / previous hunk in current buffer       |
+| `<leader>ghs/r` | stage / reset hunk                           |
+| `<leader>ghp`   | preview hunk                                 |
+
 ## Activation
 
 ```sh

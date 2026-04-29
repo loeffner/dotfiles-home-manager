@@ -42,6 +42,32 @@ require("diffview").setup({
   view = {
     default = { layout = "diff2_horizontal" },
   },
+  hooks = {
+    -- Per-window diff tweaks. ctx.symbol is 'a' (left/old) or 'b' (right/new).
+    -- VS Code-style: left pane shows changes as red removals, right pane as
+    -- green additions. Also disable the automatic foldmethod=diff collapsing
+    -- of unchanged regions.
+    diff_buf_win_enter = function(_, winid, ctx)
+      vim.wo[winid].foldenable = false
+      vim.wo[winid].foldlevel  = 99
+
+      if ctx and ctx.symbol == "a" then
+        vim.wo[winid].winhighlight = table.concat({
+          "DiffAdd:DiffviewDiffAddAsDelete",
+          "DiffDelete:DiffviewDiffDeleteDim",
+          "DiffChange:DiffviewDiffAddAsDelete",
+          "DiffText:DiffviewDiffTextDelete",
+        }, ",")
+      elseif ctx and ctx.symbol == "b" then
+        vim.wo[winid].winhighlight = table.concat({
+          "DiffDelete:DiffviewDiffDeleteDim",
+          "DiffAdd:DiffviewDiffAdd",
+          "DiffChange:DiffviewDiffAdd",
+          "DiffText:DiffviewDiffText",
+        }, ",")
+      end
+    end,
+  },
 })
 
 vim.keymap.set("n", "<leader>ghV", function()
@@ -68,30 +94,6 @@ vim.keymap.set("n", "<leader>ghV", function()
 
     vim.cmd("update")
     vim.cmd("DiffviewOpen " .. vim.fn.fnameescape(ref) .. " -- " .. vim.fn.fnameescape(rel))
-
-    vim.schedule(function()
-      local wins = vim.tbl_filter(function(w) return vim.wo[w].diff end,
-        vim.api.nvim_tabpage_list_wins(0))
-      table.sort(wins, function(a, b)
-        return vim.api.nvim_win_get_position(a)[2] < vim.api.nvim_win_get_position(b)[2]
-      end)
-      if wins[1] then
-        vim.wo[wins[1]].winhighlight = table.concat({
-          "DiffAdd:DiffviewDiffAddAsDelete",
-          "DiffDelete:DiffviewDiffDeleteDim",
-          "DiffChange:DiffviewDiffAddAsDelete",
-          "DiffText:DiffviewDiffTextDelete",
-        }, ",")
-      end
-      if wins[2] then
-        vim.wo[wins[2]].winhighlight = table.concat({
-          "DiffDelete:DiffviewDiffDeleteDim",
-          "DiffAdd:DiffviewDiffAdd",
-          "DiffChange:DiffviewDiffAdd",
-          "DiffText:DiffviewDiffText",
-        }, ",")
-      end
-    end)
   end)
 end, { desc = "Diff split: buffer vs ref" })
 

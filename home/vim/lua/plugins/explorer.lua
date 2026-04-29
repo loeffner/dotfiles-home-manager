@@ -5,11 +5,29 @@
 vim.g.loaded_netrw = 1
 vim.g.loaded_netrwPlugin = 1
 
+-- Custom command: open the node under cursor in Diffview against the index
+-- (i.e. show working-tree changes), VS Code "click a file in SCM" style.
+local function diff_node(state)
+  local node = state.tree:get_node()
+  if not node or node.type ~= "file" then return end
+  local git_root = vim.fn.systemlist({ "git", "-C", vim.fn.fnamemodify(node.path, ":h"),
+                                       "rev-parse", "--show-toplevel" })[1]
+  if vim.v.shell_error ~= 0 or not git_root or git_root == "" then
+    vim.notify("Not inside a git repository", vim.log.levels.WARN)
+    return
+  end
+  local rel = vim.fs.relpath(git_root, node.path) or node.path
+  vim.cmd("DiffviewOpen -- " .. vim.fn.fnameescape(rel))
+end
+
 require("neo-tree").setup({
   close_if_last_window = true,
   popup_border_style = "rounded",
   enable_git_status = true,
   enable_diagnostics = true,
+  commands = {
+    diff_node = diff_node,
+  },
   default_component_configs = {
     indent = {
       with_markers   = true,
@@ -33,22 +51,6 @@ require("neo-tree").setup({
     position = "left",
     width = 32,
     mappings = {
-      ["<space>"] = "none",
-      ["<cr>"]    = "open",
-      ["o"]       = "open",
-      ["l"]       = "open",
-      ["h"]       = "close_node",
-      ["P"]       = { "toggle_preview", config = { use_float = true } },
-      ["a"]       = { "add", config = { show_path = "relative" } },
-      ["A"]       = "add_directory",
-      ["d"]       = "delete",
-      ["r"]       = "rename",
-      ["y"]       = "copy_to_clipboard",
-      ["x"]       = "cut_to_clipboard",
-      ["p"]       = "paste_from_clipboard",
-      ["q"]       = "close_window",
-      ["?"]       = "show_help",
-      ["<r>"]   = "open_vsplit",
     },
   },
   filesystem = {
@@ -65,7 +67,14 @@ require("neo-tree").setup({
     follow_current_file = { enabled = true },
   },
   git_status = {
-    window = { position = "float" },
+    window = {
+      position = "left",
+      mappings = {
+        ["<cr>"] = "diff_node", -- VS Code SCM-style: enter on a file → open diff
+        ["o"]    = "open",      -- still allow opening the plain file
+        ["d"]    = "diff_node",
+      },
+    },
   },
 })
 
@@ -92,3 +101,7 @@ end, { desc = "Explorer: files" })
 map("n", "<leader>gE", function()
   require("neo-tree.command").execute({ source = "git_status", toggle = true })
 end, { desc = "Explorer: git status" })
+
+-- VS Code-style "Source Control" panel: file list on the left, diff on the right.
+-- Enter on a file in the panel opens the working-tree-vs-index diff.
+map("n", "<leader>gs", "<cmd>DiffviewOpen<cr>",       { desc = "Source control (Diffview)" })

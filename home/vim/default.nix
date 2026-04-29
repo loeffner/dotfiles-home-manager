@@ -56,6 +56,7 @@
       mini-nvim
       flash-nvim
       which-key-nvim
+      rainbow-delimiters-nvim
       todo-comments-nvim
       indent-blankline-nvim
 
