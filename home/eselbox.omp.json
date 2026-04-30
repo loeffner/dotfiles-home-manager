@@ -61,7 +61,7 @@
           "min_width": 40
         },
         {
-          "foreground": "#ffff66",
+          "foreground": "#fabd2f",
           "background": "transparent",
           "leading_diamond": "\ue0b6",
           "trailing_diamond": "\ue0b4",
