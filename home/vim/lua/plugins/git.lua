@@ -37,10 +37,33 @@ require("gitsigns").setup({
 })
 
 -- Diffview: side-aware diff with red/green per pane.
+local function gs() return require("gitsigns") end
+
 require("diffview").setup({
   enhanced_diff_hl = true,
   view = {
     default = { layout = "diff2_horizontal" },
+  },
+  hooks = {
+    -- Disable the automatic foldmethod=diff collapsing of unchanged regions;
+    -- show full file context like VS Code's diff view.
+    diff_buf_win_enter = function(_, winid)
+      vim.wo[winid].foldenable = false
+      vim.wo[winid].foldlevel  = 99
+    end,
+  },
+  keymaps = {
+    -- Hunk staging inside the diff windows themselves (the right pane is
+    -- the actual working-tree buffer, so gitsigns is already attached).
+    -- These shadow Diffview's defaults for those keys, but only inside
+    -- Diffview windows — normal buffers are unaffected.
+    view = {
+      { "n", "<leader>hs", function() gs().stage_hunk()                      end, { desc = "Stage hunk"   } },
+      { "n", "<leader>hu", function() gs().stage_hunk()                      end, { desc = "Unstage hunk (toggle)" } },
+      { "n", "<leader>hr", function() gs().reset_hunk()                      end, { desc = "Restore hunk (discard)" } },
+      { "v", "<leader>hs", function() gs().stage_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, { desc = "Stage selection" } },
+      { "v", "<leader>hr", function() gs().reset_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, { desc = "Restore selection" } },
+    },
   },
 })
 
