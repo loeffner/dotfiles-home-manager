@@ -13,7 +13,10 @@
     }:
     let
       system = "x86_64-linux";
-      pkgs = nixpkgs.legacyPackages.${system};
+      pkgs = import nixpkgs {
+        inherit system;
+        config.allowUnfreePredicate = pkg: builtins.elem (pkgs.lib.getName pkg) [ "github-copilot-cli" ];
+      };
 
       mkConfig =
         modules:
@@ -33,12 +36,13 @@
                 bat
                 ripgrep
                 tealdeer
-            		zellij
+                zellij
                 nerd-fonts.meslo-lg
+                github-copilot-cli
               ];
 
               home.sessionVariables.SHELL = "${pkgs.zsh}/bin/zsh";
-           }
+            }
             ./home/common.nix
           ]
           ++ modules;
