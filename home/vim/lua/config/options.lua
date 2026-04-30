@@ -41,12 +41,12 @@ opt.mouse = "a"
 
 -- Filetype mappings
 vim.filetype.add({
-  extension = {
-    hpp = "cpp",
-    hxx = "cpp",
-    hh = "cpp",
-    ipp = "cpp",
-  },
+	extension = {
+		hpp = "cpp",
+		hxx = "cpp",
+		hh = "cpp",
+		ipp = "cpp",
+	},
 })
 
 -- Clipboard: use system clipboard, with OSC 52 for SSH sessions.
@@ -54,20 +54,20 @@ opt.clipboard = "unnamedplus"
 
 local osc52 = require("vim.ui.clipboard.osc52")
 vim.g.clipboard = {
-  name = "OSC 52",
-  copy = {
-    ["+"] = osc52.copy("+"),
-    ["*"] = osc52.copy("*"),
-  },
-  paste = {
-    ["+"] = osc52.paste("+"),
-    ["*"] = osc52.paste("*"),
-  },
+	name = "OSC 52",
+	copy = {
+		["+"] = osc52.copy("+"),
+		["*"] = osc52.copy("*"),
+	},
+	paste = {
+		["+"] = function() end,
+		["*"] = function() end,
+	},
 }
 
 -- Sensible diagnostic display.
 vim.diagnostic.config({
-  virtual_text = { prefix = "●" },
-  severity_sort = true,
-  float = { border = "rounded", source = true },
+	virtual_text = { prefix = "●" },
+	severity_sort = true,
+	float = { border = "rounded", source = true },
 })
