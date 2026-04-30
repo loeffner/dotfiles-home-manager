@@ -66,15 +66,15 @@ local function set_diff_highlights()
   vim.api.nvim_set_hl(0, "DiffAdd",    { bg = green_bg })
   vim.api.nvim_set_hl(0, "DiffDelete", { bg = red_bg })
   vim.api.nvim_set_hl(0, "DiffChange", { bg = gray_bg })
-  vim.api.nvim_set_hl(0, "DiffText",   { bg = red_bg_strong, bold = true })
+  vim.api.nvim_set_hl(0, "DiffText",   { bg = red_bg_strong })
 
   vim.api.nvim_set_hl(0, "DiffviewDiffAddAsDelete", { bg = red_bg })
   vim.api.nvim_set_hl(0, "DiffviewDiffAdd",         { bg = green_bg })
   vim.api.nvim_set_hl(0, "DiffviewDiffDelete",      { fg = gray_fg, bg = gray_bg })
   vim.api.nvim_set_hl(0, "DiffviewDiffDeleteDim",   { fg = gray_fg, bg = gray_bg })
   vim.api.nvim_set_hl(0, "DiffviewDiffChange",      { bg = gray_bg })
-  vim.api.nvim_set_hl(0, "DiffviewDiffText",        { bg = green_bg_strong, bold = true })
-  vim.api.nvim_set_hl(0, "DiffviewDiffTextDelete",  { bg = red_bg_strong, bold = true })
+  vim.api.nvim_set_hl(0, "DiffviewDiffText",        { bg = green_bg_strong })
+  vim.api.nvim_set_hl(0, "DiffviewDiffTextDelete",  { bg = red_bg_strong })
 end
 
 vim.api.nvim_create_autocmd({ "ColorScheme", "VimEnter" }, {
