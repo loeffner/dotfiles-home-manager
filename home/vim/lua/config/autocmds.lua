@@ -55,13 +55,13 @@ local diff_group = augroup("diff_highlights")
 local function set_diff_highlights()
   vim.opt.fillchars:append({ diff = " " })
 
-  -- Catppuccin Macchiato palette
-  local gray_bg         = "#363a4f" -- surface0
-  local gray_fg         = "#6e738d" -- overlay0
-  local red_bg          = "#4a2030" -- dim red wash
-  local red_bg_strong   = "#6e2a3a" -- stronger red wash
-  local green_bg        = "#2c4a3a" -- dim green wash
-  local green_bg_strong = "#3f6a4a" -- stronger green wash
+  -- VS Code Dark Modern diff washes on gruvbox neutral bgs.
+  local gray_bg         = "#3c3836" -- gruvbox bg1
+  local gray_fg         = "#928374" -- gruvbox gray
+  local red_bg          = "#4B1818" -- diffEditor.removedTextBackground (dim)
+  local red_bg_strong   = "#6F1313" -- removed text wash (stronger)
+  local green_bg        = "#1B3D1B" -- diffEditor.insertedTextBackground (dim)
+  local green_bg_strong = "#2C5A2C" -- inserted text wash (stronger)
 
   vim.api.nvim_set_hl(0, "DiffAdd",    { bg = green_bg })
   vim.api.nvim_set_hl(0, "DiffDelete", { bg = red_bg })

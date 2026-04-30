@@ -3,7 +3,7 @@
 -- as the message router).
 
 require("notify").setup({
-  background_colour = "#000000",
+  background_colour = "#282828",
   render = "compact",
   stages = "fade",
   timeout = 2500,

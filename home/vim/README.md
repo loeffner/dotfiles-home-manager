@@ -129,8 +129,68 @@ If syntax highlighting looks broken, check in this order:
   Treesitter foreground colors stay intact in diff splits.
 - **Sidebar explorer** is `neo-tree.nvim` — toggle with `<leader>e`
   (revealed at current file) or `<leader>E` (cwd).
-- **Theme** is Catppuccin Macchiato with token overrides in
+- **Theme** is VS Code Dark Modern syntax on a Gruvbox dark background.
+  See the [Theme](#theme) section below and
   [lua/plugins/colorscheme.lua](lua/plugins/colorscheme.lua).
+
+## Theme
+
+Hybrid scheme: **VS Code Dark Modern token colors** layered on **Gruvbox
+dark surfaces**. The split is intentional — gruvbox tones for the
+"chrome" (statusline, sidebar, panels) feel warm and easy on the eyes,
+while VS Code's syntax palette gives strong, semantically-distinct hues
+for code.
+
+Implementation:
+
+- Plugin: `vscode-nvim` (Mofiqul/vscode.nvim), loaded as `style = "dark"`.
+- `color_overrides` swaps only the *background-family* palette entries
+  (`vscBack`, `vscTabCurrent`, `vscLeftDark`, `vscPopupBack`, …) with
+  gruvbox shades. Syntax token colors (`vscYellow`, `vscBlue`, `vscOrange`,
+  `vscBlueGreen`, `vscPink`, `vscLightBlue`, …) are left untouched.
+- `group_overrides` reinforces `Normal`/`NormalFloat`/`Pmenu`/`Telescope*`/
+  `NeoTree*`/indent groups with explicit gruvbox `bg0`/`bg0_h`/`bg1`/`bg2`
+  values so panels render as proper gruvbox surfaces.
+- **Lualine** is pinned to `theme = "gruvbox"` regardless of which
+  colorscheme is active ([lua/plugins/ui.lua](lua/plugins/ui.lua)).
+- **Neo-tree** uses gruvbox accent colors: directories blue `#83a598`,
+  root/opened files yellow `#fabd2f`, git added `#b8bb26`, modified
+  `#fabd2f`, deleted `#fb4934`, untracked `#fe8019`, conflict bold red.
+- **Telescope** prompt/preview title bars use gruvbox yellow / aqua.
+- **Diff washes** ([lua/config/autocmds.lua](lua/config/autocmds.lua))
+  use VS Code red `#4B1818`/`#6F1313` and green `#1B3D1B`/`#2C5A2C`
+  backgrounds over gruvbox `bg1` for unchanged context.
+- **nvim-notify** background → gruvbox `bg0` (`#282828`).
+- **Scrollbar marks** ([lua/plugins/ui.lua](lua/plugins/ui.lua)) use VS
+  Code accent colors (errors `#F14C4C`, warn `#CCA700`, info `#3794FF`,
+  hint `#B5CEA8`, git add/change/delete `#81B88B`/`#E2C08D`/`#F48771`).
+
+Gruvbox palette in use (background family):
+
+| token   | hex       | usage                                    |
+| ------- | --------- | ---------------------------------------- |
+| `bg0_h` | `#1d2021` | sidebar / popups / inactive tabs         |
+| `bg0`   | `#282828` | editor background                        |
+| `bg0_s` | `#32302f` | folds / clangd inactive regions          |
+| `bg1`   | `#3c3836` | statusline / cursorline                  |
+| `bg2`   | `#504945` | pmenu selection / scrollbar thumb        |
+| `bg3`   | `#665c54` | indent guide scope                       |
+| `bg4`   | `#7c6f64` | line numbers                             |
+| `fg`    | `#ebdbb2` | default foreground (gruvbox fg1)         |
+| `gray`  | `#928374` | inactive statusline / gutter             |
+
+VS Code Dark Modern syntax tokens that survive (key examples):
+
+| group                    | hex       | role                          |
+| ------------------------ | --------- | ----------------------------- |
+| `vscYellow` `#DCDCAA`    | functions / methods           |          |
+| `vscBlueGreen` `#4EC9B0` | types / constructors / namespaces |      |
+| `vscBlue` `#569CD6`      | declarative keywords / type qualifiers |  |
+| `vscPink` `#C586C0`      | control flow (return/import/cond.)     |  |
+| `vscOrange` `#CE9178`    | strings                                 | |
+| `vscLightGreen` `#B5CEA8`| numbers / hint diagnostics              | |
+| `vscLightBlue` `#9CDCFE` | variables / properties / fields         | |
+| (override) `#a8a8a8`     | comments (italic, light grey)           | |
 
 ## Source-control workflow (VS Code-style)
 

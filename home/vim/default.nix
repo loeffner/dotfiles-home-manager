@@ -41,8 +41,8 @@
     ];
 
     plugins = with pkgs.vimPlugins; [
-      # Colorscheme
-      catppuccin-nvim
+      # Colorscheme — VS Code Dark Modern syntax on a gruvbox background
+      vscode-nvim
 
       # UI
       lualine-nvim

@@ -1,7 +1,8 @@
--- Statusline
+-- Statusline — explicit gruvbox theme so the bar uses warm tones regardless
+-- of the (VS Code Dark Modern) syntax colors loaded above.
 require("lualine").setup({
   options = {
-    theme = "auto",
+    theme = "gruvbox",
     icons_enabled = true,
     globalstatus = true,
     section_separators = "",
@@ -36,20 +37,20 @@ scrollbar.setup({
   set_highlights = true,
   handle = {
     text = " ",
-    color = "#494d64", -- surface1
+    color = "#3c3836", -- gruvbox bg1
     blend = 100,
     hide_if_all_visible = true,
   },
   marks = {
-    Search    = { color = "#eed49f" }, -- yellow
-    Error     = { color = "#ed8796" }, -- red
-    Warn      = { color = "#f5a97f" }, -- peach
-    Info      = { color = "#8aadf4" }, -- blue
-    Hint      = { color = "#8bd5ca" }, -- teal
-    Misc      = { color = "#c6a0f6" }, -- mauve
-    GitAdd    = { color = "#a6da95" }, -- green
-    GitChange = { color = "#eed49f" }, -- yellow
-    GitDelete = { color = "#ed8796" }, -- red
+    Search    = { color = "#CCA700" }, -- editorWarning / find match
+    Error     = { color = "#F14C4C" }, -- editorError
+    Warn      = { color = "#CCA700" }, -- editorWarning
+    Info      = { color = "#3794FF" }, -- editorInfo
+    Hint      = { color = "#B5CEA8" }, -- numbers / hint green
+    Misc      = { color = "#C586C0" }, -- keyword violet
+    GitAdd    = { color = "#81B88B" }, -- gitDecoration.addedResource
+    GitChange = { color = "#E2C08D" }, -- gitDecoration.modifiedResource
+    GitDelete = { color = "#F48771" }, -- gitDecoration.deletedResource
   },
   excluded_buftypes = { "terminal" },
   excluded_filetypes = {

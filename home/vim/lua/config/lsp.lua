@@ -53,7 +53,7 @@ local inactive_ns = vim.api.nvim_create_namespace("clangd_inactive_regions")
 -- via the autocmd below.
 local function set_inactive_hl()
   vim.api.nvim_set_hl(0, "ClangdInactiveRegion", {
-    bg = "#1e2030", -- catppuccin macchiato `mantle`; subtle dim
+    bg = "#32302f", -- gruvbox bg0_h; subtle dim
     italic = true,
     default = true,
   })
