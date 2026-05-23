@@ -24,8 +24,6 @@
           inherit pkgs;
           modules = [
             {
-              home.username = "loesela";
-              home.homeDirectory = "/home/loesela";
               home.stateVersion = "25.11";
 
               programs.home-manager.enable = true;
@@ -38,7 +36,6 @@
                 tealdeer
                 zellij
                 nerd-fonts.meslo-lg
-                github-copilot-cli
               ];
 
               home.sessionVariables.SHELL = "${pkgs.zsh}/bin/zsh";
@@ -52,13 +49,12 @@
       homeManagerModules.default = ./home/common.nix;
 
       homeConfigurations = {
-        # Personal setup (no work stuff)
-        personal = mkConfig [ ];
+        beehive = mkConfig [
+          ./home/hosts/beehive.nix
+        ];
 
-        # Work setup (includes MVTec/HALCON submodule)
-        # Activate with: home-manager switch --flake "git+file://$PWD?submodules=1#work"
-        work = mkConfig [
-          ./home/home-manager
+        ocean = mkConfig [
+          ./home/hosts/ocean.nix
         ];
       };
     };

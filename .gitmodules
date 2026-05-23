@@ -1,3 +1,0 @@
-[submodule "home/home-manager"]
-	path = home/home-manager
-	url = ssh://git@stash.mvtec.com:7999/~loesela/home-manager.git
