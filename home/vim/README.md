@@ -239,9 +239,8 @@ Other related bindings (see [lua/plugins/git.lua](lua/plugins/git.lua)):
 
 ```sh
 git add -A home/vim          # flakes ignore untracked files!
-home-manager switch --flake "git+file://$PWD?submodules=1#work"
+home-manager switch --flake "git+file://$HOME/dotfiles#work"
 ```
 
-`programs.neovim` is single-instance per user under home-manager; switching
-between this config and the LazyVim-based `home/vim/` is done by changing
-the import in `home/common.nix`.
+`programs.neovim` is single-instance per user under home-manager; the vim
+module is imported from `home/common.nix`.

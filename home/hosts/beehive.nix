@@ -1,11 +1,11 @@
-{ config, pkgs, ... }:
+{ ... }:
 {
-  # Host-specific settings for beehive
   home.username = "loeffner";
   home.homeDirectory = "/home/loeffner";
+  home.stateVersion = "25.11";
 
-  programs.git = {
-    userName  = "Andreas Lösel";
-    userEmail = "andreas.loesel@outlook.com";
+  programs.git.settings.user = {
+    name = "Andreas Lösel";
+    email = "andreas.loesel@outlook.com";
   };
 }

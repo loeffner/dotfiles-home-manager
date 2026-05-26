@@ -1,0 +1,77 @@
+#!/bin/zsh
+
+###############################################################################
+# File includes
+###############################################################################
+
+## Halcon Tools
+if [ -f "$HOME/halcon/current/tools/environment/zsh/all.src" ]; then
+  . "$HOME/halcon/current/tools/environment/zsh/all.src"
+fi
+
+# Display Variable (x2go)
+if [ -f "$HOME/.bash_display" ]; then
+  . "$HOME/.bash_display"
+fi
+
+# HDEV scripts
+if [ -f "$HOME/proj/hdev_scripts/hdlstat.sh" ]; then
+  . "$HOME/proj/hdev_scripts/hdlstat.sh"
+fi
+
+
+
+###############################################################################
+# Resource manager options
+###############################################################################
+
+if [ -f "$HOME/proj/mvtec_resource_manager/env/official.src" ]; then
+  . "$HOME/proj/mvtec_resource_manager/env/official.src"
+elif [ -f /research/public/mvtec_resource_manager/env/official.src ]; then
+  . /research/public/mvtec_resource_manager/env/official.src
+fi
+export CAFFE_RESOURCE_MANAGER_REQUEST_RESTRICTIONS="--device-type GPU"
+
+
+###############################################################################
+# HALCON and Hailo (host-specific env variables)
+###############################################################################
+
+if [ "$HOST" = "hawking" ]; then
+  export HLATEST=$(find /labor/halcon/halcon/nightly/ -maxdepth 1 -name "nightly*progress" -print |
+    awk -F'[-.]' '{print $2"."$3}' |
+    sort -V |
+    tail -n1)
+  export HNIGHTLY="/labor/halcon/halcon/nightly/nightly-${HLATEST}-progress"
+  export HAILO_VIRTUAL_ENV="$HOME/hailo/venv_dfc_3_28_hrt_4_18/"
+  export HALCON_AI2_PATH="$HOME/hailo/plugin-23.05.5.0/lib/x64-linux/"
+elif [ "$HOST" = "labor-zen4" ]; then
+  export HLATEST=$(find /labor/halcon/halcon/nightly/ -maxdepth 1 -name "nightly*progress" -print |
+    awk -F'[-.]' '{print $2"."$3}' |
+    sort -V |
+    tail -n1)
+  export HNIGHTLY="/labor/halcon/halcon/nightly/nightly-${HLATEST}-progress"
+  export HAILO_VIRTUAL_ENV="$HOME/hailo/venv_dfc_3_28_hrt_4_18/"
+  export HALCON_AI2_PATH="$HOME/hailo/plugin_23_05_5_0/lib/x64-linux/"
+elif [ "$HOST" = "labor-lin-01" ]; then
+  export HLATEST=$(find /labor/halcon/halcon/nightly/ -maxdepth 1 -name "nightly*progress" -print |
+    awk -F'[-.]' '{print $2"."$3}' |
+    sort -V |
+    tail -n1)
+  export HNIGHTLY="/labor/halcon/halcon/nightly/nightly-${HLATEST}-progress"
+  export HAILO_VIRTUAL_ENV="$HOME/hailo/venv_dfc_3_31_hrt_4_21/"
+  export HALCON_AI2_PATH="$HOME/hailo/plugin_23_05_5_0/lib/x64-linux"
+
+  export WORKSPACE="${HOME}/db_workspace"
+  export HALCON_BENCHMARK_DATA="${HOME}/halcon/benchmarkdata"
+  export HALCON_TEST_DATA="${HOME}/halcon/testdata"
+else
+  export HNIGHTLY="/halcon/nightly/nightly-master"
+fi
+
+
+###############################################################################
+# Rename all `mvtec_bash_` commands
+###############################################################################
+
+mvtec_bash_prefix "" 2>/dev/null

@@ -1,0 +1,626 @@
+#!/bin/zsh
+
+
+###############################################################################
+# LLMs & AI
+###############################################################################
+
+pi() {
+  docker run --rm -it \
+    --cap-add NET_ADMIN \
+    -v "$PWD:$PWD" \
+    -v "$HOME/ai:$HOME/ai" \
+    -w "$PWD" \
+    -e STASH_TOKEN="$(cat "$HOME/dotfiles/home/hosts/work/.stash_token" 2>/dev/null)" \
+    artifactory-prod.mvtec.local/playground-docker-local/dev/clang_dev/ubuntu_2510:latest \
+    pi
+}
+
+###############################################################################
+# Halcon tools & build
+###############################################################################
+
+himpact_branch() {
+  local GIT
+  if [[ -n $1 ]]; then
+    GIT="--git $1...HEAD"
+  fi
+  echo "$___HIMPACT_DIR"/himpact.py --db /halcon/himpact/himpact.sqlite3 query "$GIT" --exclude-priority-list
+  "$___HIMPACT_DIR"/himpact.py --db /halcon/himpact/himpact.sqlite3 query $GIT --exclude-priority-list
+}
+
+hmake_print() {
+  local GREEN='\033[1;32m'
+  local YELLOW='\033[1;33m'
+  local BLUE='\033[1;34m'
+  local NC='\033[0m'
+
+  echo "${GREEN}HMAKE Configuration:${NC}"
+  printf "${BLUE}%-20s${NC} : ${YELLOW}%s${NC}\n" "ARCH" "$HMAKE_ARCH"
+  printf "${BLUE}%-20s${NC} : ${YELLOW}%s${NC}\n" "MODE" "$HMAKE_MODE"
+  printf "${BLUE}%-20s${NC} : ${YELLOW}%s${NC}\n" "TARGET" "$HMAKE_TARGET"
+  printf "${BLUE}%-20s${NC} : ${YELLOW}%s${NC}\n" "ARCHDIR" "$HMAKE_ARCHDIR"
+  printf "${BLUE}%-20s${NC} : ${YELLOW}%s${NC}\n" "FLAGS" "$HMAKE_FLAGS"
+}
+
+hmake_master() {
+  export HMAKE_ARCH="x64-linux-clang21_1"
+  export HMAKE_MODE="debug"
+  export HMAKE_TARGET_ALL=" "
+  export HMAKE_TARGET_COMPACT="hlib hdl hodor hrun hdevelop"
+  export HMAKE_TARGET="$HMAKE_TARGET_COMPACT"
+  export HMAKE_ARCHDIR="$HOME/halcon/current/build/master"
+  export HMAKE_FLAGS= "-DWITH_DL_GRAPH_API_INTERNAL"
+  export HMAKE_ARGS="--arch $HMAKE_ARCH --$HMAKE_MODE --target $HMAKE_TARGET --archdir $HMAKE_ARCHDIR $HMAKE_FLAGS --thirdparty-libs /opt/home/buildbot/halcon/thirdparty --thirdparty-tools /opt/home/buildbot/halcon/thirdparty/tools"
+  hmake_print
+}
+
+hmake_release() {
+  export HMAKE_ARCH="x64-linux-icx-latest"
+  export HMAKE_MODE="release"
+  export HMAKE_TARGET_ALL=" "
+  export HMAKE_TARGET_COMPACT="hlib hdl hodor hrun hdevelop"
+  export HMAKE_TARGET="$HMAKE_TARGET_COMPACT"
+  export HMAKE_ARCHDIR="$HOME/halcon/current/build/release"
+  export HMAKE_FLAGS=""
+  export HMAKE_ARGS="--arch $HMAKE_ARCH --$HMAKE_MODE --target $HMAKE_TARGET --archdir $HMAKE_ARCHDIR $HMAKE_FLAGS --thirdparty-libs /opt/home/buildbot/halcon/thirdparty --thirdparty-tools /opt/home/buildbot/halcon/thirdparty/tools"
+  hmake_print
+}
+
+hmake_build() {
+  $HOME/halcon/current/tools/build/hmake.pl --arch "$HMAKE_ARCH" --"$HMAKE_MODE" --target "$HMAKE_TARGET" --archdir "$HMAKE_ARCHDIR" "$HMAKE_FLAGS" --thirdparty-libs /opt/home/buildbot/halcon/thirdparty --thirdparty-tools /opt/home/buildbot/halcon/thirdparty/tools
+}
+
+vscmaster() {
+  cd "$HOME/halcon/current/.vscode/" || return
+  python3 tasks.py --arch x64-linux-clang21_1 --mode debug --target '' --dir master --flags="-DWITH_DL_GRAPH_API_INTERNAL" >/dev/null
+  cd -
+}
+
+vscrelease() {
+  cd "$HOME/halcon/current/.vscode/" || return
+  python3 tasks.py --arch x64-linux --mode release --target '' --dir release --flags=" " >/dev/null
+  cd -
+}
+
+
+###############################################################################
+# Halcon Builds (hardcoded)
+###############################################################################
+
+alias bmaster="$HOME/halcon/current/tools/build/hmake.pl --arch x64-linux-clang21_1 --debug --target ' ' --archdir $HOME/halcon/current/build/master -DWITH_DL_GRAPH_API_INTERNAL"
+alias brelease="$HOME/halcon/current/tools/build/hmake.pl --arch x64-linux-icx-latest --release --target ' ' --archdir $HOME/halcon/current/build/release"
+
+
+###############################################################################
+# Special builds (asan, msan, ubsan)
+###############################################################################
+
+__check_default_build_dir() {
+  local ASAN_BUILD_DIR="$1"
+  if [[ "$ASAN_BUILD_DIR" != /* ]] && [[ "$ASAN_BUILD_DIR" != ~/* ]]; then
+    if [[ "$ASAN_BUILD_DIR" =~ .*build/.* ]]; then
+      ASAN_BUILD_DIR=$(echo "$ASAN_BUILD_DIR" | sed "s|.*build/|$HOME/halcon/current/build/|")
+    else
+      log_warning "The path seems to be a relative path not related to the build directory:"
+      echo $ASAN_BUILD_DIR
+      echo
+      read "confirmation?Do you wish to continue? [y/N]: "
+      case "$confirmation" in
+      [Yy]*)
+        ;;
+      *)
+        log_info "Operation cancelled by user."
+        return 1
+        ;;
+      esac
+    fi
+  fi
+}
+
+asan_build() {
+  local ASAN_BUILD_DIR="$1"
+  __check_default_build_dir "$ASAN_BUILD_DIR" || return 1
+
+  $HOME/halcon/current/tools/build/hmake.pl --arch x64-linux-clang21_1 --debug --archdir $ASAN_BUILD_DIR -DWITH_ADDRESS_SANITIZER
+  asan_setup "$ASAN_BUILD_DIR"
+}
+
+asan_setup() {
+  local ASAN_BUILD_DIR="$1"
+  __check_default_build_dir "$ASAN_BUILD_DIR" || return 1
+
+  export ASAN_SYMBOLIZER_PATH=/halcon/toolchains/x64-linux/clang-21.1.4/bin/llvm-symbolizer
+  export LSAN_OPTIONS=suppressions=$HALCON_SOURCE_DIR/tools/ci/asan_leak_suppr.txt:print_suppressions=0
+  export ASAN_OPTIONS=detect_leaks=1
+  sethalcon "$ASAN_BUILD_DIR"
+}
+
+asan_disable() {
+  export ASAN_OPTIONS=detect_leaks=0
+  echo ASAN_OPTIONS=$ASAN_OPTIONS
+}
+
+asan_reset() {
+  unset ASAN_OPTIONS
+  echo ASAN_OPTIONS=$ASAN_OPTIONS
+}
+
+asan_cuda() {
+  export ASAN_OPTIONS=protect_shadow_gap=0:replace_intrin=0
+  echo ASAN_OPTIONS=$ASAN_OPTIONS
+}
+
+msan_build() {
+  local MSAN_BUILD_DIR="$1"
+  __check_default_build_dir "$MSAN_BUILD_DIR" || return 1
+
+  $HOME/halcon/current/tools/build/hmake.pl --arch x64-linux-clang21_1_msan --target hrun --tuning --archdir $MSAN_BUILD_DIR
+  msan_setup $MSAN_BUILD_DIR
+}
+
+msan_setup() {
+  local MSAN_BUILD_DIR="$1"
+  __check_default_build_dir "$MSAN_BUILD_DIR" || return 1
+
+  export XLOCALEDIR=/usr/share/X11/locale
+  export LD_LIBRARY_PATH=/halcon/thirdparty/tools/msan/lib/:${LD_LIBRARY_PATH}
+  export MSAN_SYMBOLIZER_PATH=/halcon/toolchains/x64-linux/clang-21.1.4/bin/llvm-symbolizer
+  sethalcon "$MSAN_BUILD_DIR"
+}
+
+ubsan_build() {
+  local UBSAN_BUILD_DIR="$1"
+  __check_default_build_dir "$UBSAN_BUILD_DIR" || return 1
+
+  $HOME/halcon/current/tools/build/hmake.pl --arch x64-linux-clang21_1_usan --tuning --archdir $UBSAN_BUILD_DIR
+  ubsan_setup "$UBSAN_BUILD_DIR"
+}
+
+ubsan_setup() {
+  local UBSAN_BUILD_DIR="$1"
+  __check_default_build_dir "$UBSAN_BUILD_DIR" || return 1
+
+  export PATH=/halcon/toolchains/x64-linux/clang-19.1.0/bin/:$PATH
+  export UBSAN_OPTIONS=print_stacktrace=1
+  sethalcon "$UBSAN_BUILD_DIR"
+}
+
+
+###############################################################################
+# HDevelop, Hrun, Hodor, Unittests
+###############################################################################
+
+hdx() {
+  if [[ -z "$DISPLAY" ]]; then
+    dx2go || return 1
+  fi
+  if [[ -z "$HALCONROOT" ]]; then
+    nightly >/dev/null || return 1
+  fi
+  if [[ -z "$HALCON_AI2_PATH" ]]; then
+    ai2 /home/loesela/halcon/qualcomm/build/x64-linux-debug/install/libd/x64-linux >/dev/null || return 1
+  fi
+
+  echo HALCONROOT: "$HALCONROOT"
+  echo HALCON_AI2_PATH: "$HALCON_AI2_PATH"
+  echo LICENSE: "$(ls "$HALCONROOT"/license)"
+  echo DISPLAY: "$DISPLAY"
+
+  hdevelop "$@"
+}
+
+alias hrun="hrun -p $HOME/halcon/current/tests/templates/procedures/"
+alias hodor="hodor -p $HOME/halcon/current/tests/templates/procedures/"
+alias hodor_slow="hodor -p $HOME/halcon/current/tests/templates/procedures/ --slow-tests"
+alias hodor_repeat="hodor --loop-last-test --no-dispatch -p $HOME/halcon/current/tests/templates/procedures/"
+alias hodor_mem="hodor -p $HOME/halcon/current/tests/templates/procedures/ -n 1 --num-aop-threads 4 --peak-memory"
+
+hlibu() {
+  hlib_unittests --gtest_filter=*$1*
+}
+hdlu() {
+  hdl_unittests --gtest_filter=*$1*
+}
+door() {
+  hodor --autotests --problem-reports --filter=.*$1.*
+}
+
+lic() {
+  if [[ $HOST != "buteo2" ]]; then
+    log_error "The available licenses are only available on buteo2."
+    return 1
+  fi
+  if [[ -z "$1" || $1 == "professional" ]]; then
+    local license="license_dl_professional.dat"
+  elif [[ $1 == "enhanced" ]]; then
+    local license="license_dl_enhanced.dat"
+  elif [[ $1 == "floating" ]]; then
+    local license="license_floating.dat"
+  elif [[ $1 == "no_dl" ]]; then
+    local license="license_no_dl.dat"
+  elif [[ $1 == "fi" ]]; then
+    local license="license_progress_fi.dat"
+  else
+    log_error "Invalid license type. Please specify 'enhanced' or 'professional'."
+    return 1
+  fi
+
+  if [[ -d "$HOME/halcon/current/build/master/license" ]]; then
+    rm -f "$HOME/halcon/current/build/master/license/"*
+  fi
+
+  cp "$HOME/halcon/current/license/$license" "$HOME/halcon/current/build/master/license/"
+  log_success "Set the license of build/master to '$license'."
+}
+
+_lic() {
+  compadd enhanced professional floating no_dl fi
+}
+compdef _lic lic
+
+master() {
+  cd "$HOME"/halcon/current/build/master || return
+  seth .
+  cd - >/dev/null
+}
+
+release() {
+  cd "$HOME"/halcon/current/build/release || return
+  seth .
+  cd -
+}
+
+review() {
+  cd "$HOME"/halcon/current/build/review || return
+  seth .
+  cd -
+}
+
+nightly() {
+  sethalcon "/halcon/nightly/nightly-master"
+}
+
+alias mdx='master && hdx'
+alias nightlz="nightly"
+alias hroot="echo \$HALCONROOT"
+
+hroot_short() {
+  if [[ -n $HALCONROOT ]]; then
+    local root=$(basename $HALCONROOT)
+    echo " ($root)"
+  fi
+}
+
+dlmodel() {
+  if [[ -z "$HALCONROOT" ]]; then
+    nightly >/dev/null || return 1
+  fi
+  "$HOME"/halcon/current/tools/git_tools/diff_tools/diff.sh --hdl "$@"
+}
+
+hdict() {
+  if [[ -z "$HALCONROOT" ]]; then
+    nightly >/dev/null || return 1
+  fi
+  "$HOME"/halcon/current/tools/git_tools/diff_tools/diff.sh --hdl "$@"
+}
+
+
+###############################################################################
+# AI2 - Interfaces
+###############################################################################
+
+ai2() {
+  if [[ -z "$1" ]]; then
+    local LATEST_AI2_PATH=$HNIGHTLY"/lib/x64-linux"
+    export HALCON_AI2_PATH=$LATEST_AI2_PATH
+  elif [[ "$1" == '-d' ]]; then
+    unset HALCON_AI2_PATH
+  else
+    export HALCON_AI2_PATH="$1"
+  fi
+  echo $HALCON_AI2_PATH
+}
+
+set-ortenv() {
+  master
+  export HALCON_AI2_PATH="/home/loesela/halcon/qualcomm/build/x64-linux-debug/install/libd/x64-linux"
+  export ADSP_LIBRARY_PATH=""
+  export LD_LIBRARY_PATH="/home/loesela/halcon/qualcomm/build/x64-linux-debug/install/libd/x64-linux/thirdparty/onnxruntime"
+  ortenv
+}
+
+ortenv() {
+  [[ -n "$HALCONROOT" ]] && echo "HALCONROOT=$HALCONROOT" || echo "No \$HALCONROOT set."
+  [[ -n "$HALCON_AI2_PATH" ]] && echo "HALCON_AI2_PATH=$HALCON_AI2_PATH" || echo "No \$HALCON_AI2_PATH set."
+  [[ -n "$ADSP_LIBRARY_PATH" ]] && echo "ADSP_LIBRARY_PATH=$ADSP_LIBRARY_PATH" || echo "No \$ADSP_LIBRARY_PATH set."
+  [[ -n "$LD_LIBRARY_PATH" ]] && echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" || echo "No \$LD_LIBRARY_PATH set."
+
+  # Try to cat the soc_id, but ignore errors if the file doesn't exist (e.g., on non-ARM platforms)
+  cat /sys/devices/soc0/soc_id 2>/dev/null || echo "No soc_id found."
+}
+
+hailoenv() {
+  [[ -n "$HALCONROOT" ]] && echo "HALCONROOT=$HALCONROOT" || echo "No \$HALCONROOT set."
+  [[ -n "$HALCON_AI2_PATH" ]] && echo "HALCON_AI2_PATH=$HALCON_AI2_PATH" || echo "No \$HALCON_AI2_PATH set."
+  [[ -n "$HAILO_VIRTUAL_ENV" ]] && echo "HAILO_VIRTUAL_ENV=$HAILO_VIRTUAL_ENV" || echo "No \$HAILO_VIRTUAL_ENV set."
+  [[ -n "$LD_LIBRARY_PATH" ]] && echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH" || echo "No \$LD_LIBRARY_PATH set."
+
+  apt list hailort
+  hailortcli fw-control identify
+}
+
+
+###############################################################################
+# Self code review (for halcon)
+###############################################################################
+
+alias tidy='python3 tools/ci/run-clang-tidy.py -clang-tidy-binary=/halcon/toolchains/x64-linux/clang-17.0.1/bin/clang-tidy -p build/master/ $(git diff --name-only origin/master...HEAD)'
+alias eclint='/halcon/thirdparty/tools/bin/eclint-linux64'
+alias tags='cd $HOME/halcon/current && ctags -f .tags -V --c-kinds=+xfdev --cpp-kinds=+xfdev --exclude=./build/ --fields=+iaS source/hlib/**/*.c* source/hlib/**/*.h* include/**/*.h* tests/tools/gmock/gtest/include/gtest/gtest.h source/hlib_unittests/**/*.h* source/hlib_unittests/**/*.c* && cd -'
+
+
+###############################################################################
+# /public/tmp
+###############################################################################
+
+cptmp() {
+  local DESTINATION="/public/tmp/alo"
+
+  if [[ ! -d $DESTINATION ]]; then
+    mkdir -p $DESTINATION
+  fi
+
+  if [[ $# -eq 0 ]]; then
+    log_error "Usage: cptmp <source> [cp_options]"
+    return 1
+  fi
+
+  local SOURCE="$1"
+  shift
+
+  if [[ -e "$SOURCE" ]]; then
+    cp -r "$@" "$SOURCE" "$DESTINATION"
+  else
+    log_error "$SOURCE does not exist."
+    return 1
+  fi
+
+  chmodtmp
+}
+
+chmodtmp() {
+  chmod -R g+rw /public/tmp/alo
+}
+
+alias cleantmp="rm -r /public/tmp/alo"
+
+
+###############################################################################
+# Documentation
+###############################################################################
+
+_DOC_OP_BASE="$HOME/halcon/current/build/master"
+_DOC_OP_EN_DIR="$_DOC_OP_BASE/doc_en_US/html/reference/operators"
+
+typeset -ga _DOC_OPS_CACHE=()
+_DOC_OPS_CACHE_MTIME=""
+
+_doc_operator_build_cache() {
+  local dir="$_DOC_OP_EN_DIR"
+  [[ -d "$dir" ]] || { _DOC_OPS_CACHE=(); _DOC_OPS_CACHE_MTIME=""; return; }
+
+  local mtime
+  mtime="$(stat -c %Y "$dir" 2>/dev/null || echo "")"
+
+  if (( ${#_DOC_OPS_CACHE[@]} == 0 )) || [[ "$mtime" != "$_DOC_OPS_CACHE_MTIME" ]]; then
+    setopt local_options NULL_GLOB
+    _DOC_OPS_CACHE=()
+    local f name
+    for f in "$dir"/*.html; do
+      name="${f:t:r}"
+      _DOC_OPS_CACHE+=("$name")
+    done
+    _DOC_OPS_CACHE_MTIME="$mtime"
+  fi
+}
+
+doc_operator() {
+  if [[ "$1" == "--refresh-cache" ]]; then
+    _DOC_OPS_CACHE=()
+    _DOC_OPS_CACHE_MTIME=""
+    _doc_operator_build_cache
+    log_success "doc_operator: cache refreshed (${#_DOC_OPS_CACHE[@]} operators)."
+    return 0
+  fi
+
+  local op="$1"
+  local lang="${2:-en}"
+
+  if [[ -z "$op" ]]; then
+    log_error "Usage: doc_operator <OPERATOR_NAME> [de|en|jp|ja]"
+    return 2
+  fi
+
+  local locale
+  case "$lang" in
+    en) locale="en_US" ;;
+    de) locale="de_DE" ;;
+    jp|ja) locale="ja_JP" ;;
+    *)
+      log_error "Unsupported language: $lang (use: de, en, jp/ja)"
+      return 2
+      ;;
+  esac
+
+  local dir="$_DOC_OP_BASE/doc_${locale}/html/reference/operators"
+  local file="${dir}/${op}.html"
+
+  if [[ ! -f "$file" ]]; then
+    log_error "Not found: $file"
+    return 1
+  fi
+
+  command -v code >/dev/null 2>&1 || { log_error "VS Code 'code' CLI not found."; return 127; }
+  code "$file"
+}
+
+doc_operator_ops() {
+  _doc_operator_build_cache
+  printf '%s\n' "${_DOC_OPS_CACHE[@]}"
+}
+
+_doc_operator_completion() {
+  if (( CURRENT == 3 )); then
+    compadd de en jp ja
+    return
+  fi
+
+  _doc_operator_build_cache
+  if (( ${#_DOC_OPS_CACHE[@]} )); then
+    compadd "${_DOC_OPS_CACHE[@]}"
+  fi
+}
+compdef _doc_operator_completion doc_operator
+compdef _doc_operator_completion doc_operator_ops
+
+
+###############################################################################
+# UV magic
+###############################################################################
+
+alias netron='uvx netron'
+
+
+###############################################################################
+# Python Environments
+###############################################################################
+
+hvenv() {
+  cd ~ || return
+  vact hvenv
+  cd -
+}
+
+_setup_conda() {
+  local CONDA_DIR=$1
+  local __conda_setup
+  __conda_setup="$("$CONDA_DIR" 'shell.zsh' 'hook' 2>/dev/null)"
+  if [[ $? -eq 0 ]]; then
+    eval "$__conda_setup"
+  else
+    if [[ -f "$CONDA_DIR/etc/profile.d/conda.sh" ]]; then
+      . "$CONDA_DIR/etc/profile.d/conda.sh"
+    else
+      export PATH="$CONDA_DIR/bin:$PATH"
+    fi
+  fi
+  unset __conda_setup
+}
+
+use_miniconda3() {
+  case $HOST in
+  buteo2)
+    _setup_conda "$HOME"/miniforge3
+    ;;
+  *)
+    log_warning "Miniconda is not yet installed on this host"
+    ;;
+  esac
+}
+
+use_ort() {
+  use_miniconda3
+  conda activate ort
+}
+
+dlhython_activate() {
+  local current_host=$HOST
+  local dir="$HOME/proj/deep-learning-with-hython"
+  local env_path="${dir}/dl-hython-${current_host}"
+
+  if [[ ! -d "${env_path}" ]]; then
+    echo "${env_path}"
+    log_warning "Directory for the current host (${current_host}) does not exist!"
+    return
+  fi
+
+  if [[ -f "${env_path}/bin/activate" ]]; then
+    source "${env_path}/bin/activate"
+  else
+    log_warning "Activate script not found for the current host (${current_host})!"
+  fi
+
+  master
+  mvtec_bash_add_python_path_entry $dir/source
+  echo "halcon package is version:"
+  pip list | grep mvtec-halcon
+}
+
+dlhython_create() {
+  local current_host=$HOST
+  local dir="$HOME/proj/deep-learning-with-hython"
+  local env_path="${dir}/dl-hython-${current_host}"
+
+  if [[ -d "${env_path}" ]]; then
+    log_warning "Directory for the current host (${current_host}) already exists!"
+    return
+  fi
+
+  python3 -m venv "${env_path}"
+
+  if [[ -f "${env_path}/bin/activate" ]]; then
+    source "${env_path}/bin/activate"
+
+    [[ -f "requirements.txt" ]] && pip install -r requirements.txt || log_warning "requirements.txt not found!"
+    [[ -f "requirements_tools.txt" ]] && pip install -r requirements_tools.txt || log_warning "requirements_tools.txt not found!"
+
+    local whl="$HOME/halcon/current/build/master/bind/python/generated/dist/mvtec_halcon-26050.0.0-py3-none-any.whl"
+    [[ -f "$whl" ]] && pip install "$whl" || log_warning "halcon python package not found!"
+  else
+    log_error "Unable to activate the virtual environment. Activation script not found!"
+  fi
+}
+
+dlhython_deactivate() {
+  deactivate
+}
+
+
+###############################################################################
+# Resource Manager
+###############################################################################
+
+alias rls="mvtec_resource_manager.py list"
+alias rmy="mvtec_resource_manager.py list --mine"
+alias rfree="mvtec_resource_manager.py free --id"
+
+rram() {
+  export MVTEC_RESOURCE_MANAGER_REQUEST_RESTRICTIONS="--device-type GPU --ram $1"
+}
+
+mChomper() {
+  "$HOME/proj/memGPU/venv/bin/python3" "$HOME/proj/memGPU/mChomper.py"
+}
+
+
+###############################################################################
+# Software Manager (SOM)
+###############################################################################
+
+alias som="som --port=auto"
+
+
+###############################################################################
+# Intel VTune
+###############################################################################
+
+vtune() {
+  if [[ "$HOST" == "hawking" ]]; then
+    source /opt/intel/oneapi/setvars.sh
+    vtune-gui
+  else
+    log_warning "Intel VTune is currently only supported on hawking."
+  fi
+}

@@ -12,10 +12,11 @@
       home-manager,
     }:
     let
+      lib = nixpkgs.lib;
       system = "x86_64-linux";
       pkgs = import nixpkgs {
         inherit system;
-        config.allowUnfreePredicate = pkg: builtins.elem (pkgs.lib.getName pkg) [ "github-copilot-cli" ];
+        config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ "github-copilot-cli" ];
       };
 
       mkConfig =
@@ -24,8 +25,6 @@
           inherit pkgs;
           modules = [
             {
-              home.stateVersion = "25.11";
-
               programs.home-manager.enable = true;
 
               home.packages = with pkgs; [
@@ -46,8 +45,6 @@
         };
     in
     {
-      homeManagerModules.default = ./home/common.nix;
-
       homeConfigurations = {
         beehive = mkConfig [
           ./home/hosts/beehive.nix
@@ -55,6 +52,10 @@
 
         ocean = mkConfig [
           ./home/hosts/ocean.nix
+        ];
+
+        work = mkConfig [
+          ./home/hosts/work
         ];
       };
     };
