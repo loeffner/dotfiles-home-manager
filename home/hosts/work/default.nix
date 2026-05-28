@@ -5,9 +5,13 @@
   ...
 }:
 {
-  home.username = "loesela";
-  home.homeDirectory = "/home/loesela";
-  home.stateVersion = "25.11";
+  home.username = lib.mkDefault "loesela";
+  home.homeDirectory = lib.mkDefault "/home/loesela";
+  home.stateVersion = lib.mkDefault "25.11";
+
+  home.packages = with pkgs; [
+    github-copilot-cli
+  ];
 
   programs.git = {
     settings.user.name = "Andreas Lösel";

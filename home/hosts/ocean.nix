@@ -1,8 +1,8 @@
-{ ... }:
+{ lib, ... }:
 {
-  home.username = "loeffner";
-  home.homeDirectory = "/home/loeffner";
-  home.stateVersion = "25.11";
+  home.username = lib.mkDefault "loeffner";
+  home.homeDirectory = lib.mkDefault "/home/loeffner";
+  home.stateVersion = lib.mkDefault "25.11";
 
   programs.git.settings.user = {
     name = "Andreas Lösel";

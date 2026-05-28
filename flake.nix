@@ -19,44 +19,35 @@
         config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ "github-copilot-cli" ];
       };
 
+      # Reusable home-manager modules. These are consumed both by the
+      # standalone homeConfigurations below and by external flakes that wire
+      # home-manager into NixOS via home-manager.nixosModules.home-manager.
+      homeModules = {
+        base = ./home/base.nix;
+        common = ./home/common.nix;
+        beehive = ./home/hosts/beehive.nix;
+        ocean = ./home/hosts/ocean.nix;
+        work = ./home/hosts/work;
+      };
+
       mkConfig =
-        modules:
+        hostModule:
         home-manager.lib.homeManagerConfiguration {
           inherit pkgs;
           modules = [
-            {
-              programs.home-manager.enable = true;
-
-              home.packages = with pkgs; [
-                nixfmt
-                fd
-                bat
-                ripgrep
-                tealdeer
-                zellij
-                nerd-fonts.meslo-lg
-              ];
-
-              home.sessionVariables.SHELL = "${pkgs.zsh}/bin/zsh";
-            }
-            ./home/common.nix
-          ]
-          ++ modules;
+            homeModules.base
+            homeModules.common
+            hostModule
+          ];
         };
     in
     {
+      inherit homeModules;
+
       homeConfigurations = {
-        beehive = mkConfig [
-          ./home/hosts/beehive.nix
-        ];
-
-        ocean = mkConfig [
-          ./home/hosts/ocean.nix
-        ];
-
-        work = mkConfig [
-          ./home/hosts/work
-        ];
+        beehive = mkConfig homeModules.beehive;
+        ocean = mkConfig homeModules.ocean;
+        work = mkConfig homeModules.work;
       };
     };
 }
