@@ -13,11 +13,6 @@
     }:
     let
       lib = nixpkgs.lib;
-      system = "x86_64-linux";
-      pkgs = import nixpkgs {
-        inherit system;
-        config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ "github-copilot-cli" ];
-      };
 
       # Reusable home-manager modules. These are consumed both by the
       # standalone homeConfigurations below and by external flakes that wire
@@ -30,24 +25,45 @@
         work = ./home/hosts/work;
       };
 
+      pkgsFor =
+        system:
+        import nixpkgs {
+          inherit system;
+          config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ "github-copilot-cli" ];
+        };
+
       mkConfig =
-        hostModule:
+        system: hostModule:
         home-manager.lib.homeManagerConfiguration {
-          inherit pkgs;
+          pkgs = pkgsFor system;
           modules = [
             homeModules.base
             homeModules.common
             hostModule
           ];
         };
+
+      # Systems on which the `work` setup must build. Selected at activation
+      # time via `home-manager switch --flake .#work-<system>` (see the `hms`
+      # zsh alias, which auto-picks based on `uname -m`).
+      workSystems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
     in
     {
       inherit homeModules;
 
       homeConfigurations = {
-        beehive = mkConfig homeModules.beehive;
-        ocean = mkConfig homeModules.ocean;
-        work = mkConfig homeModules.work;
-      };
+        beehive = mkConfig "x86_64-linux" homeModules.beehive;
+        ocean = mkConfig "x86_64-linux" homeModules.ocean;
+      }
+      // lib.genAttrs (map (s: "work-${s}") workSystems) (
+        name:
+        let
+          system = lib.removePrefix "work-" name;
+        in
+        mkConfig system homeModules.work
+      );
     };
 }

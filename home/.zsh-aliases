@@ -63,7 +63,8 @@ alias code="code-insiders"
 ###############################################################################
 
 hms() {
-  home-manager switch --flake "git+file://$HOME/dotfiles#${1:-work}"
+  local target="${1:-work-$(uname -m)-linux}"
+  home-manager switch --flake "git+file://$HOME/dotfiles#${target}"
 }
 
 
