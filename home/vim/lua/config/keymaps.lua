@@ -45,6 +45,11 @@ map("n", "<leader>cd", vim.diagnostic.open_float, { desc = "Diagnostic float" })
 map("n", "]q", "<cmd>cnext<cr>", { desc = "Next quickfix" })
 map("n", "[q", "<cmd>cprev<cr>", { desc = "Previous quickfix" })
 
+-- Toggles
+map("n", "<leader>tw", function()
+  vim.wo.wrap = not vim.wo.wrap
+end, { desc = "Toggle line wrap" })
+
 -- Toggle scroll/cursor bind across windows
 map("n", "<leader>wb", function()
   local on = vim.wo.scrollbind
