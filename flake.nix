@@ -32,15 +32,42 @@
           config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ "github-copilot-cli" ];
         };
 
+      # NixOS-friendly entry points. External flakes wire these into a system
+      # via `home-manager.nixosModules.home-manager` and add
+      # `dotfiles.homeManagerModules.<host>` (or `.default`) to the user's
+      # `imports`. Each bundle is a single composite module that already pulls
+      # in `base` + `common` + the host module, so consumers only need to set
+      # per-machine identity (username, homeDirectory, stateVersion).
+      homeManagerModules = {
+        beehive.imports = [
+          homeModules.base
+          homeModules.common
+          homeModules.beehive
+        ];
+        ocean.imports = [
+          homeModules.base
+          homeModules.common
+          homeModules.ocean
+        ];
+        work.imports = [
+          homeModules.base
+          homeModules.common
+          homeModules.work
+        ];
+        # `default` targets the personal NixOS hosts (beehive, ocean). They
+        # share the same identity, so a single bundle is enough for both.
+        default.imports = [
+          homeModules.base
+          homeModules.common
+          homeModules.beehive
+        ];
+      };
+
       mkConfig =
-        system: hostModule:
+        system: hostBundle:
         home-manager.lib.homeManagerConfiguration {
           pkgs = pkgsFor system;
-          modules = [
-            homeModules.base
-            homeModules.common
-            hostModule
-          ];
+          modules = [ hostBundle ];
         };
 
       # Systems on which the `work` setup must build. Selected at activation
@@ -52,18 +79,18 @@
       ];
     in
     {
-      inherit homeModules;
+      inherit homeModules homeManagerModules;
 
       homeConfigurations = {
-        beehive = mkConfig "x86_64-linux" homeModules.beehive;
-        ocean = mkConfig "x86_64-linux" homeModules.ocean;
+        beehive = mkConfig "x86_64-linux" homeManagerModules.beehive;
+        ocean = mkConfig "x86_64-linux" homeManagerModules.ocean;
       }
       // lib.genAttrs (map (s: "work-${s}") workSystems) (
         name:
         let
           system = lib.removePrefix "work-" name;
         in
-        mkConfig system homeModules.work
+        mkConfig system homeManagerModules.work
       );
     };
 }
