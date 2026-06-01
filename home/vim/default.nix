@@ -47,6 +47,8 @@
       vscode-nvim
 
       # UI
+      bufferline-nvim
+      colorful-winsep-nvim
       lualine-nvim
       nvim-web-devicons
       nvim-scrollbar

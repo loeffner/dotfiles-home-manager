@@ -1,4 +1,4 @@
--- mini.* modules: surround, pairs, comment.
+-- mini.* modules: surround, pairs, comment, bufremove.
 require("mini.surround").setup({
   mappings = {
     add = "gsa", delete = "gsd", find = "gsf", find_left = "gsF",
@@ -7,6 +7,7 @@ require("mini.surround").setup({
 })
 require("mini.pairs").setup()
 require("mini.comment").setup()
+require("mini.bufremove").setup()
 
 -- Flash motion
 require("flash").setup({

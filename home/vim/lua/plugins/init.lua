@@ -1,5 +1,6 @@
 -- Eagerly load every plugin module. Order matters for colorscheme.
 require("plugins.colorscheme")
+require("plugins.bufferline")
 require("plugins.ui")
 require("plugins.noice")
 require("plugins.editing")

@@ -1,3 +1,15 @@
+-- Colored frame around the focused split. Draws colored borders on the
+-- separators between the active window and its neighbors.
+require("colorful-winsep").setup({
+  border    = "rounded",
+  highlight = "#fabd2f", -- gruvbox bright yellow
+  excluded_ft = {
+    "TelescopePrompt",
+    "lazy",
+    "mason",
+  },
+})
+
 -- Statusline — explicit gruvbox theme so the bar uses warm tones regardless
 -- of the (VS Code Dark Modern) syntax colors loaded above.
 require("lualine").setup({

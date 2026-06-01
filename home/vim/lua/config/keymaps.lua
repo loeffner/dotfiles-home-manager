@@ -3,7 +3,16 @@ local map = vim.keymap.set
 -- Quality of life
 map("n", "<Esc>", "<cmd>noh<cr>", { desc = "Clear search highlight" })
 map("n", "<leader>w", "<cmd>w<cr>", { desc = "Save" })
-map("n", "<leader>q", "<cmd>confirm q<cr>", { desc = "Quit" })
+map("n", "<leader>q", function()
+  local bufs = vim.tbl_filter(function(b)
+    return vim.bo[b].buflisted
+  end, vim.api.nvim_list_bufs())
+  if #bufs > 1 then
+    require("mini.bufremove").delete(0, false)
+  else
+    vim.cmd("confirm q")
+  end
+end, { desc = "Close buffer or quit" })
 map("n", "<leader>Q", "<cmd>qa!<cr>", { desc = "Force quit all" })
 
 -- Window navigation
@@ -12,10 +21,15 @@ map("n", "<C-j>", "<C-w>j", { desc = "Window down" })
 map("n", "<C-k>", "<C-w>k", { desc = "Window up" })
 map("n", "<C-l>", "<C-w>l", { desc = "Window right" })
 
--- Buffers
-map("n", "<S-h>", "<cmd>bprevious<cr>", { desc = "Previous buffer" })
-map("n", "<S-l>", "<cmd>bnext<cr>", { desc = "Next buffer" })
-map("n", "<leader>bd", "<cmd>bdelete<cr>", { desc = "Delete buffer" })
+-- Window splits (current buffer stays, opens alongside)
+map("n", "<leader>|", "<cmd>vsplit<cr>", { desc = "Split window right" })
+map("n", "<leader>-", "<cmd>split<cr>", { desc = "Split window below" })
+map("n", "<leader>wd", "<C-w>c", { desc = "Close window" })
+
+-- Buffers (navigation handled by bufferline plugin)
+map("n", "<leader>bd", function()
+  require("mini.bufremove").delete(0, false)
+end, { desc = "Delete buffer" })
 
 -- Move lines
 map("n", "<A-j>", "<cmd>m .+1<cr>==", { desc = "Move line down" })

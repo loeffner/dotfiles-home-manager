@@ -83,3 +83,6 @@ vim.api.nvim_create_autocmd({ "ColorScheme", "VimEnter" }, {
 })
 
 set_diff_highlights()
+
+-- Colored frame around the focused split. Helps spot which pane has the
+-- cursor when several windows are open. See plugins/ui.lua for the setup.
