@@ -29,7 +29,7 @@
         system:
         import nixpkgs {
           inherit system;
-          config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ "github-copilot-cli" ];
+          config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ "github-copilot-cli" "claude-code"];
         };
 
       # NixOS-friendly entry points. External flakes wire these into a system
