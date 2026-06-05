@@ -112,6 +112,6 @@ vim.keymap.set("n", "<leader>ghV", function()
   end)
 end, { desc = "Diff split: buffer vs ref" })
 
-vim.keymap.set("n", "<leader>gd", "<cmd>DiffviewOpen<cr>",       { desc = "Diffview: open" })
+vim.keymap.set("n", "<leader>gd", "<cmd>DiffviewOpen HEAD<cr>", { desc = "Diff vs last commit" })
 vim.keymap.set("n", "<leader>gx", "<cmd>DiffviewClose<cr>",      { desc = "Diffview: close" })
 vim.keymap.set("n", "<leader>gh", "<cmd>DiffviewFileHistory %<cr>", { desc = "File history" })

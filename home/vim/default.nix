@@ -90,6 +90,9 @@
       # Format
       conform-nvim
 
+      # Markdown
+      render-markdown-nvim
+
       # File explorer (sidebar)
       neo-tree-nvim
       nui-nvim

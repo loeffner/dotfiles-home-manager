@@ -103,5 +103,9 @@ map("n", "<leader>gE", function()
 end, { desc = "Explorer: git status" })
 
 -- VS Code-style "Source Control" panel: file list on the left, diff on the right.
--- Enter on a file in the panel opens the working-tree-vs-index diff.
-map("n", "<leader>gs", "<cmd>DiffviewOpen<cr>",       { desc = "Source control (Diffview)" })
+map("n", "<leader>gs", "<cmd>DiffviewOpen HEAD<cr>",  { desc = "Diff vs last commit" })
+map("n", "<leader>gS", function()
+  vim.ui.input({ prompt = "Diff against ref: ", default = "master" }, function(ref)
+    if ref and ref ~= "" then vim.cmd("DiffviewOpen " .. vim.fn.fnameescape(ref)) end
+  end)
+end, { desc = "Diff vs branch (prompt)" })
