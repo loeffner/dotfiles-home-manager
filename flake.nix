@@ -22,14 +22,19 @@
         common = ./home/common.nix;
         beehive = ./home/hosts/beehive.nix;
         ocean = ./home/hosts/ocean.nix;
+        island = ./home/hosts/island.nix;
         work = ./home/hosts/work;
       };
+
+      # Single source of truth for allowed unfree packages, shared with the
+      # NixOS path via home/base.nix. See home/unfree.nix.
+      unfreePackages = import ./home/unfree.nix;
 
       pkgsFor =
         system:
         import nixpkgs {
           inherit system;
-          config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) [ "github-copilot-cli" "claude-code"];
+          config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) unfreePackages;
         };
 
       # NixOS-friendly entry points. External flakes wire these into a system
@@ -48,6 +53,11 @@
           homeModules.base
           homeModules.common
           homeModules.ocean
+        ];
+        island.imports = [
+          homeModules.base
+          homeModules.common
+          homeModules.island
         ];
         work.imports = [
           homeModules.base
@@ -84,6 +94,7 @@
       homeConfigurations = {
         beehive = mkConfig "x86_64-linux" homeManagerModules.beehive;
         ocean = mkConfig "x86_64-linux" homeManagerModules.ocean;
+        island = mkConfig "aarch64-darwin" homeManagerModules.island;
       }
       // lib.genAttrs (map (s: "work-${s}") workSystems) (
         name:
