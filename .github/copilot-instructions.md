@@ -2,7 +2,7 @@
 
 ## Overview
 
-This is a **Nix flake** managing personal dotfiles via **Home Manager**. It targets `x86_64-linux` (all hosts) and `aarch64-linux` (work only) and defines per-host home configurations: `beehive`, `ocean` (personal NixOS hosts), and `work` (MVTec, several Ubuntu machines).
+This is a **Nix flake** managing personal dotfiles via **Home Manager**. It spans `x86_64-linux` (personal + work), `aarch64-linux` (work) and `aarch64-darwin` (the personal MacBook). It defines per-host home configurations: `beehive`, `ocean` (personal NixOS hosts), `island` (personal MacBook, standalone home-manager on macOS — not nix-darwin), and `work` (MVTec, several Ubuntu machines).
 
 The flake is consumed in two modes:
 1. **Standalone** Home Manager (e.g. on Ubuntu) via `homeConfigurations.<host>`.
@@ -15,14 +15,14 @@ The flake is consumed in two modes:
 home-manager switch --flake "git+file://$HOME/dotfiles#work"
 
 # Shortcut defined in shell aliases:
-hms work   # or: hms beehive / hms ocean
+hms work   # or: hms beehive / hms ocean / hms island
 
 # Format Nix files:
 nixfmt **/*.nix
 
 # Evaluate without building (quick syntax/type check):
 nix eval .#homeConfigurations.beehive.activationPackage.drvPath
-# (work is exposed as work-x86_64-linux / work-aarch64-linux)
+# (island is exposed as `island`; work as work-x86_64-linux / work-aarch64-linux)
 
 # Verify the NixOS-facing module bundles still resolve:
 nix eval .#homeManagerModules --apply 'm: builtins.attrNames m'
@@ -37,26 +37,30 @@ There are no tests or CI pipelines; validation is done by building/switching.
 ```
 flake.nix                         # Entry point: inputs, mkConfig, homeModules, homeManagerModules, homeConfigurations
 home/
-  base.nix                        # Shared: minimal package set (nixfmt, fd, bat, rg, tealdeer, zellij, fonts) + SHELL
+  base.nix                        # Shared: minimal package set (nixfmt, fd, bat, rg, tealdeer, zellij, fonts) + unfree predicate (NixOS path)
   common.nix                      # Shared: zsh, oh-my-posh, fzf, atuin, zoxide, eza, zellij, gpg/ssh; imports ./git and ./vim
+  unfree.nix                      # Single source of truth: allowed unfree package names (consumed by both flake.nix and base.nix)
   .zsh-aliases                    # Shell aliases and helper functions (shared)
   eselbox.omp.json                # oh-my-posh theme
   hosts/
     beehive.nix                   # Personal NixOS host (defaults: username, git identity, stateVersion)
     ocean.nix                     # Personal NixOS host (currently identical to beehive.nix)
+    island.nix                    # Personal MacBook (aarch64-darwin, standalone home-manager); enables claude-code
     work/
       default.nix                 # Work host (username, email, git signing, aichat, stateVersion)
       .zsh-work-aliases           # Work-specific shell aliases (Halcon build tools, etc.)
       .zsh-work-env               # Work-specific env vars (sourced at shell init)
   git/default.nix                 # Git settings, aliases, diff/merge tool config
   vim/default.nix                 # Neovim: plugins from nixpkgs, treesitter parsers, LSP
-  vim/lua/                        # Neovim Lua config tree (loaded eagerly, no plugin manager)
+  vim/lua/config/                 # Core editor config: options, keymaps, autocmds, lsp
+  vim/lua/plugins/                # Per-plugin config; load order set in plugins/init.lua
+  vim/README.md                   # Neovim notes incl. treesitter wiring gotchas on current nixpkgs
 ```
 
 **Module composition**: `flake.nix` exposes two attribute sets of modules:
 
-- `homeModules.{base, common, beehive, ocean, work}` — raw building blocks (paths). Use these if you want to compose your own bundle.
-- `homeManagerModules.{beehive, ocean, work, default}` — composite bundles that already `imports = [ base common <host> ]`. These are the NixOS-facing entry points and what `mkConfig` itself consumes for the standalone `homeConfigurations`. `default` aliases `beehive` (the personal hosts share identity).
+- `homeModules.{base, common, beehive, ocean, island, work}` — raw building blocks (paths). Use these if you want to compose your own bundle.
+- `homeManagerModules.{beehive, ocean, island, work, default}` — composite bundles that already `imports = [ base common <host> ]`. These are the NixOS-facing entry points and what `mkConfig` itself consumes for the standalone `homeConfigurations`. `default` aliases `beehive` (the personal hosts share identity).
 
 **Host configs** set identity (`home.username`, `home.homeDirectory`, `home.stateVersion`, `programs.git.settings.user.*`) with `lib.mkDefault` so an outer consumer (e.g. a NixOS flake) can override them. The work host additionally sources its own zsh env/aliases and configures `aichat`.
 
@@ -81,7 +85,7 @@ Because each `homeManagerModules.<host>` is a single composite module, the consu
 ### Nix
 
 - All packages and plugins come from nixpkgs — no external plugin managers (no lazy.nvim, no Mason).
-- Unfree packages are explicitly allowed via `allowUnfreePredicate` in `flake.nix` (currently only `github-copilot-cli`). Add new unfree package names to that predicate when needed.
+- Unfree packages are allowed via a single allowlist in `home/unfree.nix` (currently `openweb-ui`, `claude-code`, `github-copilot-cli`). Both consumption paths read it: `pkgsFor` in `flake.nix` (standalone) and `nixpkgs.config.allowUnfreePredicate` in `home/base.nix` (NixOS). Add new unfree package names there — not in two places.
 - Format Nix with `nixfmt` (included in the flake's package set).
 - Host configs override shared settings using `lib.mkForce` where needed.
 - `home.stateVersion` is set per-host for independent upgrade control.
@@ -93,7 +97,7 @@ Because each `homeManagerModules.<host>` is a single composite module, the consu
 - Each plugin is configured in its own file under `vim/lua/plugins/`. Load order is explicit in `plugins/init.lua`.
 - **LSP uses `vim.lsp.config` / `vim.lsp.enable`** (Neovim 0.11+ API). Do NOT use `require("lspconfig").server.setup{}`.
 - **Treesitter parsers** are sourced from `nvim-treesitter.passthru.builtGrammars` (not `pkgs.tree-sitter-grammars`) to avoid query/parser version drift. Parsers are symlinked into `~/.config/nvim/parser/`.
-- **Treesitter highlighting** is started per-buffer via `vim.treesitter.start()` in an autocmd — `require("nvim-treesitter.configs").setup{}` does not exist on the main branch rewrite.
+- **Treesitter highlighting** is started per-buffer via `vim.treesitter.start()` in an autocmd — `require("nvim-treesitter.configs").setup{}` does not exist on the main branch rewrite. See `home/vim/README.md` for the full treesitter parser/query wiring gotchas on current nixpkgs.
 - Formatting: `conform.nvim` with formatters per-filetype (stylua, nixfmt, clang-format, ruff/black, prettierd).
 - Leader key is `<Space>`, local leader is `\`.
 - Indentation: 2 spaces (expandtab), enforced in Neovim options.
