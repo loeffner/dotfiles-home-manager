@@ -102,8 +102,7 @@ map("n", "<leader>gE", function()
   require("neo-tree.command").execute({ source = "git_status", toggle = true })
 end, { desc = "Explorer: git status" })
 
--- VS Code-style "Source Control" panel: file list on the left, diff on the right.
-map("n", "<leader>gs", "<cmd>DiffviewOpen HEAD<cr>",  { desc = "Diff vs last commit" })
+-- Diff against a specific ref (prompt).
 map("n", "<leader>gS", function()
   vim.ui.input({ prompt = "Diff against ref: ", default = "master" }, function(ref)
     if ref and ref ~= "" then vim.cmd("DiffviewOpen " .. vim.fn.fnameescape(ref)) end

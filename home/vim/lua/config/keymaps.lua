@@ -2,7 +2,7 @@ local map = vim.keymap.set
 
 -- Quality of life
 map("n", "<Esc>", "<cmd>noh<cr>", { desc = "Clear search highlight" })
-map("n", "<leader>w", "<cmd>w<cr>", { desc = "Save" })
+map({ "n", "i", "v" }, "<leader>s", "<cmd>w<cr>", { desc = "Save" })
 map("n", "<leader>q", function()
   local bufs = vim.tbl_filter(function(b)
     return vim.bo[b].buflisted
@@ -58,6 +58,11 @@ map("n", "<leader>cd", vim.diagnostic.open_float, { desc = "Diagnostic float" })
 -- Quickfix
 map("n", "]q", "<cmd>cnext<cr>", { desc = "Next quickfix" })
 map("n", "[q", "<cmd>cprev<cr>", { desc = "Previous quickfix" })
+
+-- Clipboard
+map("n", "<leader>yf", function()
+  vim.fn.setreg("+", vim.fn.expand("%:p"))
+end, { desc = "Yank file path" })
 
 -- Toggles
 map("n", "<leader>tw", function()
