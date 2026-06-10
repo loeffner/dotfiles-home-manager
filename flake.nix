@@ -14,20 +14,7 @@
     let
       lib = nixpkgs.lib;
 
-      # Reusable home-manager modules. These are consumed both by the
-      # standalone homeConfigurations below and by external flakes that wire
-      # home-manager into NixOS via home-manager.nixosModules.home-manager.
-      homeModules = {
-        base = ./home/base.nix;
-        common = ./home/common.nix;
-        beehive = ./home/hosts/beehive.nix;
-        ocean = ./home/hosts/ocean.nix;
-        island = ./home/hosts/island.nix;
-        work = ./home/hosts/work;
-      };
-
-      # Single source of truth for allowed unfree packages, shared with the
-      # NixOS path via home/base.nix. See home/unfree.nix.
+      # Single source of truth for allowed unfree packages. See home/unfree.nix.
       unfreePackages = import ./home/unfree.nix;
 
       pkgsFor =
@@ -37,47 +24,17 @@
           config.allowUnfreePredicate = pkg: builtins.elem (lib.getName pkg) unfreePackages;
         };
 
-      # NixOS-friendly entry points. External flakes wire these into a system
-      # via `home-manager.nixosModules.home-manager` and add
-      # `dotfiles.homeManagerModules.<host>` (or `.default`) to the user's
-      # `imports`. Each bundle is a single composite module that already pulls
-      # in `base` + `common` + the host module, so consumers only need to set
-      # per-machine identity (username, homeDirectory, stateVersion).
-      homeManagerModules = {
-        beehive.imports = [
-          homeModules.base
-          homeModules.common
-          homeModules.beehive
-        ];
-        ocean.imports = [
-          homeModules.base
-          homeModules.common
-          homeModules.ocean
-        ];
-        island.imports = [
-          homeModules.base
-          homeModules.common
-          homeModules.island
-        ];
-        work.imports = [
-          homeModules.base
-          homeModules.common
-          homeModules.work
-        ];
-        # `default` targets the personal NixOS hosts (beehive, ocean). They
-        # share the same identity, so a single bundle is enough for both.
-        default.imports = [
-          homeModules.base
-          homeModules.common
-          homeModules.beehive
-        ];
-      };
-
+      # Every host gets base + common, plus its own host module (identity,
+      # git user, host-specific extras).
       mkConfig =
-        system: hostBundle:
+        system: hostModule:
         home-manager.lib.homeManagerConfiguration {
           pkgs = pkgsFor system;
-          modules = [ hostBundle ];
+          modules = [
+            ./home/base.nix
+            ./home/common.nix
+            hostModule
+          ];
         };
 
       # Systems on which the `work` setup must build. Selected at activation
@@ -89,19 +46,13 @@
       ];
     in
     {
-      inherit homeModules homeManagerModules;
-
       homeConfigurations = {
-        beehive = mkConfig "x86_64-linux" homeManagerModules.beehive;
-        ocean = mkConfig "x86_64-linux" homeManagerModules.ocean;
-        island = mkConfig "aarch64-darwin" homeManagerModules.island;
+        beehive = mkConfig "x86_64-linux" ./home/hosts/beehive.nix;
+        ocean = mkConfig "x86_64-linux" ./home/hosts/ocean.nix;
+        island = mkConfig "aarch64-darwin" ./home/hosts/island.nix;
       }
       // lib.genAttrs (map (s: "work-${s}") workSystems) (
-        name:
-        let
-          system = lib.removePrefix "work-" name;
-        in
-        mkConfig system homeManagerModules.work
+        name: mkConfig (lib.removePrefix "work-" name) ./home/hosts/work
       );
     };
 }

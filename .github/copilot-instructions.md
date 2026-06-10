@@ -4,9 +4,7 @@
 
 This is a **Nix flake** managing personal dotfiles via **Home Manager**. It spans `x86_64-linux` (personal + work), `aarch64-linux` (work) and `aarch64-darwin` (the personal MacBook). It defines per-host home configurations: `beehive`, `ocean` (personal NixOS hosts), `island` (personal MacBook, standalone home-manager on macOS — not nix-darwin), and `work` (MVTec, several Ubuntu machines).
 
-The flake is consumed in two modes:
-1. **Standalone** Home Manager (e.g. on Ubuntu) via `homeConfigurations.<host>`.
-2. **As an input to a NixOS flake** (used by the separate `beehive` NixOS repo) via `homeManagerModules.<host>` — see *NixOS integration* below.
+The flake provides **standalone** Home Manager configurations only, applied via `homeConfigurations.<host>` with `home-manager switch --flake`. The personal NixOS hosts (`beehive`, `ocean`) just install the `home-manager` CLI and apply these configs out-of-band — the flake is **not** wired into NixOS as a module.
 
 ## Build & Apply
 
@@ -24,8 +22,8 @@ nixfmt **/*.nix
 nix eval .#homeConfigurations.beehive.activationPackage.drvPath
 # (island is exposed as `island`; work as work-x86_64-linux / work-aarch64-linux)
 
-# Verify the NixOS-facing module bundles still resolve:
-nix eval .#homeManagerModules --apply 'm: builtins.attrNames m'
+# Check the whole flake:
+nix flake check
 ```
 
 There are no tests or CI pipelines; validation is done by building/switching.
@@ -35,11 +33,11 @@ There are no tests or CI pipelines; validation is done by building/switching.
 ## Architecture
 
 ```
-flake.nix                         # Entry point: inputs, mkConfig, homeModules, homeManagerModules, homeConfigurations
+flake.nix                         # Entry point: inputs, mkConfig, homeConfigurations
 home/
-  base.nix                        # Shared: minimal package set (nixfmt, fd, bat, rg, tealdeer, zellij, fonts) + unfree predicate (NixOS path)
+  base.nix                        # Shared: minimal package set (nixfmt, fd, bat, rg, tealdeer, zellij, fonts) + SHELL
   common.nix                      # Shared: zsh, oh-my-posh, fzf, atuin, zoxide, eza, zellij, gpg/ssh; imports ./git and ./vim
-  unfree.nix                      # Single source of truth: allowed unfree package names (consumed by both flake.nix and base.nix)
+  unfree.nix                      # Single source of truth: allowed unfree package names (consumed by flake.nix)
   .zsh-aliases                    # Shell aliases and helper functions (shared)
   eselbox.omp.json                # oh-my-posh theme
   hosts/
@@ -57,35 +55,16 @@ home/
   vim/README.md                   # Neovim notes incl. treesitter wiring gotchas on current nixpkgs
 ```
 
-**Module composition**: `flake.nix` exposes two attribute sets of modules:
+**Module composition**: `flake.nix` defines a single helper, `mkConfig system hostModule`, which builds a `homeManagerConfiguration` from `[ base common <host> ]`. Each entry in `homeConfigurations` is one `mkConfig` call; `work` is fanned out over `workSystems` (x86_64-linux, aarch64-linux).
 
-- `homeModules.{base, common, beehive, ocean, island, work}` — raw building blocks (paths). Use these if you want to compose your own bundle.
-- `homeManagerModules.{beehive, ocean, island, work, default}` — composite bundles that already `imports = [ base common <host> ]`. These are the NixOS-facing entry points and what `mkConfig` itself consumes for the standalone `homeConfigurations`. `default` aliases `beehive` (the personal hosts share identity).
-
-**Host configs** set identity (`home.username`, `home.homeDirectory`, `home.stateVersion`, `programs.git.settings.user.*`) with `lib.mkDefault` so an outer consumer (e.g. a NixOS flake) can override them. The work host additionally sources its own zsh env/aliases and configures `aichat`.
-
-### NixOS integration
-
-The personal `beehive` NixOS repo (separate flake) imports this flake as `dotfiles` and wires it in like:
-
-```nix
-home-manager.users.loeffner = {
-  imports = [ dotfiles.homeManagerModules.beehive ];  # or .ocean / .default
-  home.username = "loeffner";
-  home.homeDirectory = "/home/loeffner";
-  home.stateVersion = "25.05";
-  programs.home-manager.enable = true;
-};
-```
-
-Because each `homeManagerModules.<host>` is a single composite module, the consumer never needs to know that `base.nix` and `common.nix` exist — adding a new shared module here automatically reaches the NixOS hosts. **When adjusting the module layout, keep these bundles complete**: anything that should land on a NixOS host must be reachable from `homeManagerModules.<host>`.
+**Host configs** set identity (`home.username`, `home.homeDirectory`, `home.stateVersion`, `programs.git.settings.user.*`) with `lib.mkDefault` so a host module can override the shared defaults. The work host additionally sources its own zsh env/aliases and configures `aichat`.
 
 ## Key Conventions
 
 ### Nix
 
 - All packages and plugins come from nixpkgs — no external plugin managers (no lazy.nvim, no Mason).
-- Unfree packages are allowed via a single allowlist in `home/unfree.nix` (currently `openweb-ui`, `claude-code`, `github-copilot-cli`). Both consumption paths read it: `pkgsFor` in `flake.nix` (standalone) and `nixpkgs.config.allowUnfreePredicate` in `home/base.nix` (NixOS). Add new unfree package names there — not in two places.
+- Unfree packages are allowed via a single allowlist in `home/unfree.nix` (currently `openweb-ui`, `claude-code`, `github-copilot-cli`), read by the `allowUnfreePredicate` in `pkgsFor` (`flake.nix`). Add new unfree package names there when needed.
 - Format Nix with `nixfmt` (included in the flake's package set).
 - Host configs override shared settings using `lib.mkForce` where needed.
 - `home.stateVersion` is set per-host for independent upgrade control.
