@@ -109,7 +109,7 @@
   programs.zellij = {
     enable = true;
     enableZshIntegration = true;
-    attachExistingSession = false;
+    attachExistingSession = true;
     exitShellOnExit = true;
     settings.theme = "gruvbox-dark";
     settings.show_startup_tips = false;
