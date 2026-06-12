@@ -2,7 +2,7 @@ local map = vim.keymap.set
 
 -- Quality of life
 map("n", "<Esc>", "<cmd>noh<cr>", { desc = "Clear search highlight" })
-map({ "n", "i", "v" }, "<leader>s", "<cmd>w<cr>", { desc = "Save" })
+map({ "n", "v" }, "<leader>s", "<cmd>w<cr>", { desc = "Save" })
 map("n", "<leader>q", function()
   local bufs = vim.tbl_filter(function(b)
     return vim.bo[b].buflisted
