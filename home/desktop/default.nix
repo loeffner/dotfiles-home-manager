@@ -12,45 +12,45 @@
     # write the config. null avoids pulling a second, mismatched Hyprland in.
     package = null;
     portalPackage = null;
-    # Write classic hyprland.conf syntax (the home-manager default for this
-    # stateVersion); pinned so the choice is explicit and the deprecation
-    # warning is silenced.
-    configType = "hyprlang";
+    # Emit hyprland.lua. The NixOS session launches via `start-hyprland`, which
+    # parses the config as Lua, so we must write Lua (not hyprlang/hyprland.conf,
+    # which start-hyprland chokes on at line 1). NOTE: don't use a "$mod"
+    # variable in `settings` — HM's Lua translator turns it into invalid
+    # `hl.$mod(...)`. Inline SUPER in each bind instead.
+    configType = "lua";
 
     settings = {
       # Auto-detect whatever monitor is attached (incl. the USB4 dock).
       monitor = ",preferred,auto,auto";
 
-      "$mod" = "SUPER";
-
       bind = [
-        "$mod, Return, exec, kitty" # terminal (provided by NixOS)
-        "$mod, R, exec, wofi --show drun" # app launcher (provided by NixOS)
-        "$mod, Q, killactive,"
-        "$mod, M, exit,"
+        "SUPER, Return, exec, kitty" # terminal (provided by NixOS)
+        "SUPER, R, exec, wofi --show drun" # app launcher (provided by NixOS)
+        "SUPER, Q, killactive,"
+        "SUPER, M, exit,"
 
         # Move focus
-        "$mod, left, movefocus, l"
-        "$mod, right, movefocus, r"
-        "$mod, up, movefocus, u"
-        "$mod, down, movefocus, d"
+        "SUPER, left, movefocus, l"
+        "SUPER, right, movefocus, r"
+        "SUPER, up, movefocus, u"
+        "SUPER, down, movefocus, d"
 
         # Workspaces
-        "$mod, 1, workspace, 1"
-        "$mod, 2, workspace, 2"
-        "$mod, 3, workspace, 3"
-        "$mod, 4, workspace, 4"
-        "$mod, 5, workspace, 5"
-        "$mod SHIFT, 1, movetoworkspace, 1"
-        "$mod SHIFT, 2, movetoworkspace, 2"
-        "$mod SHIFT, 3, movetoworkspace, 3"
-        "$mod SHIFT, 4, movetoworkspace, 4"
-        "$mod SHIFT, 5, movetoworkspace, 5"
+        "SUPER, 1, workspace, 1"
+        "SUPER, 2, workspace, 2"
+        "SUPER, 3, workspace, 3"
+        "SUPER, 4, workspace, 4"
+        "SUPER, 5, workspace, 5"
+        "SUPER SHIFT, 1, movetoworkspace, 1"
+        "SUPER SHIFT, 2, movetoworkspace, 2"
+        "SUPER SHIFT, 3, movetoworkspace, 3"
+        "SUPER SHIFT, 4, movetoworkspace, 4"
+        "SUPER SHIFT, 5, movetoworkspace, 5"
       ];
 
       bindm = [
-        "$mod, mouse:272, movewindow"
-        "$mod, mouse:273, resizewindow"
+        "SUPER, mouse:272, movewindow"
+        "SUPER, mouse:273, resizewindow"
       ];
     };
   };
