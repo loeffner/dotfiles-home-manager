@@ -49,6 +49,7 @@
       homeConfigurations = {
         beehive = mkConfig "x86_64-linux" ./home/hosts/beehive.nix;
         ocean = mkConfig "x86_64-linux" ./home/hosts/ocean.nix;
+        terra = mkConfig "x86_64-linux" ./home/hosts/terra.nix;
         island = mkConfig "aarch64-darwin" ./home/hosts/island.nix;
       }
       // lib.genAttrs (map (s: "work-${s}") workSystems) (
