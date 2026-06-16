@@ -4,12 +4,12 @@
       "alignment": "left",
       "segments": [
         {
-          "foreground": "#ffffff",
+          "foreground": "#d65d0e",
           "background": "transparent",
           "leading_diamond": "\ue0b6",
           "trailing_diamond": "\ue0b4",
           "style": "diamond",
-          "template": "{{ if .WSL }}WSL at{{ end }} {{.Icon}} ",
+          "template": " {{.Icon}} {{.HostName}} ",
           "type": "os",
           "min_width": 30
         },

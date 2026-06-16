@@ -37,6 +37,7 @@ alias untarxz="tar -xvf"
 
 alias q="exit"
 alias c="clear"
+alias rawzsh="ZELLIJ=0 zsh"
 
 export CONFIG_HOME="$HOME/.config"
 alias zshrc="source $HOME/.zshrc"
