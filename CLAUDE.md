@@ -11,6 +11,7 @@ environments (shell, git, neovim, CLI tools) — not full NixOS systems.
 # Apply a configuration (standalone home-manager)
 home-manager switch --flake .#beehive          # personal host (NixOS)
 home-manager switch --flake .#ocean            # personal host (NixOS)
+home-manager switch --flake .#terra            # personal host, Hyprland desktop (NixOS)
 home-manager switch --flake .#island           # personal MacBook (macOS, aarch64-darwin)
 home-manager switch --flake .#work-x86_64-linux
 home-manager switch --flake .#work-aarch64-linux
@@ -29,6 +30,10 @@ nixfmt **/*.nix
 
 There is no test suite. Validation = the config evaluates and builds
 (`nix build` / `nix flake check`).
+
+**Flake gotcha**: Nix flakes ignore untracked files. Any new file added to the
+repo must be staged (`git add <file>`) before `nix build` or
+`home-manager switch` will see it.
 
 ## Architecture
 
@@ -57,11 +62,12 @@ enable `claude-code` (unfree); `island` is the only macOS host
 (`aarch64-darwin`, standalone home-manager — not nix-darwin) and sets
 `homeDirectory` to `/Users/loeffner`. The shared `common.nix` services
 (`ssh-agent`, `gpg-agent`) work on Darwin too — home-manager wires them via
-`launchd.agents` there instead of systemd. `work` adds copilot CLI, git
-signing + a
+`launchd.agents` there instead of systemd. `work` (a directory at
+`home/hosts/work/default.nix`) adds copilot CLI, git signing + a
 `~/.gitconfig.work` include, `umask 0027`, sources `.zsh-work-env` /
 `.zsh-work-aliases`, points atuin at a network home, and configures `aichat`
-against an internal Ollama endpoint.
+against an internal Ollama endpoint. `terra` imports `home/desktop` for a
+Hyprland desktop environment.
 
 Unfree packages are gated by an `allowUnfreePredicate` allowlist set in
 `pkgsFor` (flake.nix), which reads `home/unfree.nix`. To allow a new unfree
@@ -74,6 +80,21 @@ from `common.nix`. Work-only shell bits live in
 `home/hosts/work/.zsh-work-*`. zsh `initContent` is assembled with
 `lib.mkBefore`/`mkAfter` ordering — e.g. the `exec zellij` guard must run last
 (`mkAfter`), and work additions append with `mkAfter`.
+
+### Desktop (`home/desktop`)
+
+Imported by hosts that run Hyprland (currently `terra` and `beehive`).
+Contains: Hyprland config (hand-written Lua), Waybar (top bar with workspaces/
+clock/audio/network), Wofi (app launcher), Kitty (terminal), Yazi (file
+manager), cursor theme, and helper scripts (`audio-sink-picker`,
+`audio-source-picker`). All styled with Gruvbox dark.
+
+Convention: use the home-manager module for an app where the module works well
+(type-checked options, themes). Fall back to `xdg.configFile` with a
+hand-written config only where the module is broken or limiting. Current
+exception: Hyprland itself — the `wayland.windowManager.hyprland` module's
+settings→Lua translation emits invalid binds, so `hyprland.lua` is deployed
+verbatim via `xdg.configFile."hypr/hyprland.lua"`.
 
 ### Neovim (`home/vim`)
 

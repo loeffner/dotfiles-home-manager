@@ -1,0 +1,269 @@
+{ config, pkgs, ... }:
+let
+  # Niri waybar config — same layout/style as the Hyprland one; only the
+  # workspaces module differs (niri/workspaces instead of hyprland/workspaces).
+  niriWaybarConfig = [
+    {
+      layer = "top";
+      position = "top";
+      height = 32;
+      spacing = 4;
+
+      modules-left = [ "niri/workspaces" ];
+      modules-center = [ "clock" ];
+      modules-right = [
+        "pulseaudio#microphone"
+        "pulseaudio"
+        "network"
+      ];
+
+      "niri/workspaces" = {
+        format = "{id}";
+        on-click = "activate";
+      };
+
+      clock = {
+        format = "{:%H:%M}";
+        format-alt = "{:%d. %b %Y  %H:%M}";
+        tooltip-format = "<big>{:%B %Y}</big>\n<tt>{calendar}</tt>";
+      };
+
+      pulseaudio = {
+        format = "{icon}";
+        format-muted = "󰝟";
+        format-icons = {
+          default = [
+            "󰕿"
+            "󰖀"
+            "󰕾"
+          ];
+        };
+        tooltip-format = "{volume}% — {desc}";
+        on-click = "$HOME/.local/bin/audio-sink-picker";
+        on-scroll-up = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+";
+        on-scroll-down = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
+      };
+
+      "pulseaudio#microphone" = {
+        format = "{format_source}";
+        format-source = "󰍬";
+        format-source-muted = "󰍭";
+        tooltip-format = "{source_volume}% — {source_desc}";
+        on-click = "$HOME/.local/bin/audio-source-picker";
+        on-scroll-up = "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%+";
+        on-scroll-down = "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%-";
+      };
+
+      network = {
+        format-wifi = "󰤨  {essid} ({signalStrength}%)";
+        format-ethernet = "󰈀  {ipaddr}";
+        format-disconnected = "󰤭  disconnected";
+        tooltip-format = "{ifname}: {ipaddr}/{cidr}";
+        on-click = "nm-connection-editor";
+      };
+    }
+  ];
+in
+{
+  # niri has no built-in XWayland (unlike Hyprland). X11-only apps — Steam,
+  # and Electron apps like Discord that default to X11 — won't launch without
+  # an X server. xwayland-satellite provides one; see the autostart block.
+  home.packages = [
+    pkgs.niri
+    pkgs.xwayland-satellite
+  ];
+
+  # Niri waybar config — written alongside the shared style.css so waybar
+  # finds it automatically (no --style flag needed).
+  xdg.configFile."waybar/config-niri.json".text = builtins.toJSON niriWaybarConfig;
+
+  # Niri compositor config — hand-written KDL (no home-manager module needed).
+  # Reference: https://github.com/YaLTeR/niri/wiki/Configuration:-Overview
+  xdg.configFile."niri/config.kdl".text = ''
+    input {
+        keyboard {
+            xkb {
+                // Layout inherited from the system; override here if needed.
+            }
+            repeat-delay 600
+            repeat-rate 25
+        }
+        touchpad {
+            tap
+            natural-scroll
+        }
+    }
+    layout {
+        gaps 5
+        center-focused-column "never"
+        preset-column-widths {
+            proportion 0.33333
+            proportion 0.5
+            proportion 0.66667
+        }
+        default-column-width { proportion 0.5; }
+
+        // Active border: Gruvbox green→orange gradient (matches Hyprland
+        // active_border). Inactive: muted dark grey.
+        border {
+            width 2
+            active-color "#d65d0e"
+            inactive-color "#504945"
+        }
+        focus-ring {
+            off
+        }
+    }
+
+    prefer-no-csd
+
+    screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+
+    animations {}
+
+    // Rounded corners on all windows — matches Hyprland rounding=10.
+    // window-rule {
+    //     geometry-corner-radius 10
+    //     clip-to-geometry true
+    // }
+
+    // ── Environment ─────────────────────────────────────────────────────────
+
+    // Point X11 clients at the display xwayland-satellite creates (see below).
+    // niri also pushes this into the systemd/D-Bus activation environment, so
+    // apps launched via .desktop files (e.g. Discord, Steam) inherit it too.
+    environment {
+        DISPLAY ":0"
+    }
+
+    // ── Autostart ─────────────────────────────────────────────────────────
+
+    // XWayland for X11-only apps (Steam) and X11-by-default Electron (Discord).
+    // Pinned to :0 to match the DISPLAY exported above. Absolute path so it
+    // starts regardless of PATH timing during session bring-up.
+    spawn-at-startup "${pkgs.xwayland-satellite}/bin/xwayland-satellite" ":0"
+
+    spawn-at-startup "swaybg" "-i" "${config.home.homeDirectory}/Images/earth.png" "-m" "fill"
+    // style.css is resolved relative to the config file dir (~/.config/waybar/).
+    spawn-at-startup "waybar" "--config" "${config.xdg.configHome}/waybar/config-niri.json"
+
+    // ── Keybinds ──────────────────────────────────────────────────────────
+    //
+    binds {
+        // Discoverability & session.
+        Mod+Shift+Slash { show-hotkey-overlay; }      // cheat-sheet of all binds
+        Mod+M           { quit; }                      // Hyprland parity (exit)
+        Ctrl+Alt+Delete { quit; }                      // safety net
+        Mod+Shift+P     { power-off-monitors; }
+
+        // MX Master thumb button (BTN_FORWARD, evdev 277) → overview.
+        MouseForward repeat=false { toggle-overview; }
+
+        // Apps — mirrors the Hyprland binds.
+        Mod+Return    { spawn "kitty"; }
+        Mod+B         { spawn "firefox"; }
+        Mod+E         { spawn "kitty" "-e" "yazi"; }
+        Mod+R         { spawn "sh" "-c" "pkill wofi || wofi --show drun"; }
+        Mod+Space     { spawn "sh" "-c" "pkill wofi || wofi --show drun"; }
+
+        // Window lifecycle.
+        Mod+Q         { close-window; }
+        Mod+Backspace { close-window; }
+        Mod+Shift+F   { fullscreen-window; }           // Hyprland parity
+        Mod+F         { maximize-column; }             // niri's "fullscreen-ish"
+
+        // Overview — niri's signature zoomed-out workspace view.
+        Mod+O repeat=false { toggle-overview; }
+
+        // Focus (niri is column-based; K/J move within a column). hjkl + arrows.
+        Mod+H     { focus-column-left; }
+        Mod+L     { focus-column-right; }
+        Mod+K     { focus-window-up; }
+        Mod+J     { focus-window-down; }
+        Mod+Left  { focus-column-left; }
+        Mod+Right { focus-column-right; }
+        Mod+Up    { focus-window-up; }
+        Mod+Down  { focus-window-down; }
+        Mod+Home  { focus-column-first; }
+        Mod+End   { focus-column-last; }
+
+        // Move windows/columns. Shift+hjkl (Hyprland parity) + Ctrl+arrows.
+        Mod+Shift+H    { move-column-left; }
+        Mod+Shift+L    { move-column-right; }
+        Mod+Shift+K    { move-window-up; }
+        Mod+Shift+J    { move-window-down; }
+        Mod+Ctrl+Left  { move-column-left; }
+        Mod+Ctrl+Right { move-column-right; }
+        Mod+Ctrl+Up    { move-window-up; }
+        Mod+Ctrl+Down  { move-window-down; }
+
+        // Column composition — pull windows into / out of the current column.
+        Mod+Comma        { consume-window-into-column; }
+        Mod+Period       { expel-window-from-column; }
+        Mod+BracketLeft  { consume-or-expel-window-left; }
+        Mod+BracketRight { consume-or-expel-window-right; }
+        Mod+W            { toggle-column-tabbed-display; }
+        Mod+C            { center-column; }
+
+        // Floating layer.
+        Mod+V       { toggle-window-floating; }
+        Mod+Shift+V { switch-focus-between-floating-and-tiling; }
+
+        // Workspaces 1-5: switch and move active column.
+        Mod+1 { focus-workspace 1; }
+        Mod+2 { focus-workspace 2; }
+        Mod+3 { focus-workspace 3; }
+        Mod+4 { focus-workspace 4; }
+        Mod+5 { focus-workspace 5; }
+        Mod+Shift+1 { move-column-to-workspace 1; }
+        Mod+Shift+2 { move-column-to-workspace 2; }
+        Mod+Shift+3 { move-column-to-workspace 3; }
+        Mod+Shift+4 { move-column-to-workspace 4; }
+        Mod+Shift+5 { move-column-to-workspace 5; }
+
+        // Workspace navigation — page keys and Mod+scroll.
+        Mod+Page_Down { focus-workspace-down; }
+        Mod+Page_Up   { focus-workspace-up; }
+        Mod+Shift+Page_Down { move-column-to-workspace-down; }
+        Mod+Shift+Page_Up   { move-column-to-workspace-up; }
+        // Mod+vertical scroll → workspaces; Mod+horizontal scroll → columns.
+        Mod+WheelScrollDown  cooldown-ms=150 { focus-workspace-down; }
+        Mod+WheelScrollUp    cooldown-ms=150 { focus-workspace-up; }
+        Mod+WheelScrollLeft  cooldown-ms=150 { focus-column-left; }
+        Mod+WheelScrollRight cooldown-ms=150 { focus-column-right; }
+        Mod+Shift+WheelScrollLeft  cooldown-ms=150 { move-column-left; }
+        Mod+Shift+WheelScrollRight cooldown-ms=150 { move-column-right; }
+
+        // Column width: fine adjust, preset cycle, and fixed shortcuts.
+        Mod+Minus      { set-column-width "-10%"; }
+        Mod+Equal      { set-column-width "+10%"; }
+        Mod+0          { set-column-width "80%"; }  // Super+) → 80% (8 cols)
+        Mod+Shift+R    { switch-preset-window-height; }
+
+        // Volume (allow-when-locked keeps media keys working on the lock screen).
+        XF86AudioRaiseVolume allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%+"; }
+        XF86AudioLowerVolume allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%-"; }
+        XF86AudioMute        allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"; }
+        XF86AudioMicMute     allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
+
+        // Screenshots.
+        Print      { screenshot; }
+        Ctrl+Print { screenshot-screen; }
+        Alt+Print  { screenshot-window; }
+    }
+  '';
+
+  # Wayland session file for display managers.
+  # greetd and SDDM ≥ 0.21 (configured with EnableHidpi/SessionDir pointing at
+  # ~/.local/share/wayland-sessions) will pick this up automatically.
+  # For SDDM on NixOS the canonical path is the system store — add
+  # `programs.niri.enable = true` in ~/beehive to install the session file
+  # system-wide and have it appear alongside Hyprland in the login screen.
+  xdg.dataFile."wayland-sessions/niri.desktop".text = ''
+    [Desktop Entry]
+    Name=Niri
+    Comment=A scrollable-tiling Wayland compositor
+    Exec=niri
+    Type=Application
+  '';
+}

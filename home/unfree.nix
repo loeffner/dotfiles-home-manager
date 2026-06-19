@@ -5,4 +5,5 @@
   "openweb-ui"
   "claude-code"
   "github-copilot-cli"
+  "discord"
 ]

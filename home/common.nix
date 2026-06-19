@@ -58,7 +58,10 @@
       ''
       (lib.mkAfter ''
         if [[ -z "$ZELLIJ" ]]; then
-          exec zellij
+          # Autostart zellij. Use `zellij` (not `exec`) so that if it crashes
+          # the shell — and therefore the terminal window — stays open. On a
+          # clean exit, close the shell so the window closes along with it.
+          zellij && exit
         fi
       '')
     ];
@@ -108,47 +111,28 @@
 
   programs.zellij = {
     enable = true;
-    enableZshIntegration = true;
-    attachExistingSession = true;
-    exitShellOnExit = true;
+    # Autostart is handled by hand in the zsh initContent above (mkAfter), so
+    # that crashes keep the window open while a clean exit closes the shell.
+    # The module's own integration can't express that, so leave it off.
+    enableZshIntegration = false;
     settings.theme = "gruvbox-dark";
     settings.show_startup_tips = false;
-    settings.ui.pane_frames.rounded_corners = true;
+    # Minimalistic UI: compact bottom bar (no top status bar / help panes)
+    # and no pane borders.
+    settings.default_layout = "compact";
+    settings.pane_frames = true;
+
     extraConfig = ''
+      support_kitty_keyboard_protocol true
+
       keybinds {
           shared_except "move" "locked" {
               unbind "Ctrl h"
               bind "Alt m" {
                   SwitchToMode "Move";
-                }
-              // Enter the "execute" launcher mode (repurposed tmux mode).
-              bind "Alt x" {
-                  SwitchToMode "Tmux";
-                }
-            }
-          // Execute mode: prefix-style launcher. Each key starts a program /
-          // zsh function, then drops back to normal mode. The status bar at
-          // the bottom reflects these keys while the mode is active.
-          tmux clear-defaults=true {
-              // h -> floating pane in the upper-right corner running `mdx`.
-              // `-i` makes the shell interactive so aliases load; `exec zsh`
-              // keeps the pane open after the alias finishes.
-              bind "h" {
-                  Run "zsh" "-ic" "mdx; exec zsh" {
-                      floating true
-                      name "mdx"
-                      x "56%"
-                      y "7%"
-                      width "42%"
-                      height "45%"
-                    }
-                  SwitchToMode "Normal";
-                }
-              bind "Esc" "Enter" "q" {
-                  SwitchToMode "Normal";
-                }
-            }
-        }
+              }
+          }
+      }
     '';
   };
 

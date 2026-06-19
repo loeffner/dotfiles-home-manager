@@ -9,6 +9,9 @@
     email = "andreas.loesel@outlook.com";
   };
 
+  programs.claude-code.enable = true;
+  programs.discord.enable = true;
+
   # terra is a desktop: pull in the minimal portable Hyprland environment.
   imports = [ ../desktop ];
 }
