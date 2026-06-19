@@ -71,7 +71,39 @@ in
   home.packages = [
     pkgs.niri
     pkgs.xwayland-satellite
+    pkgs.cliphist # clipboard-history store + decoder (the "Win+V" backend)
+    pkgs.wl-clipboard # wl-copy / wl-paste — cliphist reads/writes via these
+    pkgs.wtype # synthesizes the paste keystroke so the picker auto-pastes
   ];
+
+  # Clipboard-history picker: a wofi menu over cliphist's stored history, bound
+  # to Ctrl+Alt+V in the niri config below. The chosen entry is copied back onto
+  # the clipboard and then pasted into the window that was focused before the
+  # menu opened (Win+V style). Terminals paste with Ctrl+Shift+V and GUI apps
+  # with Ctrl+V, so the focused window's app_id decides which to synthesize.
+  # Guards against an empty/cancelled selection so Esc never clears the
+  # clipboard or fires a stray paste.
+  home.file.".local/bin/clipboard-picker" = {
+    executable = true;
+    text = ''
+      #!/usr/bin/env bash
+      # Note the focused window now — wofi steals focus once it opens.
+      focused=$(niri msg --json focused-window 2>/dev/null)
+
+      sel=$(cliphist list | wofi --dmenu --prompt "Clipboard") || exit 0
+      [ -z "$sel" ] && exit 0
+      printf '%s\n' "$sel" | cliphist decode | wl-copy
+
+      # Let niri hand focus back to that window, then synthesize its paste key.
+      sleep 0.15
+      if printf '%s' "$focused" \
+        | grep -qiE '"app_id":[[:space:]]*"(kitty|foot|alacritty|wezterm|st|[Xx]?term[^"]*)"'; then
+        wtype -M ctrl -M shift -k v -m shift -m ctrl   # terminals
+      else
+        wtype -M ctrl -k v -m ctrl                     # GUI default
+      fi
+    '';
+  };
 
   # Niri waybar config — written alongside the shared style.css so waybar
   # finds it automatically (no --style flag needed).
@@ -147,6 +179,11 @@ in
     // style.css is resolved relative to the config file dir (~/.config/waybar/).
     spawn-at-startup "waybar" "--config" "${config.xdg.configHome}/waybar/config-niri.json"
 
+    // Clipboard-history daemon: record every clipboard change so the
+    // Ctrl+Alt+V picker (below) has something to show. Absolute paths so it
+    // starts regardless of PATH timing during session bring-up.
+    spawn-at-startup "${pkgs.wl-clipboard}/bin/wl-paste" "--watch" "${pkgs.cliphist}/bin/cliphist" "store"
+
     // ── Keybinds ──────────────────────────────────────────────────────────
     //
     binds {
@@ -208,6 +245,11 @@ in
         // Floating layer.
         Mod+V       { toggle-window-floating; }
         Mod+Shift+V { switch-focus-between-floating-and-tiling; }
+
+        // Clipboard history — Win+V-style popup of past clipboard entries
+        // (cliphist + wofi). On Ctrl+Alt+V so it stays clear of kitty's own
+        // Ctrl+Shift+V paste. Pressing it again closes an already-open picker.
+        Ctrl+Alt+V { spawn "sh" "-c" "pkill wofi || $HOME/.local/bin/clipboard-picker"; }
 
         // Workspaces 1-5: switch and move active column.
         Mod+1 { focus-workspace 1; }
