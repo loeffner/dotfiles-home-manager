@@ -41,7 +41,7 @@ repo must be staged (`git add <file>`) before `nix build` or
 
 - **`homeConfigurations`** — standalone `homeManagerConfiguration`s applied
   with `home-manager switch --flake`. Each is built by `mkConfig`, which
-  layers `base` + `common` + the host module. `work` is generated for every
+  layers `common` + the host module. `work` is generated for every
   system in `workSystems` (x86_64-linux, aarch64-linux).
 
 These are standalone configs only — there is no NixOS-integrated path. NixOS
@@ -49,11 +49,10 @@ hosts just install the `home-manager` CLI and apply these configs out-of-band.
 
 The layering that every config goes through:
 
-1. `home/base.nix` — minimal package set + `SHELL`.
-2. `home/common.nix` — the bulk of the environment: zsh (with keybindings and
+1. `home/common.nix` — the bulk of the environment: zsh (with keybindings and
    auto-`exec zellij`), oh-my-posh, fzf, atuin, zoxide (aliased to `cd`), eza,
    zellij, ssh/gpg agents. It `imports` `./git` and `./vim`.
-3. `home/hosts/<host>` — per-machine identity (username, homeDirectory,
+2. `home/hosts/<host>` — per-machine identity (username, homeDirectory,
    stateVersion), git user/email, and host-specific extras. Identity fields
    use `lib.mkDefault` so a host module can override the shared defaults.
 

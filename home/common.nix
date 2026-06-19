@@ -5,6 +5,20 @@
   ...
 }:
 {
+  programs.home-manager.enable = true;
+
+  home.packages = with pkgs; [
+    nixfmt
+    fd
+    bat
+    ripgrep
+    tealdeer
+    zellij
+    nerd-fonts.meslo-lg
+  ];
+
+  home.sessionVariables.SHELL = "${pkgs.zsh}/bin/zsh";
+
   programs.zsh = {
     enable = true;
     autosuggestion.enable = true;
@@ -107,6 +121,23 @@
       "--group-directories-first"
       "--header"
     ];
+  };
+
+  programs.yazi = {
+    enable = true;
+    enableZshIntegration = true;
+    shellWrapperName = "y";
+    flavors = {
+      gruvbox-dark = pkgs.fetchFromGitHub {
+        owner = "benyyip";
+        repo = "gruvbox-dark.yazi";
+        rev = "619fdc5844db0c04f6115a62cf218e707de2821e";
+        hash = "sha256-Y/i+eS04T2+Sg/Z7/CGbuQHo5jxewXIgORTQm25uQb4=";
+      };
+    };
+    theme.flavor = {
+      dark = "gruvbox-dark";
+    };
   };
 
   programs.zellij = {

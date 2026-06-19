@@ -31,7 +31,6 @@
         home-manager.lib.homeManagerConfiguration {
           pkgs = pkgsFor system;
           modules = [
-            ./home/base.nix
             ./home/common.nix
             hostModule
           ];

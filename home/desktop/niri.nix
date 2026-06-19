@@ -1,69 +1,4 @@
 { config, pkgs, ... }:
-let
-  # Niri waybar config — same layout/style as the Hyprland one; only the
-  # workspaces module differs (niri/workspaces instead of hyprland/workspaces).
-  niriWaybarConfig = [
-    {
-      layer = "top";
-      position = "top";
-      height = 32;
-      spacing = 4;
-
-      modules-left = [ "niri/workspaces" ];
-      modules-center = [ "clock" ];
-      modules-right = [
-        "pulseaudio#microphone"
-        "pulseaudio"
-        "network"
-      ];
-
-      "niri/workspaces" = {
-        format = "{id}";
-        on-click = "activate";
-      };
-
-      clock = {
-        format = "{:%H:%M}";
-        format-alt = "{:%d. %b %Y  %H:%M}";
-        tooltip-format = "<big>{:%B %Y}</big>\n<tt>{calendar}</tt>";
-      };
-
-      pulseaudio = {
-        format = "{icon}";
-        format-muted = "󰝟";
-        format-icons = {
-          default = [
-            "󰕿"
-            "󰖀"
-            "󰕾"
-          ];
-        };
-        tooltip-format = "{volume}% — {desc}";
-        on-click = "$HOME/.local/bin/audio-sink-picker";
-        on-scroll-up = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+";
-        on-scroll-down = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-";
-      };
-
-      "pulseaudio#microphone" = {
-        format = "{format_source}";
-        format-source = "󰍬";
-        format-source-muted = "󰍭";
-        tooltip-format = "{source_volume}% — {source_desc}";
-        on-click = "$HOME/.local/bin/audio-source-picker";
-        on-scroll-up = "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%+";
-        on-scroll-down = "wpctl set-volume @DEFAULT_AUDIO_SOURCE@ 5%-";
-      };
-
-      network = {
-        format-wifi = "󰤨  {essid} ({signalStrength}%)";
-        format-ethernet = "󰈀  {ipaddr}";
-        format-disconnected = "󰤭  disconnected";
-        tooltip-format = "{ifname}: {ipaddr}/{cidr}";
-        on-click = "nm-connection-editor";
-      };
-    }
-  ];
-in
 {
   # niri has no built-in XWayland (unlike Hyprland). X11-only apps — Steam,
   # and Electron apps like Discord that default to X11 — won't launch without
@@ -105,10 +40,6 @@ in
     '';
   };
 
-  # Niri waybar config — written alongside the shared style.css so waybar
-  # finds it automatically (no --style flag needed).
-  xdg.configFile."waybar/config-niri.json".text = builtins.toJSON niriWaybarConfig;
-
   # Niri compositor config — hand-written KDL (no home-manager module needed).
   # Reference: https://github.com/YaLTeR/niri/wiki/Configuration:-Overview
   xdg.configFile."niri/config.kdl".text = ''
@@ -128,6 +59,7 @@ in
     layout {
         gaps 5
         center-focused-column "never"
+        always-center-single-column
         preset-column-widths {
             proportion 0.33333
             proportion 0.5
@@ -135,8 +67,7 @@ in
         }
         default-column-width { proportion 0.5; }
 
-        // Active border: Gruvbox green→orange gradient (matches Hyprland
-        // active_border). Inactive: muted dark grey.
+        // Active border: Gruvbox green. Inactive: muted dark grey.
         border {
             width 2
             active-color "#d65d0e"
@@ -149,15 +80,9 @@ in
 
     prefer-no-csd
 
-    screenshot-path "~/Pictures/Screenshots/Screenshot from %Y-%m-%d %H-%M-%S.png"
+    screenshot-path "~/Pictures/Screenshots/%Y-%m-%d-%H-%M-%S.png"
 
     animations {}
-
-    // Rounded corners on all windows — matches Hyprland rounding=10.
-    // window-rule {
-    //     geometry-corner-radius 10
-    //     clip-to-geometry true
-    // }
 
     // ── Environment ─────────────────────────────────────────────────────────
 
@@ -175,9 +100,7 @@ in
     // starts regardless of PATH timing during session bring-up.
     spawn-at-startup "${pkgs.xwayland-satellite}/bin/xwayland-satellite" ":0"
 
-    spawn-at-startup "swaybg" "-i" "${config.home.homeDirectory}/Images/earth.png" "-m" "fill"
-    // style.css is resolved relative to the config file dir (~/.config/waybar/).
-    spawn-at-startup "waybar" "--config" "${config.xdg.configHome}/waybar/config-niri.json"
+    spawn-at-startup "swaybg" "-i" "${config.home.homeDirectory}/Pictures/earth.png" "-m" "fill"
 
     // Clipboard-history daemon: record every clipboard change so the
     // Ctrl+Alt+V picker (below) has something to show. Absolute paths so it
@@ -189,7 +112,6 @@ in
     binds {
         // Discoverability & session.
         Mod+Shift+Slash { show-hotkey-overlay; }      // cheat-sheet of all binds
-        Mod+M           { quit; }                      // Hyprland parity (exit)
         Ctrl+Alt+Delete { quit; }                      // safety net
         Mod+Shift+P     { power-off-monitors; }
 
@@ -200,6 +122,8 @@ in
         Mod+Return    { spawn "kitty"; }
         Mod+B         { spawn "firefox"; }
         Mod+E         { spawn "kitty" "-e" "yazi"; }
+        Mod+D         { spawn "discord"; }
+        Mod+G         { spawn "steam"; }
         Mod+R         { spawn "sh" "-c" "pkill wofi || wofi --show drun"; }
         Mod+Space     { spawn "sh" "-c" "pkill wofi || wofi --show drun"; }
 
