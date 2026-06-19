@@ -1,0 +1,34 @@
+// Quickshell entry point. One bar and one toast overlay per connected screen.
+// Referencing the Notifications singleton here ensures the notification daemon
+// starts at launch, not only when the bar indicator is first shown.
+import Quickshell
+
+ShellRoot {
+    Variants {
+        model: Quickshell.screens
+        Bar {}
+    }
+
+    Variants {
+        model: Quickshell.screens
+        NotificationToasts {}
+    }
+
+    // Transparent click-catcher: active while a bar popup or dashboard is open.
+    Variants {
+        model: Quickshell.screens
+        PopupBackdrop {}
+    }
+
+    // Dashboard: slides down from the bar on clock click.
+    Variants {
+        model: Quickshell.screens
+        Dashboard {}
+    }
+
+    // Power modal: full-screen overlay, above everything else.
+    Variants {
+        model: Quickshell.screens
+        PowerWindow {}
+    }
+}

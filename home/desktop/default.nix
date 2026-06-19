@@ -49,12 +49,21 @@
     NoDisplay=true
   '';
 
-
   # Extra desktop GUI tools.
   home.packages = with pkgs; [
-    networkmanagerapplet # nm-connection-editor for network management
+    networkmanagerapplet # nm-connection-editor — the bar's "advanced" net escape hatch
     swaybg
+    libnotify # notify-send — emit notifications (testing the bar's notif server)
+    quickshell # QtQuick desktop-shell toolkit; runs the bar in ./quickshell
   ];
+
+  # Quickshell bar config (hand-written QML, see ./quickshell). Static QML, so
+  # the whole tree is symlinked verbatim. Autostarted from niri (see niri.nix).
+  # NOTE: new files here must be `git add`-ed before the flake will see them.
+  xdg.configFile."quickshell" = {
+    source = ./quickshell;
+    recursive = true;
+  };
 
   # Kitty — home-manager module: gruvbox dark + transparency.
   programs.kitty = {
@@ -65,7 +74,7 @@
     };
     themeFile = "gruvbox-dark"; # from the kitty-themes package
     settings = {
-      background_opacity = "0.70"; # transparency; tweak 0.0-1.0
+      background_opacity = "0.80"; # transparency; tweak 0.0-1.0
       window_padding_width = 0;
       enable_audio_bell = "no";
       confirm_os_window_close = 0;

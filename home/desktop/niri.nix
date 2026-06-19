@@ -102,6 +102,8 @@
 
     spawn-at-startup "swaybg" "-i" "${config.home.homeDirectory}/Pictures/earth.png" "-m" "fill"
 
+    spawn-at-startup "${pkgs.quickshell}/bin/qs"
+
     // Clipboard-history daemon: record every clipboard change so the
     // Ctrl+Alt+V picker (below) has something to show. Absolute paths so it
     // starts regardless of PATH timing during session bring-up.

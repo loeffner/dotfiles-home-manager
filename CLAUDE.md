@@ -82,18 +82,26 @@ from `common.nix`. Work-only shell bits live in
 
 ### Desktop (`home/desktop`)
 
-Imported by hosts that run Hyprland (currently `terra` and `beehive`).
-Contains: Hyprland config (hand-written Lua), Waybar (top bar with workspaces/
-clock/audio/network), Wofi (app launcher), Kitty (terminal), Yazi (file
-manager), cursor theme, and helper scripts (`audio-sink-picker`,
-`audio-source-picker`). All styled with Gruvbox dark.
+Imported by hosts that run the **niri** desktop (currently `terra`).
+Contains: niri config (hand-written KDL, `niri.nix`), a Quickshell status bar
+(hand-written QML, `quickshell/`), Wofi (app launcher, `wofi.nix`), Kitty
+(terminal), cursor theme, and helper scripts (wallpaper daemon, clipboard
+picker). All styled with Gruvbox dark.
+
+The **Quickshell bar** (`home/desktop/quickshell/`) is a from-scratch QML config
+deployed verbatim via `xdg.configFile."quickshell"` (recursive) and autostarted
+from niri (`spawn-at-startup "qs"`). Components are flat `.qml` files referenced
+by filename; `Theme.qml` (`pragma Singleton`) is the palette/metrics single
+source of truth. Services used: `Pipewire` (audio), `Notifications`,
+`Networking` (NetworkManager), `Mpris`, `SystemTray`, `SystemClock`; workspaces
+come from `niri msg --json event-stream` via `Quickshell.Io.Process` (no niri
+QML plugin). Quickshell live-reloads on QML edits.
 
 Convention: use the home-manager module for an app where the module works well
 (type-checked options, themes). Fall back to `xdg.configFile` with a
 hand-written config only where the module is broken or limiting. Current
-exception: Hyprland itself — the `wayland.windowManager.hyprland` module's
-settings→Lua translation emits invalid binds, so `hyprland.lua` is deployed
-verbatim via `xdg.configFile."hypr/hyprland.lua"`.
+exceptions deployed verbatim via `xdg.configFile`: the niri KDL
+(`niri/config.kdl`) and the Quickshell QML tree.
 
 ### Neovim (`home/vim`)
 

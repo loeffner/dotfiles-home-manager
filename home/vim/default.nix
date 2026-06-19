@@ -56,6 +56,9 @@
       noice-nvim
       nvim-notify
 
+      # Color codes
+      nvim-colorizer-lua
+
       # Editor
       mini-nvim
       flash-nvim
