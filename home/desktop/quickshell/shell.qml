@@ -32,4 +32,10 @@ ShellRoot {
         model: Quickshell.screens
         Osd {}
     }
+
+    // Pictographic keybind cheatsheet (hold Super via keyd, or the toggle bind).
+    Variants {
+        model: Quickshell.screens
+        Cheatsheet {}
+    }
 }

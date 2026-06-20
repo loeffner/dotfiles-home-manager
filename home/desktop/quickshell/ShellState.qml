@@ -8,8 +8,10 @@ import Quickshell
 Singleton {
     property bool dashboardOpen: false
     property bool powerOpen: false
+    property bool cheatOpen: false // pictographic keybind cheatsheet (hold Super)
 
     // Close any open bar popup when entering a full-screen mode.
     onDashboardOpenChanged: if (dashboardOpen) PopupState.current?.hide()
-    onPowerOpenChanged: if (powerOpen) { PopupState.current?.hide(); dashboardOpen = false; }
+    onPowerOpenChanged: if (powerOpen) { PopupState.current?.hide(); dashboardOpen = false; cheatOpen = false; }
+    onCheatOpenChanged: if (cheatOpen) PopupState.current?.hide()
 }

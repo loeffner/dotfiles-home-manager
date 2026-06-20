@@ -112,8 +112,11 @@
     // ── Keybinds ──────────────────────────────────────────────────────────
     //
     binds {
-        // Discoverability & session.
-        Mod+Shift+Slash { show-hotkey-overlay; }      // cheat-sheet of all binds
+        // Discoverability & session. Mod+/ toggles the Quickshell pictographic
+        // cheatsheet (the real trigger is hold-Super via keyd, see keyd.nix);
+        // Mod+Shift+/ keeps niri's own textual overlay as a fallback.
+        Mod+Slash       { spawn "qs" "ipc" "call" "cheatsheet" "toggle"; }
+        Mod+Shift+Slash { show-hotkey-overlay; }      // niri's built-in cheat-sheet
         Ctrl+Alt+Delete { quit; }                      // safety net
         Mod+Shift+P     { power-off-monitors; }
 
