@@ -1,8 +1,12 @@
-{ lib, ... }:
+{ lib, pkgs, ... }:
 {
   home.username = lib.mkDefault "loeffner";
   home.homeDirectory = lib.mkDefault "/home/loeffner";
   home.stateVersion = lib.mkDefault "25.11";
+
+  home.packages = with pkgs; [
+    signal-desktop
+  ];
 
   programs.git.settings.user = {
     name = "Andreas Lösel";
