@@ -62,6 +62,10 @@ PanelWindow {
             bar: bar
         }
         Sep {}
+        SystemMon {
+            bar: bar
+        }
+        Sep {}
         NotifButton {
             bar: bar
         }
