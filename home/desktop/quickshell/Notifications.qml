@@ -63,18 +63,29 @@ Singleton {
                 root.toastQueue = [...root.toastQueue, n];
             }
 
-            // Prepend, cap at 50, dismissing the live refs of anything evicted.
+            // Prepend, cap at 50, fully dropping anything evicted.
             const trimmed = [entry, ...root.history];
-            for (const e of trimmed.slice(50)) {
-                const ln = root._liveById[e.id];
-                if (ln) { ln.dismiss(); delete root._liveById[e.id]; }
-            }
+            for (const e of trimmed.slice(50))
+                root._drop(e.id);
             root.history = trimmed.slice(0, 50);
             root._save();
         }
     }
 
     function removeToast(n) { toastQueue = toastQueue.filter(x => x !== n); }
+
+    // Single dismissal path: dismiss the live notification (if any) and prune it
+    // from every place it can linger (toastQueue + _liveById). Callers update
+    // `history` separately. Without this, paths other than removeToast/clearAll
+    // left stale Notification objects stuck in toastQueue.
+    function _drop(id) {
+        const n = _liveById[id];
+        if (n) {
+            n.dismiss();
+            toastQueue = toastQueue.filter(x => x !== n);
+            delete _liveById[id];
+        }
+    }
 
     // The live Notification for a history id, only if still alive (else null).
     function liveFor(id) {
@@ -90,18 +101,13 @@ Singleton {
     }
 
     function removeById(id) {
-        const n = liveFor(id);
-        if (n) n.dismiss();
-        delete _liveById[id];
-        toastQueue = toastQueue.filter(x => x !== n);
+        _drop(id);
         history = history.filter(e => e.id !== id);
         _save();
     }
     function clearApp(app) {
-        for (const e of history.filter(e => (e.appName || "") === (app || ""))) {
-            const n = _liveById[e.id];
-            if (n) { n.dismiss(); delete _liveById[e.id]; }
-        }
+        for (const e of history.filter(e => (e.appName || "") === (app || "")))
+            _drop(e.id);
         history = history.filter(e => (e.appName || "") !== (app || ""));
         _save();
     }

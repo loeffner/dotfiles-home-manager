@@ -33,6 +33,18 @@ PopupWindow {
     property bool isOpen: false
 
     function show() {
+        const prev = PopupState.current;
+        if (prev && prev !== pop) {
+            // Switching popups: drop the previous one's focus grab *now* and open
+            // ours on the next tick. Taking a new grab while the old one is still
+            // active races at the compositor and flickers the new popup shut.
+            prev.hideInstant();
+            Qt.callLater(_doShow);
+        } else {
+            _doShow();
+        }
+    }
+    function _doShow() {
         isOpen = true;
         visible = true;
         PopupState.opened(pop);
@@ -43,6 +55,13 @@ PopupWindow {
         isOpen = false;
         PopupState.closed(pop);
         // visible=false is set once the collapse animation reaches 0.
+    }
+
+    // Close without the fold-up animation — used when this popup is being
+    // replaced by another so its grab releases before the new one is taken.
+    function hideInstant() {
+        isOpen = false;
+        visible = false;
     }
 
     function toggle() { visible ? hide() : show(); }
