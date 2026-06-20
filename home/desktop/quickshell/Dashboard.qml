@@ -273,7 +273,7 @@ PanelWindow {
                             text: "󰒮"
                             color: mediaCard.player?.canGoPrevious ? Theme.fg : Theme.dim
                             font { family: Theme.font; pixelSize: Theme.iconSize + 2 }
-                            MouseArea { anchors.fill: parent; anchors.margins: -6; cursorShape: Qt.PointingHandCursor; onClicked: mediaCard.player?.previous() }
+                            MouseArea { anchors.fill: parent; anchors.margins: -6; cursorShape: Qt.PointingHandCursor; onClicked: MediaThumb.previousOrRewind() }
                         }
                         Text {
                             text: mediaCard.player?.playbackState === MprisPlaybackState.Playing ? "󰏤" : "󰐊"
