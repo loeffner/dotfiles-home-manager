@@ -14,12 +14,13 @@ Row {
     readonly property int minColPx: 5
 
     readonly property var cols: {
-        const all = Niri.windows || [];
-        if (all.length === 0)
+        // Filter by the focused *workspace* id (not by a focused window): an empty
+        // workspace has no focused window, and falling back to "all windows" then
+        // bled other workspaces' columns into the map.
+        const wsId = Niri.focusedId;
+        const ws = (Niri.windows || []).filter(w => !w.floating && w.workspaceId === wsId);
+        if (ws.length === 0)
             return [];
-        const fw = all.find(w => w.focused);
-        const wsId = fw ? fw.workspaceId : null;
-        const ws = all.filter(w => !w.floating && (wsId === null || w.workspaceId === wsId));
         const map = {};
         let fallback = 1;
         for (const w of ws) {

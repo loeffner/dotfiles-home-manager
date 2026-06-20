@@ -60,20 +60,49 @@ Singleton {
     }
 
     // ── Window tracking ───────────────────────────────────────────────────
-    // pos_in_scrolling_layout is [column, row]; absent for floating windows.
+    // Maintained incrementally from the event stream (no polling). The layout
+    // object — pos_in_scrolling_layout [column, row] and tile_size [w, h] — is
+    // absent for floating windows.
+    function _layoutInto(rec, layout) {
+        const pos = layout && layout.pos_in_scrolling_layout ? layout.pos_in_scrolling_layout : null;
+        const sz = layout && layout.tile_size ? layout.tile_size : null;
+        rec.col = pos ? pos[0] : null;
+        rec.row = pos ? pos[1] : null;
+        rec.tileWidth = sz ? sz[0] : 0;
+        rec.tileHeight = sz ? sz[1] : 0;
+    }
     function _putWindow(w) {
-        const pos = w.layout && w.layout.pos_in_scrolling_layout ? w.layout.pos_in_scrolling_layout : null;
-        const sz = w.layout && w.layout.tile_size ? w.layout.tile_size : null;
-        _wins[w.id] = {
+        const rec = {
             id: w.id,
             workspaceId: w.workspace_id,
             focused: !!w.is_focused,
-            col: pos ? pos[0] : null,
-            row: pos ? pos[1] : null,
-            floating: !!w.is_floating,
-            tileWidth: sz ? sz[0] : 0,
-            tileHeight: sz ? sz[1] : 0
+            floating: !!w.is_floating
         };
+        _layoutInto(rec, w.layout);
+        _wins[w.id] = rec;
+    }
+    function _closeWindow(id) {
+        delete _wins[id];
+    }
+    // WindowFocusChanged carries only the newly-focused id (or null).
+    function _focusWindow(id) {
+        for (const k in _wins)
+            _wins[k].focused = (_wins[k].id === id);
+    }
+    // WindowLayoutsChanged: array of [windowId, layout] pairs (tile resizes etc.).
+    function _applyLayouts(changes) {
+        if (!changes)
+            return;
+        for (const ch of changes) {
+            const rec = _wins[ch[0]];
+            if (rec)
+                _layoutInto(rec, ch[1]);
+        }
+    }
+    function _resetWindows(list) {
+        _wins = {};
+        for (const w of list)
+            _putWindow(w);
     }
     function _emitWindows() {
         windows = Object.keys(_wins).map(k => _wins[k]);
@@ -104,7 +133,9 @@ Singleton {
         }
     }
 
-    // Workspaces: follow the event stream for instant updates on switch.
+    // Workspaces + windows: follow the event stream for instant updates. On
+    // connect niri dumps current state (WorkspacesChanged + WindowsChanged), then
+    // streams deltas — so both stay live with no polling.
     Process {
         running: true
         command: ["niri", "msg", "--json", "event-stream"]
@@ -112,45 +143,30 @@ Singleton {
             onRead: line => {
                 try {
                     const ev = JSON.parse(line);
-                    if (ev.WorkspacesChanged)
+                    if (ev.WorkspacesChanged) {
                         root.ingestList(ev.WorkspacesChanged.workspaces);
-                    else if (ev.WorkspaceActivated)
+                    } else if (ev.WorkspaceActivated) {
                         root.activate(ev.WorkspaceActivated.id, ev.WorkspaceActivated.focused);
-                    else if (ev.WindowsChanged || ev.WindowOpenedOrChanged || ev.WindowClosed || ev.WindowFocusChanged || ev.WindowLayoutsChanged)
-                        winQuery.running = true; // refresh the window snapshot promptly
+                    } else if (ev.WindowsChanged) {
+                        root._resetWindows(ev.WindowsChanged.windows);
+                        root._emitWindows();
+                    } else if (ev.WindowOpenedOrChanged) {
+                        root._putWindow(ev.WindowOpenedOrChanged.window);
+                        root._emitWindows();
+                    } else if (ev.WindowClosed) {
+                        root._closeWindow(ev.WindowClosed.id);
+                        root._emitWindows();
+                    } else if (ev.WindowFocusChanged) {
+                        root._focusWindow(ev.WindowFocusChanged.id);
+                        root._emitWindows();
+                    } else if (ev.WindowLayoutsChanged) {
+                        root._applyLayouts(ev.WindowLayoutsChanged.changes);
+                        root._emitWindows();
+                    }
                 } catch (e)
                 // Non-JSON / partial line — ignore.
                 {}
             }
         }
-    }
-
-    // Windows: poll `niri msg --json windows` (a known-good shape) for the
-    // minimap. A short poll + event-driven refresh keeps it current without
-    // depending on the exact event-stream window event names.
-    Process {
-        id: winQuery
-        command: ["niri", "msg", "--json", "windows"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    const arr = JSON.parse(text);
-                    root._wins = {};
-                    for (const w of arr)
-                        root._putWindow(w);
-                    root._emitWindows();
-                } catch (e)
-                {}
-            }
-        }
-    }
-
-    Timer {
-        id: windowPoll
-        interval: 1000
-        running: true
-        repeat: true
-        triggeredOnStart: true
-        onTriggered: winQuery.running = true
     }
 }
