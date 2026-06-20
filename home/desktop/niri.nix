@@ -143,6 +143,7 @@ in
         Mod+G         { spawn "steam"; }
         Mod+R         { spawn "sh" "-c" "pkill wofi || wofi --show drun"; }
         Mod+Space     { spawn "sh" "-c" "pkill wofi || wofi --show drun"; }
+        Mod+Shift+R   { spawn "sh" "-c" "pkill quickshell && qs -d"; }
 
         // Window lifecycle.
         Mod+Q         { close-window; }
@@ -221,7 +222,6 @@ in
         Mod+Minus      { set-column-width "-10%"; }
         Mod+Equal      { set-column-width "+10%"; }
         Mod+0          { set-column-width "80%"; }  // Super+) → 80% (8 cols)
-        Mod+Shift+R    { switch-preset-window-height; }
 
         // Volume (allow-when-locked keeps media keys working on the lock screen).
         XF86AudioRaiseVolume allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%+"; }
