@@ -10,10 +10,7 @@ Item {
     id: root
     required property var bar
 
-    readonly property var player: {
-        const ps = Mpris.players?.values ?? [];
-        return ps.find(p => p.playbackState === MprisPlaybackState.Playing) ?? ps[0] ?? null;
-    }
+    readonly property var player: MediaThumb.active
     readonly property bool playing: player && player.playbackState === MprisPlaybackState.Playing
 
     visible: player !== null
@@ -75,14 +72,15 @@ Item {
                 clip: true
 
                 Image {
+                    id: popupArt
                     anchors.fill: parent
-                    source: root.player ? (root.player.trackArtUrl ?? "") : ""
+                    source: MediaThumb.path
                     fillMode: Image.PreserveAspectCrop
                     visible: status === Image.Ready
                 }
                 Text {
                     anchors.centerIn: parent
-                    visible: !root.player || !root.player.trackArtUrl
+                    visible: popupArt.status !== Image.Ready
                     text: "󰎈"
                     color: Theme.dim
                     font.family: Theme.font

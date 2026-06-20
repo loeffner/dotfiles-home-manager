@@ -1,5 +1,5 @@
 // Workspace indicator: a row of pills. The focused workspace is a wide accent
-// pill; other occupied workspaces are small grey dots. Click to focus.
+// pill with a soft glow halo (atmosphere effect); inactive ones are small dots.
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -10,30 +10,44 @@ RowLayout {
     Repeater {
         model: Niri.workspaces
 
-        delegate: Rectangle {
+        delegate: Item {
             required property var modelData
-
+            // Outer Item is larger than the pill to give the glow room.
             implicitWidth: modelData.focused ? 22 : 10
-            implicitHeight: 8
-            radius: 4
-            color: modelData.focused ? Theme.accent : modelData.active ? Theme.dim : Theme.bg2
+            implicitHeight: 18
 
             Behavior on implicitWidth {
-                NumberAnimation {
-                    duration: 80
-                    easing.type: Easing.OutQuart
-                }
-            }
-            Behavior on color {
-                ColorAnimation {
-                    duration: 80
-                }
+                NumberAnimation { duration: 80; easing.type: Easing.OutQuart }
             }
 
-            MouseArea {
-                anchors.fill: parent
-                cursorShape: Qt.PointingHandCursor
-                onClicked: Niri.focusWorkspace(modelData.idx)
+            // Glow halo — only on the focused pill.
+            Rectangle {
+                visible: parent.modelData.focused
+                anchors.centerIn: parent
+                width: parent.implicitWidth + 10
+                height: 10 + 10
+                radius: height / 2
+                color: Theme.accent
+                opacity: 0.18
+            }
+
+            // The pill itself.
+            Rectangle {
+                anchors.centerIn: parent
+                width: parent.implicitWidth
+                height: 8
+                radius: 4
+                color: parent.modelData.focused ? Theme.accent
+                     : parent.modelData.active  ? Theme.dim
+                     :                            Theme.bg2
+
+                Behavior on color { ColorAnimation { duration: 80 } }
+
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: Niri.focusWorkspace(parent.parent.modelData.idx)
+                }
             }
         }
     }

@@ -21,7 +21,9 @@ Singleton {
     readonly property color dim: "#928374" // secondary / inactive
 
     // ── Accents (used sparingly, by meaning) ────────────────────────────────
-    readonly property color accent: "#83a598" // focus / selection (gruvbox blue)
+    // accent is pulled from the earth.png wallpaper — the warm sandy highlight
+    // of the planet itself, so the UI and the wallpaper share the same pigment.
+    readonly property color accent: "#bdae93" // warm ivory (gruvbox fg3 / earth surface)
     readonly property color good: "#b8bb26" // connected / strong signal
     readonly property color warn: "#d79921" // caution
     readonly property color urgent: "#fb4934" // disconnected / critical

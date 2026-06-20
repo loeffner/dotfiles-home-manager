@@ -13,10 +13,11 @@ PanelWindow {
     exclusionMode: ExclusionMode.Ignore
     visible: false
 
-    // Fade the overlay in/out.
+    // Deep space void — Gruvbox bg0_h (#1d2021) at high opacity rather than
+    // plain black, so the overlay matches the bar and feels like space itself.
     color: Qt.rgba(0, 0, 0, 0)
     NumberAnimation on color {
-        id: fadeIn; to: Qt.rgba(0, 0, 0, 0.6)
+        id: fadeIn; to: Qt.rgba(0.114, 0.125, 0.129, 0.92)
         duration: 130; easing.type: Easing.OutQuart
         running: false
     }
@@ -39,6 +40,16 @@ PanelWindow {
                 fadeOut.start();
             }
         }
+    }
+
+    // Deep-space starfield — large, dramatic, slow-breathing.
+    StarField {
+        anchors.fill: parent
+        starCount: 160
+        seed: 42
+        maxOpacity: 0.55
+        maxRadius: 2.4
+        twinkle: true
     }
 
     // Click outside the card to dismiss.

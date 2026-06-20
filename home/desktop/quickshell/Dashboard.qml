@@ -11,18 +11,23 @@ PanelWindow {
     required property var modelData
     screen: modelData
 
-    anchors { top: true; left: true; right: true }
-    // Position below the bar. The bar's exclusive zone handles this for Normal
-    // surfaces, but we use Ignore (overlay), so set the margin explicitly.
+    // Full-screen below the bar. Keeping everything in ONE window makes child
+    // stacking deterministic: the backdrop MouseArea sits below the cards, so
+    // card controls receive clicks and only empty space dismisses. (A separate
+    // backdrop window had ambiguous cross-surface z-order and ate the clicks.)
+    anchors { top: true; bottom: true; left: true; right: true }
     margins.top: Theme.barHeight
     exclusionMode: ExclusionMode.Ignore
     color: "transparent"
-    // Fixed surface height — avoids resizing the Wayland surface every animation
-    // frame (per-frame protocol messages stutter). The clip inside handles reveal.
-    implicitHeight: cards.height + 16
     visible: false
 
-    readonly property bool hasMedia: (Mpris.players?.values?.length ?? 0) > 0
+    readonly property bool hasMedia: MediaThumb.active !== null
+
+    // Click anywhere outside the cards to dismiss.
+    MouseArea {
+        anchors.fill: parent
+        onClicked: ShellState.dashboardOpen = false
+    }
 
     // ── Open / close ───────────────────────────────────────────────────────
     function open() {
@@ -75,6 +80,18 @@ PanelWindow {
                 color: Theme.bgPopup
                 radius: Theme.radius + 4
                 border { width: 1; color: Theme.border }
+                clip: true
+
+                // Space — subtle starfield behind the clock hands.
+                StarField {
+                    anchors.fill: parent
+                    starCount: 40
+                    seed: 13
+                    maxOpacity: 0.28
+                }
+
+                // Swallow clicks so clicking the card doesn't dismiss the dashboard.
+                MouseArea { anchors.fill: parent }
 
                 SystemClock { id: dashClock; precision: SystemClock.Minutes }
 
@@ -127,16 +144,25 @@ PanelWindow {
 
             // ── Card 2 : Calendar ────────────────────────────────────────
             Rectangle {
-                // Fill remaining width: total minus clock, media (if visible),
-                // and spacing items.
                 width: parent.width - 150 - (dash.hasMedia ? 220 : 0)
                        - (dash.hasMedia ? parent.spacing * 2 : parent.spacing)
                 height: parent.height
                 color: Theme.bgPopup
                 radius: Theme.radius + 4
                 border { width: 1; color: Theme.border }
+                clip: true
 
                 Behavior on width { NumberAnimation { duration: 150; easing.type: Easing.OutQuart } }
+
+                StarField {
+                    anchors.fill: parent
+                    starCount: 55
+                    seed: 99
+                    maxOpacity: 0.20
+                    maxRadius: 1.3
+                }
+
+                MouseArea { anchors.fill: parent }
 
                 Calendar {
                     id: dashCal
@@ -162,6 +188,7 @@ PanelWindow {
                 color: Theme.bgPopup
                 radius: Theme.radius + 4
                 border { width: 1; color: Theme.border }
+                clip: true
                 visible: dash.hasMedia
                 opacity: 0
 
@@ -184,10 +211,17 @@ PanelWindow {
 
                 id: mediaCard
 
-                readonly property var player: {
-                    const ps = Mpris.players?.values ?? [];
-                    return ps.find(p => p.playbackState === MprisPlaybackState.Playing) ?? ps[0] ?? null;
+                StarField {
+                    anchors.fill: parent
+                    starCount: 35
+                    seed: 77
+                    maxOpacity: 0.22
+                    maxRadius: 1.4
                 }
+
+                MouseArea { anchors.fill: parent }
+
+                readonly property var player: MediaThumb.active
 
                 Column {
                     anchors { fill: parent; margins: Theme.pad }
@@ -195,21 +229,23 @@ PanelWindow {
 
                     Item { height: 4 }
 
-                    // Cover art
+                    // Cover art — sourced from MediaThumb (handles remote YouTube
+                    // CDN URLs via curl, local file:// URLs directly).
                     Rectangle {
                         anchors.horizontalCenter: parent.horizontalCenter
                         width: 90; height: 90
                         radius: Theme.radius; color: Theme.bg1; clip: true
 
                         Image {
+                            id: dashArt
                             anchors.fill: parent
-                            source: mediaCard.player?.trackArtUrl ?? ""
+                            source: MediaThumb.path
                             fillMode: Image.PreserveAspectCrop
                             visible: status === Image.Ready
                         }
                         Text {
                             anchors.centerIn: parent
-                            visible: !(mediaCard.player?.trackArtUrl)
+                            visible: dashArt.status !== Image.Ready
                             text: "󰎈"; color: Theme.dim
                             font { family: Theme.font; pixelSize: 32 }
                         }

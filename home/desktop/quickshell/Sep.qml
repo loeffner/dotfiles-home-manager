@@ -1,10 +1,11 @@
-// Thin vertical separator between right-cluster groups.
+// Middle-dot separator between right-cluster groups.
 import QtQuick
 import QtQuick.Layouts
 
-Rectangle {
-    implicitWidth: 1
-    implicitHeight: 14
-    color: Theme.bg1
+Text {
+    text: "·"
+    color: Theme.bg2
+    font.family: Theme.font
+    font.pixelSize: Theme.fontSize
     Layout.alignment: Qt.AlignVCenter
 }

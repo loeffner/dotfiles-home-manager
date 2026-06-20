@@ -26,6 +26,9 @@ PopupWindow {
     implicitHeight: panel.implicitHeight
     color: "transparent"
     visible: false
+    // grabFocus routes pointer events to the popup (so its buttons work) and
+    // dismisses on outside click. Without it niri sends clicks elsewhere.
+    grabFocus: true
 
     property bool isOpen: false
 

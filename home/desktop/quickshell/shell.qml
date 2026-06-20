@@ -14,13 +14,8 @@ ShellRoot {
         NotificationToasts {}
     }
 
-    // Transparent click-catcher: active while a bar popup or dashboard is open.
-    Variants {
-        model: Quickshell.screens
-        PopupBackdrop {}
-    }
-
-    // Dashboard: slides down from the bar on clock click.
+    // Dashboard: slides down from the bar on clock click (self-contained
+    // full-screen window with its own click-catcher).
     Variants {
         model: Quickshell.screens
         Dashboard {}

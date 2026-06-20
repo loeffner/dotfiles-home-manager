@@ -67,11 +67,11 @@
         }
         default-column-width { proportion 0.5; }
 
-        // Active border: Gruvbox green. Inactive: muted dark grey.
+        // Active border: warm earth-ivory (matches bar accent). Inactive: dark.
         border {
             width 2
-            active-color "#d65d0e"
-            inactive-color "#504945"
+            active-color "#bdae93"
+            inactive-color "#3c3836"
         }
         focus-ring {
             off
