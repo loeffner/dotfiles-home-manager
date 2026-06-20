@@ -97,6 +97,16 @@ source of truth. Services used: `Pipewire` (audio), `Notifications`,
 come from `niri msg --json event-stream` via `Quickshell.Io.Process` (no niri
 QML plugin). Quickshell live-reloads on QML edits.
 
+The **hold-Super cheatsheet** (`Cheatsheet.qml`) is a pictographic keybind overlay
+shown while Super is held. niri can't bind on modifier-hold or key-release, so a
+small read-only evdev watcher (`super-cheatsheet-watch.py`, python-evdev,
+autostarted from niri, defined in `niri.nix`) drives it over Quickshell IPC
+(`qs ipc call cheatsheet open/close`). The watcher only *observes* Super, never
+remaps it, so Super+X binds keep working. **Requires the user in the `input`
+group** to read `/dev/input` — a NixOS-side change
+(`users.users.<name>.extraGroups = [ "input" ];`), not in this repo; until then the
+watcher backs off harmlessly and only the `Mod+/` tap toggle works.
+
 Convention: use the home-manager module for an app where the module works well
 (type-checked options, themes). Fall back to `xdg.configFile` with a
 hand-written config only where the module is broken or limiting. Current

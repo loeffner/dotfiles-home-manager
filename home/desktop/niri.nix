@@ -1,4 +1,12 @@
 { config, pkgs, ... }:
+let
+  # Hold-Super cheatsheet watcher: a read-only evdev reader (python-evdev) that
+  # opens/closes the Quickshell cheatsheet over IPC. Needs the user in the
+  # `input` group (NixOS-side) to read /dev/input. See super-cheatsheet-watch.py.
+  superCheatWatch = pkgs.python3.withPackages (ps: [ ps.evdev ]);
+  superCheatWatchCmd =
+    "${superCheatWatch}/bin/python3 ${./super-cheatsheet-watch.py} ${pkgs.quickshell}/bin/qs";
+in
 {
   # niri has no built-in XWayland (unlike Hyprland). X11-only apps — Steam,
   # and Electron apps like Discord that default to X11 — won't launch without
@@ -103,6 +111,10 @@
     spawn-at-startup "swaybg" "-i" "${config.home.homeDirectory}/Pictures/earth.png" "-m" "fill"
 
     spawn-at-startup "${pkgs.quickshell}/bin/qs"
+
+    // Hold-Super cheatsheet watcher (evdev -> qs ipc). Wrapped in a restart loop
+    // so a transient device hiccup (suspend/unplug) re-enumerates keyboards.
+    spawn-at-startup "sh" "-c" "while true; do ${superCheatWatchCmd}; sleep 2; done"
 
     // Clipboard-history daemon: record every clipboard change so the
     // Ctrl+Alt+V picker (below) has something to show. Absolute paths so it
