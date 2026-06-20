@@ -26,4 +26,10 @@ ShellRoot {
         model: Quickshell.screens
         PowerWindow {}
     }
+
+    // OSD: transient volume / mic / media feedback near the top edge.
+    Variants {
+        model: Quickshell.screens
+        Osd {}
+    }
 }

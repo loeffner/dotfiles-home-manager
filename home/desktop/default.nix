@@ -54,6 +54,7 @@
     networkmanagerapplet # nm-connection-editor — the bar's "advanced" net escape hatch
     swaybg
     libnotify # notify-send — emit notifications (testing the bar's notif server)
+    playerctl # MPRIS control for the media function-key binds (niri.nix)
     quickshell # QtQuick desktop-shell toolkit; runs the bar in ./quickshell
   ];
 

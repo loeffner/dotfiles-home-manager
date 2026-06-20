@@ -214,6 +214,15 @@
         XF86AudioMute        allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SINK@" "toggle"; }
         XF86AudioMicMute     allow-when-locked=true { spawn "wpctl" "set-mute" "@DEFAULT_AUDIO_SOURCE@" "toggle"; }
 
+        // Volume + media on the function row (this keyboard has no media keys).
+        // The Quickshell OSD reacts to the resulting Pipewire / MPRIS state.
+        Mod+F1 { spawn "wpctl" "set-mute"   "@DEFAULT_AUDIO_SINK@" "toggle"; }
+        Mod+F2 { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%-"; }
+        Mod+F3 { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%+"; }
+        Mod+F7 { spawn "playerctl" "previous"; }
+        Mod+F8 { spawn "playerctl" "play-pause"; }
+        Mod+F9 { spawn "playerctl" "next"; }
+
         // Screenshots.
         Print      { screenshot; }
         Ctrl+Print { screenshot-screen; }
