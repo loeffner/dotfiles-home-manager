@@ -2,11 +2,13 @@ pragma Singleton
 
 // Notification daemon + persistent history.
 //
-// `list` is the live tracked set (drives toasts). `history` is a persistent log
-// of every notification that arrived — plain JS objects so they survive after a
-// notification is dismissed, written to disk so they survive a qs restart. DND
-// suppresses all toasts; per-app mute (`mutedApps`) suppresses one app's toasts
-// while still recording it to history. Helpers group history by app for the UI.
+// Model: notifications are *retained* (kept alive, not auto-dismissed) so the
+// center can show their actions and let you act on them later — toasts are just
+// transient previews (`toastQueue`). `history` is a plain-object log (capped,
+// written to disk) that drives the center and survives a qs restart; while a
+// notification is still alive we keep a live ref (`_liveById`) so its actions are
+// invocable. DND suppresses all toasts; per-app mute suppresses one app's toasts
+// while still recording to history.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -16,17 +18,16 @@ Singleton {
     id: root
 
     property bool dnd: false
-    readonly property var list: server.trackedNotifications
-    // [{ id, summary, body, appName, appIcon, image, urgency, time(ms) }]
-    property var history: []
-    property var mutedApps: [] // appNames whose toasts are suppressed
+    readonly property var live: server.trackedNotifications
+    property var toastQueue: []           // Notification objects shown as toasts
+    property var history: []              // plain [{id,summary,body,appName,appIcon,image,urgency,time}]
+    property var mutedApps: []
     property int _nextId: 1
+    property var _liveById: ({})          // history id -> live Notification (while alive)
 
     readonly property string _dir: (Quickshell.env("HOME") || "") + "/.cache/quickshell"
 
-    function isMuted(app) {
-        return mutedApps.indexOf(app || "") >= 0;
-    }
+    function isMuted(app) { return mutedApps.indexOf(app || "") >= 0; }
     function toggleMute(app) {
         const a = app || "";
         mutedApps = isMuted(a) ? mutedApps.filter(x => x !== a) : [a, ...mutedApps];
@@ -42,57 +43,87 @@ Singleton {
         bodyMarkupSupported: true
         onNotification: n => {
             const app = n.appName ?? "";
-            // Record to history first (captures the text before any dismiss).
-            root.history = [{
-                    id: root._nextId++,
-                    summary: n.summary ?? "",
-                    body: n.body ?? "",
-                    appName: app,
-                    appIcon: n.appIcon ?? "",
-                    image: n.image ?? "",
-                    urgency: n.urgency,
-                    time: Date.now()
-                }, ...root.history].slice(0, 50); // cap at 50 entries
+            const id = root._nextId++;
+            const entry = {
+                id: id,
+                summary: n.summary ?? "",
+                body: n.body ?? "",
+                appName: app,
+                appIcon: n.appIcon ?? "",
+                image: n.image ?? "",
+                urgency: n.urgency,
+                time: Date.now()
+            };
+
+            if (root.dnd || root.isMuted(app)) {
+                n.tracked = false; // record to history only, no toast / retention
+            } else {
+                n.tracked = true;  // retain alive for the center
+                root._liveById[id] = n;
+                root.toastQueue = [...root.toastQueue, n];
+            }
+
+            // Prepend, cap at 50, dismissing the live refs of anything evicted.
+            const trimmed = [entry, ...root.history];
+            for (const e of trimmed.slice(50)) {
+                const ln = root._liveById[e.id];
+                if (ln) { ln.dismiss(); delete root._liveById[e.id]; }
+            }
+            root.history = trimmed.slice(0, 50);
             root._save();
-            // Toast unless DND is on or this app is muted.
-            n.tracked = !root.dnd && !root.isMuted(app);
         }
     }
 
-    function dismissAll() {
-        const items = server.trackedNotifications.values.slice();
-        for (const n of items)
-            n.dismiss();
+    function removeToast(n) { toastQueue = toastQueue.filter(x => x !== n); }
+
+    // The live Notification for a history id, only if still alive (else null).
+    function liveFor(id) {
+        const n = _liveById[id];
+        if (!n)
+            return null;
+        return (server.trackedNotifications.values || []).indexOf(n) >= 0 ? n : null;
     }
-    function clearHistory() {
-        history = [];
-        _save();
+    // Invocable, non-default actions for a history id ([] once the notif is gone).
+    function actionsFor(id) {
+        const n = liveFor(id);
+        return n ? (n.actions || []).filter(a => a.identifier !== "default" && (a.text ?? "") !== "") : [];
     }
+
     function removeById(id) {
+        const n = liveFor(id);
+        if (n) n.dismiss();
+        delete _liveById[id];
+        toastQueue = toastQueue.filter(x => x !== n);
         history = history.filter(e => e.id !== id);
         _save();
     }
     function clearApp(app) {
+        for (const e of history.filter(e => (e.appName || "") === (app || ""))) {
+            const n = _liveById[e.id];
+            if (n) { n.dismiss(); delete _liveById[e.id]; }
+        }
         history = history.filter(e => (e.appName || "") !== (app || ""));
         _save();
     }
+    function clearAll() {
+        for (const n of (server.trackedNotifications.values || []).slice())
+            n.dismiss();
+        toastQueue = [];
+        _liveById = ({});
+        history = [];
+        _save();
+    }
 
-    // Group history by app, preserving most-recent-first order of first sighting.
     function grouped() {
         const map = {}, order = [];
         for (const e of history) {
             const k = e.appName || "";
-            if (!(k in map)) {
-                map[k] = [];
-                order.push(k);
-            }
+            if (!(k in map)) { map[k] = []; order.push(k); }
             map[k].push(e);
         }
         return order.map(k => ({ appName: k, items: map[k], count: map[k].length }));
     }
 
-    // Best image/icon source for a notification: prefer a real image (mpris art,
-    // screenshot), else resolve the app icon (name -> theme path, or direct path).
     function iconSource(n) {
         const img = n.image || "";
         if (img && !img.startsWith("image://icon/"))
@@ -101,7 +132,7 @@ Singleton {
         if (ai) {
             if (ai.startsWith("file://") || ai.startsWith("http") || ai.includes("/"))
                 return ai;
-            return Quickshell.iconPath(ai, true); // "" if not in the icon theme
+            return Quickshell.iconPath(ai, true);
         }
         if (img.startsWith("image://icon/"))
             return Quickshell.iconPath(img.replace("image://icon/", ""), true);

@@ -1,7 +1,8 @@
-// Notification bell: shows a dot when there's unread history, opens a panel with
-// the notification log grouped by app. Each group has an icon, a count, a per-app
-// mute toggle and a clear-group action; each entry can be cleared individually,
-// and groups with more than one entry collapse to the latest. Right-click the
+// Notification bell + center. The bell shows a dot for unread history and opens
+// a panel grouping notifications by app. Each entry is a raised card (for visual
+// separation) that can be swiped away, shows the sending app's actions while the
+// notification is still alive, and can be cleared individually. Groups collapse
+// to the latest; per-app mute and clear live in the group header. Right-click the
 // bell toggles DND.
 import QtQuick
 import QtQuick.Layouts
@@ -24,7 +25,6 @@ Item {
         id: row
         anchors.fill: parent
         spacing: 4
-
         Text {
             text: Notifications.dnd ? "󰂛" : "󰂚"
             font.family: Theme.font
@@ -33,9 +33,7 @@ Item {
         }
         Rectangle {
             visible: root.count > 0 && !Notifications.dnd
-            width: 5
-            height: 5
-            radius: 3
+            width: 5; height: 5; radius: 3
             color: Theme.accent
             Layout.alignment: Qt.AlignVCenter
         }
@@ -59,7 +57,7 @@ Item {
         id: popup
         bar: root.bar
         anchorItem: root
-        popWidth: 360
+        popWidth: 380
 
         // Header.
         RowLayout {
@@ -93,10 +91,7 @@ Item {
                     anchors.margins: -4
                     hoverEnabled: true
                     cursorShape: Qt.PointingHandCursor
-                    onClicked: {
-                        Notifications.dismissAll();
-                        Notifications.clearHistory();
-                    }
+                    onClicked: Qt.callLater(() => Notifications.clearAll())
                 }
             }
         }
@@ -126,29 +121,23 @@ Item {
                     Layout.fillWidth: true
                     spacing: Theme.gap
 
-                    // App icon (falls back to a bell glyph).
                     Item {
-                        implicitWidth: 18
-                        implicitHeight: 18
+                        implicitWidth: 18; implicitHeight: 18
                         Image {
                             id: gIcon
                             anchors.fill: parent
                             source: Notifications.iconSource(group.items[0])
-                            sourceSize.width: 18
-                            sourceSize.height: 18
+                            sourceSize.width: 18; sourceSize.height: 18
                             fillMode: Image.PreserveAspectFit
                             visible: status === Image.Ready
                         }
                         Text {
                             anchors.centerIn: parent
                             visible: gIcon.status !== Image.Ready
-                            text: "󰂚"
-                            color: Theme.dim
-                            font.family: Theme.font
-                            font.pixelSize: Theme.iconSize
+                            text: "󰂚"; color: Theme.dim
+                            font.family: Theme.font; font.pixelSize: Theme.iconSize
                         }
                     }
-
                     Text {
                         text: group.modelData.appName || "Unknown"
                         color: Theme.fg
@@ -165,7 +154,6 @@ Item {
                         font.family: Theme.font
                         font.pixelSize: Theme.fontSize - 1
                     }
-                    // Per-app mute toggle.
                     Text {
                         text: Notifications.isMuted(group.modelData.appName) ? "󰂛" : "󰂚"
                         color: Notifications.isMuted(group.modelData.appName) ? Theme.accent : (muteMa.containsMouse ? Theme.fg : Theme.dim)
@@ -174,14 +162,12 @@ Item {
                         Behavior on color { ColorAnimation { duration: 80 } }
                         MouseArea {
                             id: muteMa
-                            anchors.fill: parent
-                            anchors.margins: -3
+                            anchors.fill: parent; anchors.margins: -3
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
                             onClicked: Notifications.toggleMute(group.modelData.appName)
                         }
                     }
-                    // Clear this app's entries.
                     Text {
                         text: "󰅖"
                         color: grpClearMa.containsMouse ? Theme.urgent : Theme.dim
@@ -190,75 +176,171 @@ Item {
                         Behavior on color { ColorAnimation { duration: 80 } }
                         MouseArea {
                             id: grpClearMa
-                            anchors.fill: parent
-                            anchors.margins: -3
+                            anchors.fill: parent; anchors.margins: -3
                             hoverEnabled: true
                             cursorShape: Qt.PointingHandCursor
-                            onClicked: Notifications.clearApp(group.modelData.appName)
+                            onClicked: { const a = group.modelData.appName; Qt.callLater(() => Notifications.clearApp(a)); }
                         }
                     }
                 }
 
-                // ── Entries (collapsed to the latest unless expanded) ───────
+                // ── Entry cards (collapsed to the latest unless expanded) ───
                 Repeater {
                     model: group.expanded ? group.items : group.items.slice(0, 1)
 
-                    delegate: RowLayout {
+                    // Wrapper holds the layout slot; the card slides for swipe.
+                    delegate: Item {
+                        id: entry
                         required property var modelData
+                        readonly property bool critical: modelData.urgency === NotificationUrgency.Critical
+                        readonly property var acts: Notifications.actionsFor(modelData.id)
                         Layout.fillWidth: true
-                        Layout.leftMargin: 24
-                        spacing: Theme.gap
+                        Layout.leftMargin: 12
+                        implicitHeight: card.implicitHeight
 
-                        ColumnLayout {
-                            Layout.fillWidth: true
-                            spacing: 1
+                        Rectangle {
+                            id: card
+                            width: parent.width
+                            implicitHeight: ecol.implicitHeight + Theme.pad
+                            radius: Theme.radius - 2
+                            color: Theme.bgPopup
+                            border.width: 1
+                            border.color: entry.critical ? Theme.urgent : Theme.border
 
-                            RowLayout {
-                                Layout.fillWidth: true
-                                Text {
-                                    text: modelData.summary
-                                    color: modelData.urgency === NotificationUrgency.Critical ? Theme.urgent : Theme.fg
-                                    font.family: Theme.font
-                                    font.pixelSize: Theme.fontSize
-                                    elide: Text.ElideRight
+                            // Left stripe for depth / urgency cue.
+                            Rectangle {
+                                anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+                                width: 3
+                                topLeftRadius: card.radius
+                                bottomLeftRadius: card.radius
+                                color: entry.critical ? Theme.urgent : Theme.accent
+                                opacity: entry.critical ? 1.0 : 0.6
+                            }
+
+                            // Swipe to dismiss (below the action/clear hit areas).
+                            // Tracks the pointer against the stable wrapper (so the
+                            // moving card doesn't feed back) and commits the fling
+                            // mid-drag once past the threshold — the pointer can then
+                            // leave the small popup surface without aborting it.
+                            MouseArea {
+                                id: swipe
+                                anchors.fill: parent
+                                preventStealing: true
+                                property real startX: 0
+                                property bool committed: false
+                                onPressed: e => { startX = mapToItem(entry, e.x, 0).x; committed = false; }
+                                onPositionChanged: e => {
+                                    if (committed) return;
+                                    const dx = mapToItem(entry, e.x, 0).x - startX;
+                                    card.x = dx;
+                                    card.opacity = Math.max(0.15, 1 - Math.abs(dx) / entry.width);
+                                    if (Math.abs(dx) > 64) {
+                                        committed = true;
+                                        efling.to = dx > 0 ? entry.width + 40 : -entry.width - 40;
+                                        efling.start();
+                                    }
+                                }
+                                onReleased: if (!committed) esnap.start()
+                            }
+                            NumberAnimation {
+                                id: efling; target: card; property: "x"; duration: 140; easing.type: Easing.InQuart
+                                // Defer the model change: removing the entry destroys
+                                // this delegate, which must not happen inside its own
+                                // animation callback (use-after-free).
+                                onFinished: { const id = entry.modelData.id; Qt.callLater(() => Notifications.removeById(id)); }
+                            }
+                            NumberAnimation {
+                                id: esnap; target: card; property: "x"; to: 0; duration: 120; easing.type: Easing.OutQuart
+                                onStarted: card.opacity = 1
+                            }
+
+                            ColumnLayout {
+                                id: ecol
+                                anchors { left: parent.left; right: parent.right; top: parent.top }
+                                anchors { leftMargin: Theme.pad; rightMargin: Theme.gap; topMargin: Theme.gap }
+                                spacing: 2
+
+                                RowLayout {
                                     Layout.fillWidth: true
+                                    Text {
+                                        text: entry.modelData.summary
+                                        color: entry.critical ? Theme.urgent : Theme.fg
+                                        font.family: Theme.font
+                                        font.pixelSize: Theme.fontSize
+                                        elide: Text.ElideRight
+                                        Layout.fillWidth: true
+                                    }
+                                    Text {
+                                        text: Qt.formatTime(new Date(entry.modelData.time), "HH:mm")
+                                        color: Theme.dim
+                                        font.family: Theme.font
+                                        font.pixelSize: Theme.fontSize - 2
+                                    }
+                                    Text {
+                                        text: "󰅖"
+                                        color: itemClearMa.containsMouse ? Theme.urgent : Theme.dim
+                                        font.family: Theme.font
+                                        font.pixelSize: Theme.fontSize - 1
+                                        Behavior on color { ColorAnimation { duration: 80 } }
+                                        MouseArea {
+                                            id: itemClearMa
+                                            anchors.fill: parent; anchors.margins: -4
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: { const id = entry.modelData.id; Qt.callLater(() => Notifications.removeById(id)); }
+                                        }
+                                    }
                                 }
                                 Text {
-                                    text: Qt.formatTime(new Date(modelData.time), "HH:mm")
+                                    Layout.fillWidth: true
+                                    visible: (entry.modelData.body ?? "") !== ""
+                                    text: entry.modelData.body
                                     color: Theme.dim
                                     font.family: Theme.font
-                                    font.pixelSize: Theme.fontSize - 2
+                                    font.pixelSize: Theme.fontSize - 1
+                                    wrapMode: Text.WordWrap
+                                    textFormat: Text.MarkdownText
+                                    maximumLineCount: group.expanded ? 6 : 2
+                                    elide: Text.ElideRight
                                 }
-                            }
-                            Text {
-                                Layout.fillWidth: true
-                                visible: (modelData.body ?? "") !== ""
-                                text: modelData.body
-                                color: Theme.dim
-                                font.family: Theme.font
-                                font.pixelSize: Theme.fontSize - 1
-                                wrapMode: Text.WordWrap
-                                textFormat: Text.MarkdownText
-                                maximumLineCount: group.expanded ? 6 : 2
-                                elide: Text.ElideRight
-                            }
-                        }
 
-                        // Per-entry clear.
-                        Text {
-                            text: "󰅖"
-                            color: itemClearMa.containsMouse ? Theme.urgent : Theme.dim
-                            font.family: Theme.font
-                            font.pixelSize: Theme.fontSize - 2
-                            Layout.alignment: Qt.AlignTop
-                            Behavior on color { ColorAnimation { duration: 80 } }
-                            MouseArea {
-                                id: itemClearMa
-                                anchors.fill: parent
-                                anchors.margins: -4
-                                hoverEnabled: true
-                                cursorShape: Qt.PointingHandCursor
-                                onClicked: Notifications.removeById(modelData.id)
+                                // Live action buttons (empty once the notif is gone).
+                                Flow {
+                                    Layout.fillWidth: true
+                                    Layout.topMargin: 2
+                                    visible: entry.acts.length > 0
+                                    spacing: Theme.gap
+                                    Repeater {
+                                        model: entry.acts
+                                        delegate: Rectangle {
+                                            required property var modelData
+                                            implicitWidth: aLabel.implicitWidth + Theme.pad * 2
+                                            implicitHeight: aLabel.implicitHeight + Theme.gap
+                                            radius: Theme.radius - 4
+                                            color: aMa.containsMouse ? Theme.bg2 : Theme.bg1
+                                            Behavior on color { ColorAnimation { duration: 80 } }
+                                            Text {
+                                                id: aLabel
+                                                anchors.centerIn: parent
+                                                text: modelData.text
+                                                color: Theme.fg
+                                                font.family: Theme.font
+                                                font.pixelSize: Theme.fontSize - 1
+                                            }
+                                            MouseArea {
+                                                id: aMa
+                                                anchors.fill: parent
+                                                hoverEnabled: true
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    modelData.invoke();
+                                                    const id = entry.modelData.id;
+                                                    Qt.callLater(() => Notifications.removeById(id));
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -267,7 +349,7 @@ Item {
                 // Expand / collapse toggle for multi-entry groups.
                 Text {
                     visible: group.modelData.count > 1
-                    Layout.leftMargin: 24
+                    Layout.leftMargin: 12
                     text: group.expanded ? "Show less" : ("Show " + (group.modelData.count - 1) + " more")
                     color: moreMa.containsMouse ? Theme.fg : Theme.accent
                     font.family: Theme.font
@@ -275,19 +357,11 @@ Item {
                     Behavior on color { ColorAnimation { duration: 80 } }
                     MouseArea {
                         id: moreMa
-                        anchors.fill: parent
-                        anchors.margins: -3
+                        anchors.fill: parent; anchors.margins: -3
                         hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: group.expanded = !group.expanded
                     }
-                }
-
-                Rectangle {
-                    Layout.fillWidth: true
-                    implicitHeight: 1
-                    color: Theme.border
-                    opacity: 0.5
                 }
             }
         }
