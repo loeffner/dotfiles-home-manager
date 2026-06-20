@@ -11,8 +11,10 @@ over Quickshell IPC:
 Devices are read but never grabbed (no EVIOCGRAB), so every event still reaches
 the compositor — Super keeps working as a normal modifier for all Super+X binds.
 
-argv[1] is the `qs` binary path (the systemd/niri spawn passes an absolute path so
-it doesn't depend on PATH). Needs read access to /dev/input/event* (input group).
+argv[1] is the `qs` binary path (the niri spawn passes an absolute path so it
+doesn't depend on PATH). Needs read access to the keyboard's /dev/input/event*
+node; grant it with a scoped `uaccess` udev rule for that one device (NOT the
+blanket `input` group) — see CLAUDE.md. Devices it can't open are skipped.
 """
 import selectors
 import subprocess

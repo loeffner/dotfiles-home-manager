@@ -102,10 +102,29 @@ shown while Super is held. niri can't bind on modifier-hold or key-release, so a
 small read-only evdev watcher (`super-cheatsheet-watch.py`, python-evdev,
 autostarted from niri, defined in `niri.nix`) drives it over Quickshell IPC
 (`qs ipc call cheatsheet open/close`). The watcher only *observes* Super, never
-remaps it, so Super+X binds keep working. **Requires the user in the `input`
-group** to read `/dev/input` — a NixOS-side change
-(`users.users.<name>.extraGroups = [ "input" ];`), not in this repo; until then the
-watcher backs off harmlessly and only the `Mod+/` tap toggle works.
+remaps it, so Super+X binds keep working, and it only opens devices it already has
+access to (skipping the rest).
+
+**Device access (NixOS-side, not this repo): a scoped `uaccess` udev rule — NOT the
+`input` group.** The `input` group grants rw to *every* input device (including the
+YubiKey's keystrokes and event injection) and is too broad. Instead, give only the
+real keyboard a per-session ACL for the active local user via `uaccess`. On `terra`
+that keyboard is the AKKO (USB `0c45:7638`); the YubiKey (`1050:0407`) is
+deliberately left out. Add to terra's NixOS config a rule ordered before
+`73-seat-late.rules`:
+
+    services.udev.packages = [
+      (pkgs.writeTextDir "etc/udev/rules.d/70-uaccess-akko-kbd.rules" ''
+        ACTION=="remove", GOTO="akko_uaccess_end"
+        SUBSYSTEM=="input", KERNEL=="event*", ATTRS{idVendor}=="0c45", ATTRS{idProduct}=="7638", TAG+="uaccess"
+        LABEL="akko_uaccess_end"
+      '')
+    ];
+
+Until that lands, the watcher backs off harmlessly and only the `Mod+/` tap toggle
+works. (The gold-standard alternative is logind `TakeDevice` — a revocable fd, no
+system change at all — but it needs real session/D-Bus handling in the watcher;
+the scoped `uaccess` rule is the pragmatic secure choice.)
 
 Convention: use the home-manager module for an app where the module works well
 (type-checked options, themes). Fall back to `xdg.configFile` with a

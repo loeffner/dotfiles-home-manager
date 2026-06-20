@@ -1,8 +1,8 @@
 { config, pkgs, ... }:
 let
   # Hold-Super cheatsheet watcher: a read-only evdev reader (python-evdev) that
-  # opens/closes the Quickshell cheatsheet over IPC. Needs the user in the
-  # `input` group (NixOS-side) to read /dev/input. See super-cheatsheet-watch.py.
+  # opens/closes the Quickshell cheatsheet over IPC. Reads the keyboard via a
+  # scoped `uaccess` udev rule (NOT the `input` group) — see CLAUDE.md.
   superCheatWatch = pkgs.python3.withPackages (ps: [ ps.evdev ]);
   superCheatWatchCmd =
     "${superCheatWatch}/bin/python3 ${./super-cheatsheet-watch.py} ${pkgs.quickshell}/bin/qs";
