@@ -33,23 +33,16 @@ PopupWindow {
     property bool isOpen: false
 
     function show() {
-        closeAnim.stop();
         isOpen = true;
         visible = true;
         PopupState.opened(pop);
-        Qt.callLater(() => {
-            if (!isOpen) return;
-            openAnim.to = panel.implicitHeight;
-            openAnim.start();
-        });
     }
 
     function hide() {
         if (!visible) return;
         isOpen = false;
-        openAnim.stop();
-        closeAnim.start();
         PopupState.closed(pop);
+        // visible=false is set once the collapse animation reaches 0.
     }
 
     function toggle() { visible ? hide() : show(); }
@@ -57,9 +50,6 @@ PopupWindow {
     onVisibleChanged: {
         if (!visible) {
             isOpen = false;
-            openAnim.stop();
-            closeAnim.stop();
-            clipper.height = 0;
             PopupState.closed(pop);
         }
     }
@@ -67,21 +57,22 @@ PopupWindow {
     Item {
         id: clipper
         anchors { top: parent.top; left: parent.left; right: parent.right }
-        height: 0
         clip: true
 
         // layer.enabled caches content as a GPU texture — no re-render each frame.
         layer.enabled: true
 
-        NumberAnimation {
-            id: openAnim; target: clipper; property: "height"
-            duration: 150; easing.type: Easing.OutQuart
+        // Track the panel height while open, so content that grows after opening
+        // (e.g. expanding a notification group) enlarges the popup instead of
+        // being clipped; collapse to 0 when closing. Behavior animates both ways.
+        height: pop.isOpen ? panel.implicitHeight : 0
+        Behavior on height {
+            NumberAnimation {
+                duration: pop.isOpen ? 150 : 80
+                easing.type: pop.isOpen ? Easing.OutQuart : Easing.InQuart
+            }
         }
-        NumberAnimation {
-            id: closeAnim; target: clipper; property: "height"; to: 0
-            duration: 80; easing.type: Easing.InQuart
-            onFinished: pop.visible = false
-        }
+        onHeightChanged: if (!pop.isOpen && height === 0) pop.visible = false
 
         Rectangle {
             id: panel
