@@ -8,4 +8,7 @@
     name = "Andreas Lösel";
     email = "andreas.loesel@outlook.com";
   };
+
+  programs.claude-code.enable = true;
+
 }
