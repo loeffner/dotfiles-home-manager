@@ -1,14 +1,18 @@
 # niri compositor settings — the KDL fragment that precedes the keybinds block
 # (see ./binds.nix): input, layout, environment, and autostart. Assembled into
 # the final config.kdl by ./default.nix.
-{ pkgs, config, superCheatWatchCmd }:
+{
+  pkgs,
+  config,
+  superCheatWatchCmd,
+}:
 ''
   input {
       keyboard {
           xkb {
               // Layout inherited from the system; override here if needed.
           }
-          repeat-delay 600
+          repeat-delay 200
           repeat-rate 25
       }
       touchpad {
@@ -43,6 +47,13 @@
   screenshot-path "~/Pictures/Screenshots/%Y-%m-%d-%H-%M-%S.png"
 
   animations {}
+
+  // ── Window Rules ─────────────────────────────────────────────────────────
+
+  window-rule {
+    match app-id=r#"firefox$"# title="^Picture-in-Picture|Library$"
+    open-floating true
+  }
 
   // ── Environment ─────────────────────────────────────────────────────────
 
