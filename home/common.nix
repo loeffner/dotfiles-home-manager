@@ -57,11 +57,16 @@
         bindkey "^[[1;5C" zle-forward-word-sep   # Ctrl+Right
         bindkey "^[[1;5D" zle-backward-word-sep  # Ctrl+Left
 
-        # Line navigation
+        # Line navigation. Bind every Home/End encoding terminals emit: the
+        # normal-mode CSI forms, the vt220 alternates, and the application-mode
+        # SS3 forms — kitty's terminfo declares the SS3 variants (khome=\EOH,
+        # kend=\EOF), so without these Home/End do nothing under kitty.
         bindkey "^[[H" beginning-of-line  # Pos1
         bindkey "^[[F" end-of-line        # End
         bindkey "^[[1~" beginning-of-line # Pos1 (alternate)
         bindkey "^[[4~" end-of-line       # End (alternate)
+        bindkey "^[OH" beginning-of-line  # Pos1 (application/kitty)
+        bindkey "^[OF" end-of-line        # End  (application/kitty)
 
         # Deletion
         bindkey "^[[3~"   delete-char                 # Delete: char under cursor
