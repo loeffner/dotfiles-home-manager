@@ -83,7 +83,9 @@ from `common.nix`. Work-only shell bits live in
 ### Desktop (`home/desktop`)
 
 Imported by hosts that run the **niri** desktop (currently `terra`).
-Contains: niri config (hand-written KDL, `niri.nix`), a Quickshell status bar
+Contains: niri config (hand-written KDL, split by concern across `niri/` —
+`default.nix` assembles `settings.nix` + `binds.nix` into `config.kdl`, plus
+`clipboard.nix`), a Quickshell status bar
 (hand-written QML, `quickshell/`), Wofi (app launcher, `wofi.nix`), Kitty
 (terminal), cursor theme, and helper scripts (wallpaper daemon, clipboard
 picker). All styled with Gruvbox dark.
@@ -100,7 +102,7 @@ QML plugin). Quickshell live-reloads on QML edits.
 The **hold-Super cheatsheet** (`Cheatsheet.qml`) is a pictographic keybind overlay
 shown while Super is held. niri can't bind on modifier-hold or key-release, so a
 small read-only evdev watcher (`super-cheatsheet-watch.py`, python-evdev,
-autostarted from niri, defined in `niri.nix`) drives it over Quickshell IPC
+autostarted from niri, defined in `niri/settings.nix`) drives it over Quickshell IPC
 (`qs ipc call cheatsheet open/close`). The watcher only *observes* Super, never
 remaps it, so Super+X binds keep working, and it only opens devices it already has
 access to (skipping the rest).

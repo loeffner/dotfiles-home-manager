@@ -9,8 +9,7 @@ let
   # opens/closes the Quickshell cheatsheet over IPC. Reads the keyboard via a
   # scoped `uaccess` udev rule (NOT the `input` group) — see CLAUDE.md.
   superCheatWatch = pkgs.python3.withPackages (ps: [ ps.evdev ]);
-  superCheatWatchCmd =
-    "${superCheatWatch}/bin/python3 ${./super-cheatsheet-watch.py} ${pkgs.quickshell}/bin/qs";
+  superCheatWatchCmd = "${superCheatWatch}/bin/python3 ${./super-cheatsheet-watch.py} ${pkgs.quickshell}/bin/qs";
 
   # run-or-raise: focus the most-recently-focused window whose app_id matches the
   # regex (case-insensitive); if none exists, launch the command. Lets a single
@@ -19,7 +18,10 @@ let
   # it doesn't depend on the session PATH.
   runOrRaise = pkgs.writeShellApplication {
     name = "run-or-raise";
-    runtimeInputs = [ pkgs.niri pkgs.jq ];
+    runtimeInputs = [
+      pkgs.niri
+      pkgs.jq
+    ];
     text = ''
       re=$1; shift
       id=$(niri msg --json windows \

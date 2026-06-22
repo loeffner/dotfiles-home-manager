@@ -5,7 +5,7 @@
 # audio, fonts, the dock, the terminal+launcher binaries) lives in NixOS
 {
   imports = [
-    ./niri.nix
+    ./niri
     ./wofi.nix
   ];
 
