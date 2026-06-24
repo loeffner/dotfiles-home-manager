@@ -17,5 +17,9 @@
   programs.discord.enable = true;
 
   # terra is a desktop: pull in the minimal portable Hyprland environment.
-  imports = [ ../desktop ];
+  # ../ssh.nix is the personal SSH client config (terra + ocean only).
+  imports = [
+    ../desktop
+    ../ssh.nix
+  ];
 }

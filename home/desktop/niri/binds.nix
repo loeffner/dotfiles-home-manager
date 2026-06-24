@@ -15,6 +15,9 @@
       Ctrl+Alt+Delete { quit; }                      // safety net
       Mod+Shift+P     { power-off-monitors; }
 
+      // Cycle keyboard layout (us → de → us). The bar shows "DE" when active.
+      Mod+Alt+Space   { switch-layout "next"; }
+
       // MX Master thumb button (BTN_FORWARD, evdev 277) → overview.
       MouseForward repeat=false { toggle-overview; }
 

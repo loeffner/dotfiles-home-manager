@@ -87,6 +87,26 @@ vact() {
 # ssh
 ###############################################################################
 
+pf() {
+  if [[ $# -lt 2 || $# -gt 4 ]]; then
+    echo "Usage: pf <ssh-host> <remote-port> [local-port] [remote-host]"
+    echo
+    echo "Examples:"
+    echo "  pf locean 8482"
+    echo "  pf loeffner@192.168.178.101 8482 9999"
+    echo "  pf myserver 5432 15432 db.internal"
+    return 1
+  fi
+
+  local ssh_host="$1"
+  local remote_port="$2"
+  local local_port="${3:-$remote_port}"
+  local remote_host="${4:-127.0.0.1}"
+
+  echo "Forwarding localhost:${local_port} -> ${remote_host}:${remote_port} via ${ssh_host}"
+  ssh -L "${local_port}:${remote_host}:${remote_port}" "$ssh_host"
+}
+
 waitfor() {
   local host=$1
   local first_check=true

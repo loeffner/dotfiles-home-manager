@@ -4,6 +4,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Wayland
 
 PanelWindow {
     id: bar
@@ -17,6 +18,12 @@ PanelWindow {
     }
     implicitHeight: Theme.barHeight
     color: Theme.bar
+
+    // A PopupWindow's focus grab can only receive keyboard events (e.g. the
+    // Wi-Fi passphrase field) if this parent layer surface declares keyboard
+    // interactivity. Only while a popup is open, so clicking the bar otherwise
+    // never steals focus from the active window.
+    WlrLayershell.keyboardFocus: PopupState.anyOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
     RowLayout {
         anchors {
@@ -46,6 +53,15 @@ PanelWindow {
             verticalCenter: parent.verticalCenter
         }
         spacing: Theme.pad
+
+        // Keyboard-layout badge — only visible on a non-default layout, so its
+        // separator follows its visibility.
+        KbLayout {
+            id: kbl
+        }
+        Sep {
+            visible: kbl.visible
+        }
 
         Media {
             id: media

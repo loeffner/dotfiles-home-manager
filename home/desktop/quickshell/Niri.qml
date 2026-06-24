@@ -24,6 +24,12 @@ Singleton {
     property var windows: []
     property var _wins: ({})
 
+    // Keyboard layout: niri streams the configured layout names and the active
+    // index (KeyboardLayoutsChanged on connect, KeyboardLayoutSwitched on every
+    // Mod+Alt+Space). Index 0 is the default (us). The bar's KbLayout reads these.
+    property var layoutNames: []
+    property int layoutIdx: 0
+
     function ingestList(list) {
         const ws = list.map(w => ({
                     id: w.id,
@@ -112,6 +118,10 @@ Singleton {
         Quickshell.execDetached(["niri", "msg", "action", "focus-workspace", String(idx)]);
     }
 
+    function switchLayout() {
+        Quickshell.execDetached(["niri", "msg", "action", "switch-layout", "next"]);
+    }
+
     // Query the logical output width once at startup.
     Process {
         command: ["niri", "msg", "--json", "outputs"]
@@ -162,6 +172,12 @@ Singleton {
                     } else if (ev.WindowLayoutsChanged) {
                         root._applyLayouts(ev.WindowLayoutsChanged.changes);
                         root._emitWindows();
+                    } else if (ev.KeyboardLayoutsChanged) {
+                        const kl = ev.KeyboardLayoutsChanged.keyboard_layouts;
+                        root.layoutNames = kl.names;
+                        root.layoutIdx = kl.current_idx;
+                    } else if (ev.KeyboardLayoutSwitched) {
+                        root.layoutIdx = ev.KeyboardLayoutSwitched.idx;
                     }
                 } catch (e)
                 // Non-JSON / partial line — ignore.

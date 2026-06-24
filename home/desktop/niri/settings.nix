@@ -10,7 +10,10 @@
   input {
       keyboard {
           xkb {
-              // Layout inherited from the system; override here if needed.
+              // English (US) is the default; German is the alternate. Toggle
+              // with Mod+Alt+Space (see binds.nix → switch-layout). The bar
+              // shows a "DE" indicator whenever the non-default layout is active.
+              layout "us,de"
           }
           repeat-delay 200
           repeat-rate 25

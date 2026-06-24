@@ -32,6 +32,14 @@ PopupWindow {
 
     property bool isOpen: false
 
+    // Escape closes the popup. Works because an open popup's grab gives this
+    // window keyboard focus (see Bar.qml's WlrLayershell.keyboardFocus).
+    Shortcut {
+        sequences: ["Escape"]
+        enabled: pop.isOpen
+        onActivated: pop.hide()
+    }
+
     function show() {
         const prev = PopupState.current;
         if (prev && prev !== pop) {

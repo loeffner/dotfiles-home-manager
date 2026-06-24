@@ -11,4 +11,6 @@
 
   programs.claude-code.enable = true;
 
+  # Personal SSH client config (terra + ocean only).
+  imports = [ ../ssh.nix ];
 }

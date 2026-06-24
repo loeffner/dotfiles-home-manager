@@ -20,6 +20,22 @@ Item {
     implicitWidth: icon.implicitWidth
     implicitHeight: Theme.barHeight
 
+    // Inline-passphrase state lives here, not in the Repeater delegate: a Wi-Fi
+    // rescan swaps out `wifiDev.networks`, which rebuilds every delegate and
+    // would otherwise wipe the field. `pskSsid` is the network whose field is
+    // open; `pskText` is what's been typed so far.
+    property string pskSsid: ""
+    property string pskText: ""
+
+    // Scan only while the panel is open. (Don't pause scanning during passphrase
+    // entry: disabling the scanner empties wifiDev.networks, which would destroy
+    // the row you're typing into. The hoisted pskText below survives a rescan
+    // rebuild instead.)
+    function syncScanner() {
+        if (root.wifiDev)
+            root.wifiDev.scannerEnabled = popup.isOpen;
+    }
+
     opacity: ma.containsMouse ? 1.0 : 0.82
     Behavior on opacity {
         NumberAnimation {
@@ -64,12 +80,16 @@ Item {
         anchorItem: root
         popWidth: 340
 
-        // Scan for networks only while the panel is open.
+        // Scan for networks only while the panel is open; reset any in-progress
+        // passphrase entry when it closes.
         Connections {
             target: popup
             function onVisibleChanged() {
-                if (root.wifiDev)
-                    root.wifiDev.scannerEnabled = popup.isOpen;
+                if (!popup.isOpen) {
+                    root.pskSsid = "";
+                    root.pskText = "";
+                }
+                root.syncScanner();
             }
         }
 
@@ -126,7 +146,7 @@ Item {
                 id: netRow
                 required property var modelData
                 readonly property bool secured: modelData.security !== WifiSecurityType.Open
-                property bool expanded: false
+                readonly property bool expanded: root.pskSsid === modelData.name
 
                 Layout.fillWidth: true
                 spacing: 4
@@ -182,8 +202,13 @@ Item {
                                 n.disconnect();
                             else if (n.known || !netRow.secured)
                                 n.connect();          // saved or open network
-                            else
-                                netRow.expanded = !netRow.expanded; // ask for a passphrase
+                            else if (netRow.expanded)
+                                root.pskSsid = "";    // collapse the field
+                            else {
+                                root.pskSsid = n.name; // ask for a passphrase
+                                root.pskText = "";
+                                psk.text = "";
+                            }
                         }
                     }
                 }
@@ -213,9 +238,16 @@ Item {
                             font.family: Theme.font
                             font.pixelSize: Theme.fontSize
                             clip: true
+                            // Seed from the hoisted text so a rescan-driven
+                            // rebuild restores what was typed; write edits back.
+                            Component.onCompleted: text = root.pskText
+                            onTextChanged: root.pskText = text
+                            // Grab focus as soon as the row expands so typing
+                            // lands here, not in the previously focused window.
+                            onVisibleChanged: if (visible) forceActiveFocus()
                             onAccepted: {
                                 netRow.modelData.connectWithPsk(text);
-                                netRow.expanded = false;
+                                root.pskSsid = "";
                             }
                         }
                     }
@@ -228,8 +260,8 @@ Item {
                             anchors.fill: parent
                             cursorShape: Qt.PointingHandCursor
                             onClicked: {
-                                netRow.modelData.connectWithPsk(psk.text);
-                                netRow.expanded = false;
+                                netRow.modelData.connectWithPsk(root.pskText);
+                                root.pskSsid = "";
                             }
                         }
                     }
