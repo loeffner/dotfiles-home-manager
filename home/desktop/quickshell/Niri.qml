@@ -118,6 +118,10 @@ Singleton {
         Quickshell.execDetached(["niri", "msg", "action", "focus-workspace", String(idx)]);
     }
 
+    function focusWindow(id) {
+        Quickshell.execDetached(["niri", "msg", "action", "focus-window", "--id", String(id)]);
+    }
+
     function switchLayout() {
         Quickshell.execDetached(["niri", "msg", "action", "switch-layout", "next"]);
     }

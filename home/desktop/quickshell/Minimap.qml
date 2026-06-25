@@ -62,6 +62,12 @@ Row {
 
                     Behavior on color { ColorAnimation { duration: 120 } }
                     Behavior on width { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: Niri.focusWindow(parent.modelData.id)
+                    }
                 }
             }
         }
