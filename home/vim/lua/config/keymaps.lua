@@ -1,6 +1,7 @@
 local map = vim.keymap.set
 
 -- Quality of life
+map("i", "jk", "<Esc>", { desc = "Exit insert mode" })
 map("n", "<Esc>", "<cmd>noh<cr>", { desc = "Clear search highlight" })
 map({ "n", "v" }, "<leader>s", "<cmd>w<cr>", { desc = "Save" })
 map("n", "<leader>q", function()
