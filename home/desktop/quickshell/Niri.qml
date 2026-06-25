@@ -82,7 +82,9 @@ Singleton {
             id: w.id,
             workspaceId: w.workspace_id,
             focused: !!w.is_focused,
-            floating: !!w.is_floating
+            floating: !!w.is_floating,
+            appId: w.app_id || "",
+            title: w.title || ""
         };
         _layoutInto(rec, w.layout);
         _wins[w.id] = rec;
@@ -120,6 +122,32 @@ Singleton {
 
     function focusWindow(id) {
         Quickshell.execDetached(["niri", "msg", "action", "focus-window", "--id", String(id)]);
+    }
+
+    // Focus the window that best matches a notification's origin. Notifications
+    // carry a `desktop-entry` hint (the .desktop basename, e.g. "firefox" or
+    // "org.telegram.desktop") and an app name; niri windows carry a Wayland
+    // `app_id`. Match desktop-entry against app_id first (exact, then either side
+    // being a reverse-DNS suffix of the other), then fall back to the app name
+    // against app_id/title. Returns true if a window was found and focused.
+    function focusByApp(desktopEntry, appName) {
+        const wins = windows || [];
+        const norm = s => (s || "").toLowerCase();
+        const de = norm(desktopEntry);
+        const an = norm(appName);
+        let m = null;
+        if (de) {
+            m = wins.find(w => norm(w.appId) === de)
+                || wins.find(w => norm(w.appId).endsWith("." + de) || de.endsWith("." + norm(w.appId)));
+        }
+        if (!m && an) {
+            m = wins.find(w => norm(w.appId) === an)
+                || wins.find(w => norm(w.appId).indexOf(an) >= 0)
+                || wins.find(w => norm(w.title).indexOf(an) >= 0);
+        }
+        if (m)
+            focusWindow(m.id);
+        return !!m;
     }
 
     function switchLayout() {

@@ -53,6 +53,14 @@ PanelWindow {
                     return false;
                 }
 
+                // Clicking the toast should jump to the app that raised it; only
+                // fall back to the notification's own default action if no window
+                // matched (e.g. a background daemon with no window).
+                function activate() {
+                    if (!Niri.focusByApp(modelData.desktopEntry, modelData.appName))
+                        invokeDefault();
+                }
+
                 Rectangle {
                     id: card
                     width: parent.width
@@ -100,7 +108,7 @@ PanelWindow {
                             if (committed)
                                 return;
                             if (!dragging) {
-                                toast.invokeDefault();
+                                toast.activate();
                                 const n = toast.modelData;
                                 Qt.callLater(() => Notifications.removeToast(n));
                             } else {

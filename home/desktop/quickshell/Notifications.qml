@@ -49,6 +49,7 @@ Singleton {
                 summary: n.summary ?? "",
                 body: n.body ?? "",
                 appName: app,
+                desktopEntry: n.desktopEntry ?? "",
                 appIcon: n.appIcon ?? "",
                 image: n.image ?? "",
                 urgency: n.urgency,

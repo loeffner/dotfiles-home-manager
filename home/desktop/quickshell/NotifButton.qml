@@ -226,12 +226,15 @@ Item {
                                 id: swipe
                                 anchors.fill: parent
                                 preventStealing: true
+                                cursorShape: Qt.PointingHandCursor
                                 property real startX: 0
                                 property bool committed: false
-                                onPressed: e => { startX = mapToItem(entry, e.x, 0).x; committed = false; }
+                                property bool dragging: false
+                                onPressed: e => { startX = mapToItem(entry, e.x, 0).x; committed = false; dragging = false; }
                                 onPositionChanged: e => {
                                     if (committed) return;
                                     const dx = mapToItem(entry, e.x, 0).x - startX;
+                                    if (Math.abs(dx) > 4) dragging = true;
                                     card.x = dx;
                                     card.opacity = Math.max(0.15, 1 - Math.abs(dx) / entry.width);
                                     if (Math.abs(dx) > 64) {
@@ -240,7 +243,18 @@ Item {
                                         efling.start();
                                     }
                                 }
-                                onReleased: if (!committed) esnap.start()
+                                // A tap (not a swipe) jumps to the producing window and
+                                // closes the center; a drag just snaps back.
+                                onReleased: {
+                                    if (committed)
+                                        return;
+                                    if (!dragging) {
+                                        if (Niri.focusByApp(entry.modelData.desktopEntry, entry.modelData.appName))
+                                            popup.hide();
+                                    } else {
+                                        esnap.start();
+                                    }
+                                }
                             }
                             NumberAnimation {
                                 id: efling; target: card; property: "x"; duration: 140; easing.type: Easing.InQuart
