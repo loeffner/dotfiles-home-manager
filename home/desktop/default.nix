@@ -18,6 +18,32 @@
     size = 22;
   };
 
+  xdg.portal = {
+    enable = true;
+    extraPortals = [
+      pkgs.xdg-desktop-portal-gnome
+      pkgs.xdg-desktop-portal-gtk
+    ];
+    config.niri = {
+      default = [ "gnome" "gtk" ];
+      "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
+    };
+  };
+
+  gtk = {
+    enable = true;
+    theme = {
+      name = "Gruvbox-Dark";
+      package = pkgs.gruvbox-gtk-theme;
+    };
+    iconTheme = {
+      name = "Papirus-Dark";
+      package = pkgs.papirus-icon-theme;
+    };
+  };
+
+  dconf.settings."org/gnome/desktop/interface".color-scheme = "prefer-dark";
+
   # When SSHing from Kitty, copy the xterm-kitty terminfo to the remote
   # automatically so the remote shell knows how to handle the terminal.
   home.shellAliases.ssh = "TERM=xterm-256color ssh";

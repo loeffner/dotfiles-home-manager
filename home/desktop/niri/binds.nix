@@ -29,9 +29,11 @@
       Mod+D         { spawn "${runOrRaise}/bin/run-or-raise" "^discord$" "discord"; }
       Mod+G         { spawn "${runOrRaise}/bin/run-or-raise" "^steam$" "steam"; }
       Mod+S         { spawn "${runOrRaise}/bin/run-or-raise" "^signal$" "signal-desktop"; }
+      Mod+N         { spawn "${runOrRaise}/bin/run-or-raise" "^signal$" "zennotes-desktop"; }
       Mod+R         { spawn "sh" "-c" "pkill wofi || wofi --show drun"; }
       Mod+Space     { spawn "sh" "-c" "pkill wofi || wofi --show drun"; }
       Mod+Shift+R   { spawn "sh" "-c" "pkill quickshell && qs -d"; }
+      Mod+Ctrl+R    { spawn "kitty" "--app-id" "hms-runner" "-e" "bash" "-c" "home-manager switch --flake ~/dotfiles#terra; echo; read -rp 'Press Enter to close...'"; }
 
       // Window lifecycle.
       Mod+Q         { close-window; }

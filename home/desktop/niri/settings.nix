@@ -58,6 +58,13 @@
     open-floating true
   }
 
+  window-rule {
+    match app-id="^hms-runner$"
+    open-floating true
+    default-column-width { fixed 900; }
+    default-window-height { fixed 550; }
+  }
+
   // ── Environment ─────────────────────────────────────────────────────────
 
   // Point X11 clients at the display xwayland-satellite creates (see below).
