@@ -1,11 +1,13 @@
-{ lib, pkgs, ... }:
+{ lib, pkgs, zennotes, ... }:
 {
   home.username = lib.mkDefault "loeffner";
   home.homeDirectory = lib.mkDefault "/home/loeffner";
   home.stateVersion = lib.mkDefault "25.11";
 
-  home.packages = with pkgs; [
-    signal-desktop
+  home.packages = [
+    pkgs.signal-desktop
+    # Zen Notes desktop app — trialing it on terra.
+    zennotes.packages.${pkgs.system}.zennotes-desktop
   ];
 
   programs.git.settings.user = {

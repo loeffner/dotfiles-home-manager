@@ -3,6 +3,9 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    # Zen Notes — keyboard-first Markdown notes app (terra only, trying it out).
+    # Left on its own pinned nixpkgs intentionally; don't `follows` while trialing.
+    zennotes.url = "github:ZenNotes/zennotes";
   };
 
   outputs =
@@ -10,6 +13,7 @@
       self,
       nixpkgs,
       home-manager,
+      zennotes,
     }:
     let
       lib = nixpkgs.lib;
@@ -30,6 +34,7 @@
         system: hostModule:
         home-manager.lib.homeManagerConfiguration {
           pkgs = pkgsFor system;
+          extraSpecialArgs = { inherit zennotes; };
           modules = [
             ./home/common.nix
             hostModule
