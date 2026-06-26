@@ -16,7 +16,7 @@
               layout "us,de"
           }
           repeat-delay 200
-          repeat-rate 25
+          repeat-rate 30
       }
       touchpad {
           tap
