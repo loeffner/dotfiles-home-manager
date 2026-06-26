@@ -8,7 +8,7 @@ let
   # `zennotes-desktop`, so this single PATH entry fixes both terminal and wofi.
   zennotes-desktop = pkgs.symlinkJoin {
     name = "zennotes-desktop-glwrapped";
-    paths = [ zennotes.packages.${pkgs.system}.zennotes-desktop ];
+    paths = [ zennotes.packages.${pkgs.stdenv.hostPlatform.system}.zennotes-desktop ];
     nativeBuildInputs = [ pkgs.makeWrapper ];
     postBuild = ''
       wrapProgram $out/bin/zennotes-desktop \
