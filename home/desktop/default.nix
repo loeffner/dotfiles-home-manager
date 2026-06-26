@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 # Desktop environment: Niri#
 
 # All hardware machinery (GPU drivers, PRIME offload, autologin, AQ_DRM_DEVICES,
@@ -40,6 +40,10 @@
       name = "Papirus-Dark";
       package = pkgs.papirus-icon-theme;
     };
+    # Keep the pre-26.05 behavior of theming GTK4 apps with the GTK3 theme
+    # (gruvbox-gtk-theme ships gtk-4.0 assets). The default changed to `null`;
+    # set it explicitly to silence the deprecation warning.
+    gtk4.theme = config.gtk.theme;
   };
 
   dconf.settings."org/gnome/desktop/interface".color-scheme = "prefer-dark";
