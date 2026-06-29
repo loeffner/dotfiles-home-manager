@@ -5,6 +5,9 @@
   ...
 }:
 {
+  options.custom.copilot.enable = lib.mkEnableOption "GitHub Copilot inline completion in Neovim";
+
+  config = {
   # A from-scratch Neovim configuration.
   # No LazyVim, no lazy.nvim, no plugin manager.
   # Plugins come from nixpkgs and are loaded eagerly; each is configured
@@ -23,6 +26,9 @@
       # Build / parser tools
       tree-sitter
       gcc
+
+      # Copilot inline completion runtime
+      nodejs
 
       # Telescope deps
       ripgrep
@@ -90,6 +96,9 @@
       luasnip
       friendly-snippets
 
+      # LLM autocompletion (inline ghost text; gated per host via copilot_enabled)
+      copilot-lua
+
       # Format
       conform-nvim
 
@@ -102,6 +111,8 @@
     ];
 
     initLua = ''
+      vim.g.copilot_enabled = ${if config.custom.copilot.enable then "true" else "false"}
+      vim.g.copilot_node_command = "${pkgs.nodejs}/bin/node"
       require("config.options")
       require("config.keymaps")
       require("config.autocmds")
@@ -202,4 +213,5 @@
 
   # Lua config tree.
   xdg.configFile."nvim/lua".source = ./lua;
+  };
 }

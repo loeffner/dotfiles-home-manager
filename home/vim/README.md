@@ -244,3 +244,25 @@ home-manager switch --flake "git+file://$HOME/dotfiles#work"
 
 `programs.neovim` is single-instance per user under home-manager; the vim
 module is imported from `home/common.nix`.
+
+## Copilot inline completion
+
+GitHub Copilot ghost-text completion is gated per host by the
+`custom.copilot.enable` option (default off; on for work). It powers
+inline suggestions only — nvim-cmp keeps `<Tab>`, Copilot uses:
+
+| Key     | action            |
+| ------- | ----------------- |
+| `<C-l>` | accept suggestion |
+| `<C-j>` | next suggestion   |
+| `<C-k>` | previous          |
+| `<C-h>` | dismiss           |
+
+Auth is out-of-band — run once per machine after switching:
+
+```sh
+nvim, then :Copilot auth   # log in with your Copilot subscription
+```
+
+Personal hosts have no inline LLM completion (claude.ai subscriptions can't
+drive FIM); Claude Code remains the agent/chat tool there.
