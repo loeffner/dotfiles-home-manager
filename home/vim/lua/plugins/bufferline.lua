@@ -1,11 +1,15 @@
 -- bufferline.nvim: tab bar showing open buffers at the top of the screen.
 -- Navigate with Shift+H / Shift+L (previous/next) or click a tab.
+-- Right-click a tab to close just that buffer (window stays open).
 -- Close a buffer with <leader>bd.
 
 require("bufferline").setup({
   options = {
     mode = "buffers",
     diagnostics = "nvim_lsp",
+    right_mouse_command = function(bufnum)
+      require("mini.bufremove").delete(bufnum, false)
+    end,
     show_buffer_close_icons = false,
     show_close_icon = false,
     separator_style = "thin",

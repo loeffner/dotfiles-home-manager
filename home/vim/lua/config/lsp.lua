@@ -114,6 +114,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
     end
 
     map("n", "gd", vim.lsp.buf.definition,      "Go to definition")
+    map("n", "<F12>", vim.lsp.buf.definition,      "Go to definition")
     map("n", "gD", vim.lsp.buf.declaration,     "Go to declaration")
     map("n", "gr", vim.lsp.buf.references,      "References")
     map("n", "gi", vim.lsp.buf.implementation,  "Implementation")

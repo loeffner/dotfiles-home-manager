@@ -37,6 +37,11 @@ require("gitsigns").setup({
 })
 
 -- Diffview: side-aware diff with red/green per pane.
+-- `<leader>gd` opens the working tree vs the index, giving VS Code-style
+-- "Changes" (unstaged) and "Staged changes" sections in the file panel.
+-- In the file panel: `s`/`-` toggle stage on a file, `S` stage all,
+-- `U` unstage all, `X` discard. Hunk-level staging via `<leader>hs` in a
+-- diff window, or by editing the index buffer directly.
 local function gs() return require("gitsigns") end
 
 require("diffview").setup({
@@ -112,6 +117,6 @@ vim.keymap.set("n", "<leader>ghV", function()
   end)
 end, { desc = "Diff split: buffer vs ref" })
 
-vim.keymap.set("n", "<leader>gd", "<cmd>DiffviewOpen HEAD<cr>", { desc = "Diff vs last commit" })
+vim.keymap.set("n", "<leader>gd", "<cmd>DiffviewOpen<cr>", { desc = "Source control (working tree vs index)" })
 vim.keymap.set("n", "<leader>gx", "<cmd>DiffviewClose<cr>",      { desc = "Diffview: close" })
 vim.keymap.set("n", "<leader>gh", "<cmd>DiffviewFileHistory %<cr>", { desc = "File history" })

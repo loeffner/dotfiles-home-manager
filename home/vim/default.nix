@@ -72,6 +72,7 @@
       rainbow-delimiters-nvim
       todo-comments-nvim
       indent-blankline-nvim
+      grug-far-nvim
 
       # Treesitter
       nvim-treesitter

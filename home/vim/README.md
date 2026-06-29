@@ -195,10 +195,11 @@ VS Code Dark Modern syntax tokens that survive (key examples):
 ## Source-control workflow (VS Code-style)
 
 The closest analogue to VS Code's Source Control sidebar is **Diffview**,
-not the file tree. `<leader>gs` opens it: a panel on the left lists every
-modified file (working tree vs index), and the main area shows the diff for
-the currently selected entry. Edit directly in the right pane — saving the
-working-tree buffer updates the diff live.
+not the file tree. `<leader>gd` opens it: the panel on the left splits
+modified files into **Changes** (unstaged) and **Staged changes** sections
+(working tree vs index), and the main area shows the diff for the currently
+selected entry. Edit directly in the right pane — saving the working-tree
+buffer updates the diff live.
 
 Inside the Diffview file panel:
 
@@ -206,9 +207,9 @@ Inside the Diffview file panel:
 | -------- | --------------------------------------------- |
 | `j` / `k`| move between changed files                    |
 | `<cr>`   | open diff for the selected file               |
-| `-`      | stage / unstage hunk under cursor             |
-| `s`      | stage the whole file                          |
-| `u`      | unstage the whole file                        |
+| `s`/`-`  | stage / unstage the selected file             |
+| `S`      | stage all files                               |
+| `U`      | unstage all files                             |
 | `X`      | restore (discard) the file                    |
 | `q`      | close Diffview (`<leader>gx` also works)      |
 
@@ -225,8 +226,7 @@ Other related bindings (see [lua/plugins/git.lua](lua/plugins/git.lua)):
 
 | binding         | action                                       |
 | --------------- | -------------------------------------------- |
-| `<leader>gs`    | Diffview SCM panel (working tree vs index)   |
-| `<leader>gd`    | same as `<leader>gs`                         |
+| `<leader>gd`    | Diffview SCM panel (working tree vs index)   |
 | `<leader>gx`    | close Diffview                               |
 | `<leader>gh`    | file history of the current buffer           |
 | `<leader>ghV`   | diff current buffer against an arbitrary ref |
