@@ -1,5 +1,7 @@
 -- Gitsigns: gutter signs, hunk navigation, blame, partial staging.
 require("gitsigns").setup({
+  current_line_blame = true,
+  current_line_blame_opts = { delay = 200 },
   signs = {
     add          = { text = "▎" },
     change       = { text = "▎" },

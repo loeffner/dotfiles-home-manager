@@ -12,13 +12,13 @@ log_error()   { print -P "%F{red}✗%f $*" >&2; }
 # ls, grep, rsync and find
 ###############################################################################
 
+alias ls='eza'
 alias ll='ls -alhF'
 alias la='ls -A'
-alias l='ls -CF'
+alias lt='ls --tree'
 
 if command -v dircolors &>/dev/null; then
   test -r "$HOME"/.dircolors && eval "$(dircolors -b "$HOME"/.dircolors)" || eval "$(dircolors -b)"
-  alias ls='ls --color=auto'
   alias vdir='vdir --color=auto'
   alias grep='grep --color=auto'
   alias fgrep='fgrep --color=auto'

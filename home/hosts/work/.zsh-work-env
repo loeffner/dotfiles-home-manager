@@ -30,7 +30,6 @@ if [ -f "$HOME/proj/mvtec_resource_manager/env/official.src" ]; then
 elif [ -f /research/public/mvtec_resource_manager/env/official.src ]; then
   . /research/public/mvtec_resource_manager/env/official.src
 fi
-export CAFFE_RESOURCE_MANAGER_REQUEST_RESTRICTIONS="--device-type GPU"
 
 
 ###############################################################################

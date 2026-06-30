@@ -19,7 +19,7 @@ require("bufferline").setup({
         filetype = "neo-tree",
         text = "Explorer",
         highlight = "Directory",
-        separator = true,
+        separator = false,
       },
     },
   },

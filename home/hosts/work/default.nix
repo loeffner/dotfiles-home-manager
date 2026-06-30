@@ -35,32 +35,4 @@
   '';
 
   programs.atuin.settings.dbPath = lib.mkForce "/mvtec/home/loesela/atuin/atuin.db";
-
-  programs.aichat = {
-    enable = true;
-    settings = {
-      model = "ollama:qwen3.6:latest";
-      clients = [
-        {
-          type = "openai-compatible";
-          name = "ollama";
-          api_base = "http://10.66.8.3:11434/v1";
-          models = [
-            {
-              name = "gemma4:latest";
-            }
-            {
-              name = "gemma4:26b";
-            }
-            {
-              name = "qwen3.6:latest";
-            }
-            {
-              name = "mistral:7b";
-            }
-          ];
-        }
-      ];
-    };
-  };
 }
