@@ -16,11 +16,8 @@ map("n", "<leader>q", function()
 end, { desc = "Close buffer or quit" })
 map("n", "<leader>Q", "<cmd>qa!<cr>", { desc = "Force quit all" })
 
--- Window navigation
-map("n", "<C-h>", "<C-w>h", { desc = "Window left" })
-map("n", "<C-j>", "<C-w>j", { desc = "Window down" })
-map("n", "<C-k>", "<C-w>k", { desc = "Window up" })
-map("n", "<C-l>", "<C-w>l", { desc = "Window right" })
+-- Window/pane navigation lives in plugins/zellij-nav.lua: <A-h/j/k/l> move
+-- between nvim splits and hand off to adjacent zellij panes at the edges.
 
 -- Window splits (current buffer stays, opens alongside)
 map("n", "<leader>|", "<cmd>vsplit<cr>", { desc = "Split window right" })
@@ -32,11 +29,11 @@ map("n", "<leader>bd", function()
   require("mini.bufremove").delete(0, false)
 end, { desc = "Delete buffer" })
 
--- Move lines
-map("n", "<A-j>", "<cmd>m .+1<cr>==", { desc = "Move line down" })
-map("n", "<A-k>", "<cmd>m .-2<cr>==", { desc = "Move line up" })
-map("v", "<A-j>", ":m '>+1<cr>gv=gv", { desc = "Move selection down" })
-map("v", "<A-k>", ":m '<-2<cr>gv=gv", { desc = "Move selection up" })
+-- Move lines (Alt+Shift+j/k; plain Alt+j/k is split/pane navigation)
+map("n", "<A-J>", "<cmd>m .+1<cr>==", { desc = "Move line down" })
+map("n", "<A-K>", "<cmd>m .-2<cr>==", { desc = "Move line up" })
+map("v", "<A-J>", ":m '>+1<cr>gv=gv", { desc = "Move selection down" })
+map("v", "<A-K>", ":m '<-2<cr>gv=gv", { desc = "Move selection up" })
 
 -- Stay in visual mode after indenting
 map("v", "<", "<gv")
