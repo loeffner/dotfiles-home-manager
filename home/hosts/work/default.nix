@@ -10,6 +10,7 @@
   home.stateVersion = lib.mkDefault "25.11";
 
   home.packages = with pkgs; [
+    devcontainer
     github-copilot-cli
   ];
 
