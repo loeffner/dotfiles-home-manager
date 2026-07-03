@@ -38,90 +38,41 @@ require("gitsigns").setup({
   end,
 })
 
--- Diffview: side-aware diff with red/green per pane.
--- `<leader>gd` opens the working tree vs the index, giving VS Code-style
--- "Changes" (unstaged) and "Staged changes" sections in the file panel.
--- In the file panel: `s`/`-` toggle stage on a file, `S` stage all,
--- `U` unstage all, `X` discard. Hunk-level staging via `<leader>hs` in a
--- diff window, or by editing the index buffer directly.
-local function gs() return require("gitsigns") end
+-- Fugitive: the git porcelain. Replaces Diffview + git-conflict.
+--
+-- Source-control panel:   :Git   (stage with `s`, unstage `u`, `=` toggles the
+--                         inline diff, `cc` commits, `dv` opens a diff split).
+--
+-- Conflict resolution is fugitive's strength — no separate conflict plugin
+-- needed. On a file with conflict markers, `<leader>gm` opens a 3-way diff:
+--   left  = //2 (OURS / current, HEAD)      right = //3 (THEIRS / incoming)
+--   center = the working copy you edit
+-- Pull a side into the center with `<leader>g2` (ours) / `<leader>g3` (theirs),
+-- or use vim's built-in `do`/`dp` per hunk. Save the center, done.
 
-require("diffview").setup({
-  enhanced_diff_hl = true,
-  view = {
-    default = { layout = "diff2_horizontal" },
-  },
-  hooks = {
-    -- Per-window diff tweaks. ctx.symbol is 'a' (left/old) or 'b' (right/new).
-    -- Disable the automatic foldmethod=diff collapsing of unchanged regions,
-    -- and remap the left pane so changes render as red removals (mirroring
-    -- VS Code) instead of Diffview's symmetric green-on-both-sides default.
-    diff_buf_win_enter = function(_, winid, ctx)
-      vim.wo[winid].foldenable = false
-      vim.wo[winid].foldlevel  = 99
+vim.keymap.set("n", "<leader>gd", "<cmd>Git<cr>", { desc = "Source control (fugitive status)" })
+vim.keymap.set("n", "<leader>gb", "<cmd>Git blame<cr>", { desc = "Blame (fugitive)" })
+vim.keymap.set("n", "<leader>gh", "<cmd>0Gclog<cr>", { desc = "File history (fugitive)" })
 
-      if ctx and ctx.symbol == "a" then
-        vim.wo[winid].winhighlight = table.concat({
-          "DiffAdd:DiffviewDiffAddAsDelete",
-          "DiffDelete:DiffviewDiffDeleteDim",
-          "DiffChange:DiffviewDiffAddAsDelete",
-          "DiffText:DiffviewDiffTextDelete",
-        }, ",")
-      elseif ctx and ctx.symbol == "b" then
-        vim.wo[winid].winhighlight = table.concat({
-          "DiffDelete:DiffviewDiffDeleteDim",
-          "DiffAdd:DiffviewDiffAdd",
-          "DiffChange:DiffviewDiffAdd",
-          "DiffText:DiffviewDiffText",
-        }, ",")
-      end
-    end,
-  },
-  keymaps = {
-    -- Hunk staging inside the diff windows themselves (the right pane is
-    -- the actual working-tree buffer, so gitsigns is already attached).
-    -- These shadow Diffview's defaults for those keys, but only inside
-    -- Diffview windows — normal buffers are unaffected.
-    view = {
-      { "n", "<leader>hs", function() gs().stage_hunk()                      end, { desc = "Stage hunk"   } },
-      { "n", "<leader>hu", function() gs().stage_hunk()                      end, { desc = "Unstage hunk (toggle)" } },
-      { "n", "<leader>hr", function() gs().reset_hunk()                      end, { desc = "Restore hunk (discard)" } },
-      { "v", "<leader>hs", function() gs().stage_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, { desc = "Stage selection" } },
-      { "v", "<leader>hr", function() gs().reset_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, { desc = "Restore selection" } },
-    },
-  },
-})
+-- Close diff splits and return to the single working-copy window.
+vim.keymap.set("n", "<leader>gx", function()
+  vim.cmd("diffoff!")
+  vim.cmd("only")
+end, { desc = "Close diff splits" })
 
+-- Diff current buffer against an arbitrary ref (vertical split).
 vim.keymap.set("n", "<leader>ghV", function()
-  local current_file = vim.api.nvim_buf_get_name(0)
-  if current_file == "" then
-    vim.notify("Current buffer has no file name", vim.log.levels.WARN)
-    return
-  end
-
   vim.ui.input({ prompt = "Diff against ref: ", default = "main" }, function(ref)
     if not ref or ref == "" then return end
-
-    local git_root = vim.fn.systemlist({ "git", "rev-parse", "--show-toplevel" })[1]
-    if vim.v.shell_error ~= 0 or not git_root or git_root == "" then
-      vim.notify("Not inside a git repository", vim.log.levels.ERROR)
-      return
-    end
-
-    local rel = vim.fs.relpath(git_root, current_file)
-    if not rel then
-      vim.notify("File outside repo", vim.log.levels.ERROR)
-      return
-    end
-
     vim.cmd("update")
-    vim.cmd("DiffviewOpen " .. vim.fn.fnameescape(ref) .. " -- " .. vim.fn.fnameescape(rel))
+    vim.cmd("Gvdiffsplit " .. vim.fn.fnameescape(ref))
   end)
 end, { desc = "Diff split: buffer vs ref" })
 
-vim.keymap.set("n", "<leader>gd", "<cmd>DiffviewOpen<cr>", { desc = "Source control (working tree vs index)" })
-vim.keymap.set("n", "<leader>gx", "<cmd>DiffviewClose<cr>",      { desc = "Diffview: close" })
-vim.keymap.set("n", "<leader>gh", "<cmd>DiffviewFileHistory %<cr>", { desc = "File history" })
+-- Merge-conflict resolution: 3-way vertical diff of the current file.
+vim.keymap.set("n", "<leader>gm", "<cmd>Gvdiffsplit!<cr>", { desc = "Conflict: 3-way diff" })
+vim.keymap.set("n", "<leader>g2", "<cmd>diffget //2<cr>", { desc = "Conflict: take ours (//2)" })
+vim.keymap.set("n", "<leader>g3", "<cmd>diffget //3<cr>", { desc = "Conflict: take theirs (//3)" })
 
 -- Toggle ignoring *all* whitespace in diffs (on top of the always-on
 -- `iwhiteeol`). Handy for reverts/merges where reindentation would otherwise
@@ -136,19 +87,3 @@ vim.keymap.set("n", "<leader>gw", function()
   end
   vim.cmd("diffupdate")
 end, { desc = "Toggle ignore whitespace in diffs" })
-
--- git-conflict: highlight ONLY the conflict regions (ours/theirs/ancestor) in
--- the plain buffer and leave the rest untouched — the VS Code "merge editor"
--- feel, without a full diff view. Buffer-local mappings appear only in files
--- that actually contain conflict markers:
---   ]x / [x        next / previous conflict
---   <leader>co     choose ours (HEAD / current)
---   <leader>ct     choose theirs (incoming)
---   <leader>cb     choose both
---   <leader>c0     choose none
-require("git-conflict").setup({
-  default_mappings = true,
-  default_commands = true,
-  -- No `highlights` override: the plugin's defaults already tint ours green
-  -- and theirs blue (the VS Code merge-editor look).
-})
