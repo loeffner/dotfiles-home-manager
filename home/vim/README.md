@@ -192,35 +192,32 @@ VS Code Dark Modern syntax tokens that survive (key examples):
 | `vscLightBlue` `#9CDCFE` | variables / properties / fields         | |
 | (override) `#a8a8a8`     | comments (italic, light grey)           | |
 
-## Source-control workflow (fugitive)
+## Source-control workflow (VS Code-style)
 
-The git porcelain is **vim-fugitive**. `<leader>gd` opens the status buffer
-(`:Git`) — fugitive's Source Control panel. Stage/unstage and commit from
-there without leaving the editor. Gutter signs and hunk staging still come
-from **gitsigns** (see the bindings table below).
+The closest analogue to VS Code's Source Control sidebar is **Diffview**,
+not the file tree. `<leader>gd` opens it: the panel on the left splits
+modified files into **Changes** (unstaged) and **Staged changes** sections
+(working tree vs index), and the main area shows the diff for the currently
+selected entry. Edit directly in the right pane — saving the working-tree
+buffer updates the diff live.
 
-Inside the `:Git` status buffer:
+Inside the Diffview file panel:
 
 | key      | action                                        |
 | -------- | --------------------------------------------- |
-| `s`      | stage the file / hunk under the cursor        |
-| `u`      | unstage the file / hunk under the cursor      |
-| `=`      | toggle the inline diff for a file             |
-| `X`      | discard the change under the cursor           |
-| `cc`     | commit                                        |
-| `dv`     | open the file in a vertical diff split        |
-| `<cr>`   | open the file under the cursor                |
+| `j` / `k`| move between changed files                    |
+| `<cr>`   | open diff for the selected file               |
+| `s`/`-`  | stage / unstage the selected file             |
+| `S`      | stage all files                               |
+| `U`      | unstage all files                             |
+| `X`      | restore (discard) the file                    |
+| `q`      | close Diffview (`<leader>gx` also works)      |
 
-**Conflict resolution** is fugitive's job now (no separate conflict plugin).
-On a file with conflict markers, `<leader>gm` opens a 3-way vertical diff:
-left is `//2` (OURS / current, HEAD), right is `//3` (THEIRS / incoming), and
-the center window is the working copy you edit. Pull a whole side into the
-center with `<leader>g2` (ours) / `<leader>g3` (theirs), or use vim's built-in
-`do` / `dp` per hunk. Save the center buffer and the conflict is resolved.
-Inside any diff split: `]c` / `[c` jump between hunks.
+Inside a diff buffer: `]c` / `[c` jump between hunks, `do` / `dp` pull/push
+the change across the split.
 
 If you prefer the **neo-tree** flavour, `<leader>gE` toggles the `git_status`
-source as a left-side sidebar. `<cr>` on a file there opens a fugitive diff for
+source as a left-side sidebar. `<cr>` on a file there opens a Diffview for
 that file (custom `diff_node` command in
 [lua/plugins/explorer.lua](lua/plugins/explorer.lua)); `o` opens the plain
 file instead.
@@ -229,13 +226,13 @@ Other related bindings (see [lua/plugins/git.lua](lua/plugins/git.lua)):
 
 | binding         | action                                       |
 | --------------- | -------------------------------------------- |
-| `<leader>gd`    | fugitive status (Source Control panel)       |
-| `<leader>gb`    | blame current file                           |
+| `<leader>gd`    | Diffview SCM panel (working tree vs index)   |
+| `<leader>gx`    | close Diffview                               |
 | `<leader>gh`    | file history of the current buffer           |
-| `<leader>gx`    | close diff splits                            |
-| `<leader>gm`    | conflict: open 3-way diff                    |
-| `<leader>g2/g3` | conflict: take ours (//2) / theirs (//3)     |
 | `<leader>gw`    | toggle ignoring whitespace changes in diffs  |
+| `]x` / `[x`     | next / previous conflict (git-conflict)      |
+| `<leader>co/ct` | conflict: choose ours / theirs               |
+| `<leader>cb/c0` | conflict: choose both / none                 |
 | `<leader>ghV`   | diff current buffer against an arbitrary ref |
 | `<leader>gD`    | change Gitsigns inline base ref              |
 | `]h` / `[h`     | next / previous hunk in current buffer       |

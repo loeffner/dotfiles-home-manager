@@ -89,7 +89,8 @@
 
         # Git
         gitsigns-nvim
-        vim-fugitive
+        diffview-nvim
+        git-conflict-nvim
 
         # LSP + completion
         nvim-lspconfig
