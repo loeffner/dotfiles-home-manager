@@ -57,7 +57,7 @@ home/
 
 **Module composition**: `flake.nix` defines a single helper, `mkConfig system hostModule`, which builds a `homeManagerConfiguration` from `[ base common <host> ]`. Each entry in `homeConfigurations` is one `mkConfig` call; `work` is fanned out over `workSystems` (x86_64-linux, aarch64-linux).
 
-**Host configs** set identity (`home.username`, `home.homeDirectory`, `home.stateVersion`, `programs.git.settings.user.*`) with `lib.mkDefault` so a host module can override the shared defaults. The work host additionally sources its own zsh env/aliases and configures `aichat`.
+**Host configs** set identity (`home.username`, `home.homeDirectory`, `home.stateVersion`, `programs.git.settings.user.*`) with `lib.mkDefault` so a host module can override the shared defaults. The work host additionally sources its own zsh env/aliases.
 
 ## Key Conventions
 

@@ -64,9 +64,8 @@ enable `claude-code` (unfree); `island` is the only macOS host
 `launchd.agents` there instead of systemd. `work` (a directory at
 `home/hosts/work/default.nix`) adds copilot CLI, git signing + a
 `~/.gitconfig.work` include, `umask 0027`, sources `.zsh-work-env` /
-`.zsh-work-aliases`, points atuin at a network home, and configures `aichat`
-against an internal Ollama endpoint. `terra` imports `home/desktop` for a
-Hyprland desktop environment.
+`.zsh-work-aliases`, points atuin at a network home. `terra`
+imports `home/desktop` for a Hyprland desktop environment.
 
 Unfree packages are gated by an `allowUnfreePredicate` allowlist set in
 `pkgsFor` (flake.nix), which reads `home/unfree.nix`. To allow a new unfree

@@ -16,11 +16,11 @@
         # Changes
         changed = "!git diff --color --stat --find-renames $(git symbolic-ref --short refs/remotes/origin/HEAD | cut -d/ -f2)...";
 
-        # Fuzzy switch
-        fswitch = ''!git switch "$(git for-each-ref --format='%(refname:short)' refs/heads | fzf --preview 'git lg --color=always {} | head -50')"'';
+        # Fuzzy switch (local + remote-only branches)
+        fswitch = ''!f() { locals=$(git for-each-ref --format='%(refname:short)' refs/heads); remotes=$(git for-each-ref --format='%(refname:short)' refs/remotes | grep '/' | grep -v '/HEAD$'); remote_only=$(printf '%s\n' "$remotes" | while IFS= read -r r; do printf '%s\n' "$locals" | grep -qxF "''${r#*/}" || printf '%s\n' "$r"; done); sel=$(printf '%s\n' "$locals" "$remote_only" | grep -v '^$' | fzf --height=80% --border=rounded --ansi --preview 'git lg --color=always {} -n 15' --preview-window=right,60%,border-left) || return; [ -n "$sel" ] || return; if git show-ref --quiet --verify "refs/heads/$sel"; then git switch "$sel"; else git switch "''${sel#*/}"; fi; }; f'';
 
         # Open files
-        fzffile = ''!f() { f=$(git ls-files | fzf --preview 'highlight -O ansi {} | head -50'); [ -n "$f" ] && ''${EDITOR:-vim} "$f"; }; f'';
+        fzffile = ''!f() { f=$(git ls-files | fzf --height=80% --border=rounded --ansi --preview 'bat --color=always --style=numbers,changes --line-range :500 {}' --preview-window=right,60%,border-left); [ -n "$f" ] && ''${EDITOR:-vim} "$f"; }; f'';
 
         # Commit
         fix = "commit --fixup";

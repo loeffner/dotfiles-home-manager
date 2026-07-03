@@ -52,7 +52,7 @@
           "trailing_diamond": "\ue0b4",
           "style": "diamond",
           "options": {
-            "fetch_status": false,
+            "fetch_status": true,
             "branch_icon": "\uE0A0 ",
             "branch_template": "{{ if matchP \"HA-[0-9]+\" .Branch }}{{ replaceP \".*?(HA-[0-9]+).*\" .Branch \"$1\" }}{{ else }}{{ trunc 25 .Branch }}{{ end }}"
           },
