@@ -4,16 +4,6 @@
   lib,
   ...
 }:
-let
-  # Headless zellij plugin that auto-switches between Normal and Locked modes
-  # based on the process in the focused pane. While nvim (etc.) is focused
-  # zellij locks, so Alt+h/j/k/l pass through to nvim's zellij-nav.nvim for
-  # seamless split/pane navigation. https://github.com/fresh2dev/zellij-autolock
-  zellijAutolock = pkgs.fetchurl {
-    url = "https://github.com/fresh2dev/zellij-autolock/releases/download/0.2.2/zellij-autolock.wasm";
-    hash = "sha256-aclWB7/ZfgddZ2KkT9vHA6gqPEkJ27vkOVLwIEh7jqQ=";
-  };
-in
 {
   programs.home-manager.enable = true;
 
@@ -173,40 +163,11 @@ in
     extraConfig = ''
       support_kitty_keyboard_protocol true
 
-      plugins {
-          autolock location="file:${zellijAutolock}" {
-              is_enabled true
-              // Lock zellij (passing keys through) while one of these runs in
-              // the focused pane. Pairs with zellij-nav.nvim for Alt+hjkl nav.
-              triggers "nvim|vim|fzf|atuin"
-              reaction_seconds "0.3"
-          }
-      }
-
-      load_plugins {
-          autolock
-      }
-
       keybinds {
           shared_except "move" "locked" {
               unbind "Ctrl h"
               bind "Alt m" {
                   SwitchToMode "Move";
-              }
-          }
-          // Reassess lock state immediately on Enter (e.g. right after
-          // launching nvim) instead of waiting for reaction_seconds.
-          normal {
-              bind "Enter" {
-                  WriteChars "\u{000D}";
-                  MessagePlugin "autolock";
-              }
-          }
-          // Keep Alt+f (toggle floating panes) usable while locked, i.e. even
-          // when nvim is focused. Other keys still pass through to nvim.
-          locked {
-              bind "Alt f" {
-                  ToggleFloatingPanes;
               }
           }
       }

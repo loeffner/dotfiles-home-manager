@@ -120,10 +120,6 @@
         # File explorer (sidebar)
         neo-tree-nvim
         nui-nvim
-
-        # Seamless split/pane navigation with zellij (see home/common.nix for
-        # the matching zellij-autolock keybinds)
-        zellij-nav-nvim
       ];
 
       initLua = ''
