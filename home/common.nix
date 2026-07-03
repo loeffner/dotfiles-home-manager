@@ -129,7 +129,7 @@ in
 
   programs.eza = {
     enable = true;
-    enableZshIntegration = false;
+    enableZshIntegration = true;
     icons = "auto";
     git = true;
     extraOptions = [
