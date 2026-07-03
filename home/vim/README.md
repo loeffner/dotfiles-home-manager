@@ -229,6 +229,10 @@ Other related bindings (see [lua/plugins/git.lua](lua/plugins/git.lua)):
 | `<leader>gd`    | Diffview SCM panel (working tree vs index)   |
 | `<leader>gx`    | close Diffview                               |
 | `<leader>gh`    | file history of the current buffer           |
+| `<leader>gw`    | toggle ignoring whitespace changes in diffs  |
+| `]x` / `[x`     | next / previous conflict (git-conflict)      |
+| `<leader>co/ct` | conflict: choose ours / theirs               |
+| `<leader>cb/c0` | conflict: choose both / none                 |
 | `<leader>ghV`   | diff current buffer against an arbitrary ref |
 | `<leader>gD`    | change Gitsigns inline base ref              |
 | `]h` / `[h`     | next / previous hunk in current buffer       |

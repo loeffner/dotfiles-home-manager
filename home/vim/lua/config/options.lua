@@ -36,6 +36,32 @@ opt.inccommand = "split"
 opt.splitright = true
 opt.splitbelow = true
 
+-- Diff (Diffview / :diffthis / mergetool).
+-- `linematch` is the key to VS Code-style diffs: it runs a second-stage
+-- alignment inside each changed block so unchanged lines line up across
+-- panes and only the lines that actually differ get highlighted (with
+-- word-level DiffText inside them), instead of painting the whole region
+-- solid red/green. `algorithm:histogram` produces tighter, more intuitive
+-- hunks than the default Myers diff. `iwhiteeol` ignores trailing-whitespace
+-- changes (matching VS Code's default `ignoreTrimWhitespace`), so pure
+-- end-of-line whitespace edits don't get flagged while real indentation
+-- changes still show.
+--
+-- `linematch:N` only runs its line-aligning second stage when a hunk has at
+-- most N lines total; bigger hunks fall back to painting the whole block
+-- solid red/green. Merge/revert conflicts routinely produce hunks well over
+-- 100 lines, so the value is set high (VS Code aligns these regardless of
+-- size). The cost is O(n²) work per hunk, but it's imperceptible at this size.
+opt.diffopt = {
+  "internal",
+  "filler",
+  "closeoff",
+  "algorithm:histogram",
+  "indent-heuristic",
+  "iwhiteeol",
+  "linematch:400",
+}
+
 -- Mouse
 opt.mouse = "a"
 

@@ -122,3 +122,33 @@ end, { desc = "Diff split: buffer vs ref" })
 vim.keymap.set("n", "<leader>gd", "<cmd>DiffviewOpen<cr>", { desc = "Source control (working tree vs index)" })
 vim.keymap.set("n", "<leader>gx", "<cmd>DiffviewClose<cr>",      { desc = "Diffview: close" })
 vim.keymap.set("n", "<leader>gh", "<cmd>DiffviewFileHistory %<cr>", { desc = "File history" })
+
+-- Toggle ignoring *all* whitespace in diffs (on top of the always-on
+-- `iwhiteeol`). Handy for reverts/merges where reindentation would otherwise
+-- drown out the real changes. Recomputes open diffs via :diffupdate.
+vim.keymap.set("n", "<leader>gw", function()
+  if vim.tbl_contains(vim.opt.diffopt:get(), "iwhiteall") then
+    vim.opt.diffopt:remove("iwhiteall")
+    vim.notify("Diff: showing whitespace changes", vim.log.levels.INFO)
+  else
+    vim.opt.diffopt:append("iwhiteall")
+    vim.notify("Diff: ignoring whitespace changes", vim.log.levels.INFO)
+  end
+  vim.cmd("diffupdate")
+end, { desc = "Toggle ignore whitespace in diffs" })
+
+-- git-conflict: highlight ONLY the conflict regions (ours/theirs/ancestor) in
+-- the plain buffer and leave the rest untouched — the VS Code "merge editor"
+-- feel, without a full diff view. Buffer-local mappings appear only in files
+-- that actually contain conflict markers:
+--   ]x / [x        next / previous conflict
+--   <leader>co     choose ours (HEAD / current)
+--   <leader>ct     choose theirs (incoming)
+--   <leader>cb     choose both
+--   <leader>c0     choose none
+require("git-conflict").setup({
+  default_mappings = true,
+  default_commands = true,
+  -- No `highlights` override: the plugin's defaults already tint ours green
+  -- and theirs blue (the VS Code merge-editor look).
+})

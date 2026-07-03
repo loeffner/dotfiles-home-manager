@@ -6,4 +6,5 @@
   "claude-code"
   "github-copilot-cli"
   "discord"
+  "git-conflict.nvim"
 ]

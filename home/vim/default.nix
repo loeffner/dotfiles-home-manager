@@ -90,6 +90,7 @@
         # Git
         gitsigns-nvim
         diffview-nvim
+        git-conflict-nvim
 
         # LSP + completion
         nvim-lspconfig
