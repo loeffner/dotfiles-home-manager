@@ -24,6 +24,7 @@ require("which-key").setup({ preset = "modern" })
 require("which-key").add({
   { "<leader>b", group = "buffer" },
   { "<leader>c", group = "code" },
+  { "<leader>d", group = "debug" },
   { "<leader>f", group = "find" },
   { "<leader>g", group = "git" },
   { "<leader>r", group = "replace" },
