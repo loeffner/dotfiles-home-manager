@@ -136,13 +136,27 @@
   # `swaylock` in the -effects fork. Register the PAM service system-side:
   #
   #   security.pam.services.swaylock = { };
+  # ./swaylock-auto-submit.patch adds --auto-submit-delay <ms>: after a typing
+  # pause the current buffer is tried against PAM silently (kept on failure —
+  # no red flash, no fail counter; Enter still submits normally), so the
+  # session unlocks as soon as the correct password has been typed. Usability
+  # requires PAM's 2s failure delay off for swaylock, NixOS-side:
+  #
+  #   security.pam.services.swaylock.nodelay = true;
+  #
+  # Tradeoffs (accepted deliberately): each pause runs a real PAM auth, so the
+  # journal collects pam_unix failure lines while typing, and prefixes of the
+  # password are checked — fine on a single-user home desktop without faillock.
   programs.swaylock = {
     enable = true;
-    package = pkgs.swaylock-effects;
+    package = pkgs.swaylock-effects.overrideAttrs (old: {
+      patches = (old.patches or [ ]) ++ [ ./swaylock-auto-submit.patch ];
+    });
     settings = {
       daemonize = true;
       ignore-empty-password = true;
       show-failed-attempts = true;
+      auto-submit-delay = 400;
 
       # Blurred screenshot of the session as the backdrop; flat color is only
       # the fallback if the screenshot fails. No vignette — its radial

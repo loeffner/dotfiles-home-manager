@@ -1,0 +1,234 @@
+diff -ruN a/comm.c b/comm.c
+--- a/comm.c	2026-07-04 23:36:22.206194391 +0200
++++ b/comm.c	2026-07-04 23:37:57.616988784 +0200
+@@ -69,7 +69,7 @@
+ 	return true;
+ }
+ 
+-bool write_comm_request(struct swaylock_password *pw) {
++bool write_comm_request(struct swaylock_password *pw, bool clear) {
+ 	bool result = false;
+ 
+ 	size_t len = pw->len + 1;
+@@ -91,7 +91,9 @@
+ 	result = true;
+ 
+ out:
+-	clear_password_buffer(pw);
++	if (clear) {
++		clear_password_buffer(pw);
++	}
+ 	return result;
+ }
+ 
+diff -ruN a/include/comm.h b/include/comm.h
+--- a/include/comm.h	2026-07-04 23:36:22.206508369 +0200
++++ b/include/comm.h	2026-07-04 23:37:06.843372501 +0200
+@@ -8,9 +8,10 @@
+ bool spawn_comm_child(void);
+ ssize_t read_comm_request(char **buf_ptr);
+ bool write_comm_reply(bool success);
+-// Requests the provided password to be checked. The password is always cleared
+-// when the function returns.
+-bool write_comm_request(struct swaylock_password *pw);
++// Requests the provided password to be checked. The password is cleared when
++// the function returns iff `clear` is set (auto-submit attempts keep it so
++// typing can continue after a silent failure).
++bool write_comm_request(struct swaylock_password *pw, bool clear);
+ bool read_comm_reply(void);
+ // FD to poll for password authentication replies.
+ int get_comm_reply_fd(void);
+diff -ruN a/include/swaylock.h b/include/swaylock.h
+--- a/include/swaylock.h	2026-07-04 23:36:22.206676317 +0200
++++ b/include/swaylock.h	2026-07-04 23:37:26.576223727 +0200
+@@ -81,6 +81,7 @@
+ 	uint32_t password_grace_period;
+ 	bool password_grace_no_mouse;
+ 	bool password_grace_no_touch;
++	uint32_t auto_submit_delay; // ms of typing pause before an auto attempt; 0 disables
+ 
+ 	char *text_cleared;
+ 	char *text_caps_lock;
+@@ -98,6 +99,10 @@
+ 	struct loop *eventloop;
+ 	struct loop_timer *clear_indicator_timer; // clears the indicator
+ 	struct loop_timer *clear_password_timer;  // clears the password buffer
++	struct loop_timer *auto_submit_timer;     // pending auto-submit attempt
++	bool comm_busy;      // a password check request is in flight
++	bool auto_attempt;   // the in-flight request is a silent auto-submit
++	bool enter_pending;  // Enter was pressed while an auto attempt was in flight
+ 	struct wl_display *display;
+ 	struct wl_compositor *compositor;
+ 	struct wl_subcompositor *subcompositor;
+@@ -173,6 +178,7 @@
+ void damage_state(struct swaylock_state *state);
+ void clear_password_buffer(struct swaylock_password *pw);
+ void schedule_indicator_clear(struct swaylock_state *state);
++void submit_password(struct swaylock_state *state);
+ 
+ void initialize_pw_backend(int argc, char **argv);
+ void run_pw_backend_child(void);
+diff -ruN a/main.c b/main.c
+--- a/main.c	2026-07-04 23:36:22.206767707 +0200
++++ b/main.c	2026-07-04 23:38:49.345594923 +0200
+@@ -982,6 +982,7 @@
+ 		LO_GRACE,
+ 		LO_GRACE_NO_MOUSE,
+ 		LO_GRACE_NO_TOUCH,
++		LO_AUTO_SUBMIT_DELAY,
+ 	};
+ 
+ 	static struct option long_options[] = {
+@@ -1062,6 +1063,7 @@
+ 		{"grace", required_argument, NULL, LO_GRACE},
+ 		{"grace-no-mouse", no_argument, NULL, LO_GRACE_NO_MOUSE},
+ 		{"grace-no-touch", no_argument, NULL, LO_GRACE_NO_TOUCH},
++		{"auto-submit-delay", required_argument, NULL, LO_AUTO_SUBMIT_DELAY},
+ 		{0, 0, 0, 0}
+ 	};
+ 
+@@ -1092,6 +1094,8 @@
+ 			"During the grace period, don't unlock on a mouse event.\n"
+ 		"  --grace-no-touch                 "
+ 			"During the grace period, don't unlock on a touch event.\n"
++		"  --auto-submit-delay <ms>         "
++			"Try the typed password automatically after a pause, without Enter.\n"
+ 		"  -h, --help                       "
+ 			"Show help message and quit.\n"
+ 		"  -i, --image [[<output>]:]<path>  "
+@@ -1656,6 +1660,11 @@
+ 				state->args.password_grace_no_touch = true;
+ 			}
+ 			break;
++		case LO_AUTO_SUBMIT_DELAY:
++			if (state) {
++				state->args.auto_submit_delay = strtol(optarg, NULL, 10);
++			}
++			break;
+ 		default:
+ 			fprintf(stderr, "%s", usage);
+ 			return 1;
+@@ -1764,9 +1773,21 @@
+ }
+ 
+ static void comm_in(int fd, short mask, void *data) {
+-	if (read_comm_reply()) {
++	bool success = read_comm_reply();
++	state.comm_busy = false;
++	if (success) {
+ 		// Authentication succeeded
+ 		state.run_display = false;
++	} else if (state.enter_pending) {
++		// Enter was pressed while an auto-submit attempt was in flight;
++		// re-submit the (possibly longer) current buffer as a real attempt.
++		state.enter_pending = false;
++		state.auto_attempt = false;
++		submit_password(&state);
++	} else if (state.auto_attempt) {
++		// Silent failure of an auto-submit attempt: keep the buffer, no
++		// indicator feedback, no failed-attempts counter.
++		state.auto_attempt = false;
+ 	} else {
+ 		state.auth_state = AUTH_STATE_INVALID;
+ 		schedule_indicator_clear(&state);
+@@ -1847,6 +1868,7 @@
+ 		.datestr = strdup("%a, %x"),
+ 		.allow_fade = true,
+ 		.password_grace_period = 0,
++		.auto_submit_delay = 0,
+ 
+ 		.text_cleared = strdup("Cleared"),
+ 		.text_caps_lock = strdup("Caps Lock"),
+diff -ruN a/password.c b/password.c
+--- a/password.c	2026-07-04 23:36:22.206929976 +0200
++++ b/password.c	2026-07-04 23:38:09.291900142 +0200
+@@ -78,14 +78,30 @@
+ 			state->eventloop, 10000, clear_password, state);
+ }
+ 
+-static void submit_password(struct swaylock_state *state) {
++void submit_password(struct swaylock_state *state) {
+ 	if (state->args.ignore_empty && state->password.len == 0) {
+ 		return;
+ 	}
+ 
++	if (state->auto_submit_timer) {
++		loop_remove_timer(state->eventloop, state->auto_submit_timer);
++		state->auto_submit_timer = NULL;
++	}
++
+ 	state->auth_state = AUTH_STATE_VALIDATING;
+ 
+-	if (!write_comm_request(&state->password)) {
++	if (state->comm_busy) {
++		// An auto-submit attempt is in flight. Queue this submission; the
++		// reply handler (comm_in) re-submits the current buffer when the
++		// in-flight attempt fails.
++		state->enter_pending = true;
++		damage_state(state);
++		return;
++	}
++
++	state->comm_busy = true;
++	if (!write_comm_request(&state->password, true)) {
++		state->comm_busy = false;
+ 		state->auth_state = AUTH_STATE_INVALID;
+ 		schedule_indicator_clear(state);
+ 	}
+@@ -93,6 +109,40 @@
+ 	damage_state(state);
+ }
+ 
++static void auto_submit(void *data) {
++	struct swaylock_state *state = data;
++	state->auto_submit_timer = NULL;
++	if (state->password.len == 0 ||
++			state->auth_state == AUTH_STATE_VALIDATING) {
++		return;
++	}
++	if (state->comm_busy) {
++		// Previous attempt still in flight; retry shortly.
++		state->auto_submit_timer = loop_add_timer(
++				state->eventloop, 50, auto_submit, state);
++		return;
++	}
++	// Silently try the current buffer: keep it on failure (no red flash, no
++	// failed-attempts counter) so typing simply continues.
++	state->auto_attempt = true;
++	state->comm_busy = true;
++	if (!write_comm_request(&state->password, false)) {
++		state->comm_busy = false;
++		state->auto_attempt = false;
++	}
++}
++
++static void schedule_auto_submit(struct swaylock_state *state) {
++	if (state->args.auto_submit_delay == 0) {
++		return;
++	}
++	if (state->auto_submit_timer) {
++		loop_remove_timer(state->eventloop, state->auto_submit_timer);
++	}
++	state->auto_submit_timer = loop_add_timer(state->eventloop,
++			state->args.auto_submit_delay, auto_submit, state);
++}
++
+ void swaylock_handle_mouse(struct swaylock_state *state) {
+ 	if (state->auth_state == AUTH_STATE_GRACE && !state->args.password_grace_no_mouse) {
+ 		state->run_display = false;
+@@ -135,6 +185,7 @@
+ 		damage_state(state);
+ 		schedule_indicator_clear(state);
+ 		schedule_password_clear(state);
++		schedule_auto_submit(state);
+ 		break;
+ 	case XKB_KEY_Escape:
+ 		clear_password_buffer(&state->password);
+@@ -184,6 +235,7 @@
+ 			damage_state(state);
+ 			schedule_indicator_clear(state);
+ 			schedule_password_clear(state);
++			schedule_auto_submit(state);
+ 		}
+ 		break;
+ 	}

@@ -88,9 +88,10 @@ clipboard-picker, the filtered cliphist store, swaylock-themed — the lock
 wrapper that injects the bar's current accent), a Quickshell status bar
 (hand-written QML, `quickshell/`), Wofi (app launcher, `wofi.nix`), Kitty
 (terminal), swaylock (screen lock — Mod+Escape / control-center button / idle
-timeout / before-sleep; needs `security.pam.services.swaylock = { };` on the
-NixOS side, see `default.nix`), cursor theme, and the swaybg wallpaper +
-swayidle autostarts. All styled with Gruvbox dark.
+timeout / before-sleep; carries `swaylock-auto-submit.patch` for unlocking
+without pressing Enter; needs `security.pam.services.swaylock = { };` plus
+`.nodelay = true` on the NixOS side, see `default.nix`), cursor theme, and the
+swaybg wallpaper + swayidle autostarts. All styled with Gruvbox dark.
 
 The **Quickshell bar** (`home/desktop/quickshell/`) is a from-scratch QML config
 deployed verbatim via `xdg.configFile."quickshell"` (recursive) and autostarted
