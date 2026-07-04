@@ -3,7 +3,12 @@
 # (keybinds) are assembled into config.kdl below; ./clipboard.nix carries the
 # Win+V clipboard picker. Reference:
 # https://github.com/YaLTeR/niri/wiki/Configuration:-Overview
-{ config, pkgs, dms, ... }:
+{
+  config,
+  pkgs,
+  dms,
+  ...
+}:
 let
   inherit (pkgs) lib;
   system = pkgs.stdenv.hostPlatform.system;
@@ -71,6 +76,25 @@ let
   superCheatWatch = pkgs.python3.withPackages (ps: [ ps.evdev ]);
   superCheatWatchCmd = "${superCheatWatch}/bin/python3 ${./super-cheatsheet-watch.py} ${pkgs.quickshell}/bin/qs";
 
+  # Clipboard-history store filter, run by `wl-paste --watch` on every clipboard
+  # change (content on stdin). Entries a password manager marks sensitive
+  # (x-kde-passwordManagerHint — KeePassXC, Bitwarden, …) are skipped, so
+  # secrets never land in cliphist's plaintext db (~/.cache/cliphist/db).
+  clipStore = pkgs.writeShellApplication {
+    name = "cliphist-store-filtered";
+    runtimeInputs = [
+      pkgs.wl-clipboard
+      pkgs.cliphist
+      pkgs.gnugrep
+    ];
+    text = ''
+      if wl-paste --list-types | grep -qF x-kde-passwordManagerHint; then
+        exit 0
+      fi
+      exec cliphist store
+    '';
+  };
+
   # run-or-raise: focus the most-recently-focused window whose app_id matches the
   # regex (case-insensitive); if none exists, launch the command. Lets a single
   # keybind toggle between starting an app and jumping to it — handy for
@@ -110,7 +134,15 @@ in
 
   # Assemble the KDL from the settings fragment followed by the keybinds block.
   xdg.configFile."niri/config.kdl".text =
-    (import ./settings.nix { inherit pkgs config superCheatWatchCmd shellSwitch; })
+    (import ./settings.nix {
+      inherit
+        pkgs
+        config
+        superCheatWatchCmd
+        shellSwitch
+        clipStore
+        ;
+    })
     + (import ./binds.nix { inherit runOrRaise; });
 
   # Wayland session file for display managers.

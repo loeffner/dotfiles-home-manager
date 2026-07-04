@@ -6,6 +6,7 @@
   config,
   superCheatWatchCmd,
   shellSwitch,
+  clipStore,
 }:
 ''
   input {
@@ -107,10 +108,11 @@
   // so a transient device hiccup (suspend/unplug) re-enumerates keyboards.
   spawn-at-startup "sh" "-c" "while true; do ${superCheatWatchCmd}; sleep 2; done"
 
-  // Clipboard-history daemon: record every clipboard change so the
-  // Ctrl+Alt+V picker (see binds.nix) has something to show. Absolute paths so
-  // it starts regardless of PATH timing during session bring-up.
-  spawn-at-startup "${pkgs.wl-clipboard}/bin/wl-paste" "--watch" "${pkgs.cliphist}/bin/cliphist" "store"
+  // Clipboard-history daemon: record clipboard changes so the Ctrl+Alt+V
+  // picker (see binds.nix) has something to show. The filtered store skips
+  // entries password managers mark sensitive (see default.nix). Absolute paths
+  // so it starts regardless of PATH timing during session bring-up.
+  spawn-at-startup "${pkgs.wl-clipboard}/bin/wl-paste" "--watch" "${clipStore}/bin/cliphist-store-filtered"
 
   // Idle management. swayidle arms each timeout from the last input event:
   // after 10 min blank the monitors (niri's DPMS; any key/mouse powers them
