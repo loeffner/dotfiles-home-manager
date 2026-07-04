@@ -1,4 +1,9 @@
-{ config, pkgs, dms, ... }:
+{
+  config,
+  pkgs,
+  dms,
+  ...
+}:
 # Desktop environment: Niri#
 
 # All hardware machinery (GPU drivers, PRIME offload, autologin, AQ_DRM_DEVICES,
@@ -35,7 +40,10 @@
       pkgs.xdg-desktop-portal-gtk
     ];
     config.niri = {
-      default = [ "gnome" "gtk" ];
+      default = [
+        "gnome"
+        "gtk"
+      ];
       # File dialogs via the GTK portal so we don't need nautilus (the gnome
       # portal's FileChooser shells out to nautilus on v47+).
       "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
@@ -109,6 +117,45 @@
   xdg.configFile."quickshell" = {
     source = ./quickshell;
     recursive = true;
+  };
+
+  # Screen locker (ext-session-lock, works on niri). Gruvbox-styled ring
+  # indicator. daemonize=true makes every plain `swaylock` invocation fork —
+  # required for the swayidle before-sleep hook (swayidle -w would otherwise
+  # wait for the unlock before allowing the suspend). Triggers: Mod+Escape
+  # (binds.nix), the lock button in the bar's control center, idle timeout and
+  # before-sleep (both niri/settings.nix).
+  #
+  # NixOS side (NOT applied by home-manager — add to terra's system config):
+  # swaylock authenticates through PAM, and a user-installed swaylock has no
+  # /etc/pam.d/swaylock, so unlocking would ALWAYS fail (test with a throwaway
+  # lock before relying on it). Register the PAM service system-side:
+  #
+  #   security.pam.services.swaylock = { };
+  programs.swaylock = {
+    enable = true;
+    settings = {
+      daemonize = true;
+      ignore-empty-password = true;
+      show-failed-attempts = true;
+      indicator-radius = 80;
+      indicator-thickness = 8;
+
+      color = "1d2021";
+      inside-color = "282828";
+      line-color = "1d2021";
+      separator-color = "1d2021";
+      text-color = "ebdbb2";
+      ring-color = "d79921";
+      key-hl-color = "fabd2f";
+      bs-hl-color = "d65d0e";
+      inside-ver-color = "282828";
+      ring-ver-color = "458588";
+      text-ver-color = "ebdbb2";
+      inside-wrong-color = "282828";
+      ring-wrong-color = "cc241d";
+      text-wrong-color = "ebdbb2";
+    };
   };
 
   # Kitty — home-manager module: gruvbox dark + transparency.

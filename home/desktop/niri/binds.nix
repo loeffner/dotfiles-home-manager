@@ -13,6 +13,7 @@
       Mod+Slash       { spawn "qs" "ipc" "call" "cheatsheet" "toggle"; }
       Mod+Shift+Slash { show-hotkey-overlay; }      // niri's built-in cheat-sheet
       Ctrl+Alt+Delete { quit; }                      // safety net
+      Mod+Escape      { spawn "swaylock"; }          // lock the session
       Mod+Shift+P     { power-off-monitors; }
 
       // Cycle keyboard layout (us → de → us). The bar shows "DE" when active.

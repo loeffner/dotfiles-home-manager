@@ -315,6 +315,14 @@ Item {
                 Layout.fillWidth: true
             }
             MIconButton {
+                icon: "lock" // lock the session (swaylock daemonizes itself)
+                raised: true
+                onClicked: {
+                    Quickshell.execDetached(["swaylock"]);
+                    pop.close();
+                }
+            }
+            MIconButton {
                 icon: "bedtime" // sleep / suspend (moon)
                 raised: true
                 onClicked: {

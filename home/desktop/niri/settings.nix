@@ -116,12 +116,17 @@
 
   // Idle management. swayidle arms each timeout from the last input event:
   // after 10 min blank the monitors (niri's DPMS; any key/mouse powers them
-  // back on, and `resume` makes that explicit), after 30 min suspend the box.
-  // niri honours the idle-inhibit protocol, so fullscreen video (mpv, browser)
-  // that inhibits idle pauses these timers — no special-casing needed. -w makes
-  // swayidle wait for each command so they can't overlap.
+  // back on, and `resume` makes that explicit), after 20 min lock the session
+  // (swaylock daemonizes via its config, see home/desktop/default.nix), after
+  // 30 min suspend the box — before-sleep also locks, so a suspend never
+  // resumes into an open session. niri honours the idle-inhibit protocol, so
+  // fullscreen video (mpv, browser) that inhibits idle pauses these timers —
+  // no special-casing needed. -w makes swayidle wait for each command so they
+  // can't overlap.
   spawn-at-startup "${pkgs.swayidle}/bin/swayidle" "-w" \
       "timeout" "600"  "${pkgs.niri}/bin/niri msg action power-off-monitors" \
       "resume"         "${pkgs.niri}/bin/niri msg action power-on-monitors" \
-      "timeout" "1800" "${pkgs.systemd}/bin/systemctl suspend"
+      "timeout" "1200" "${config.programs.swaylock.package}/bin/swaylock" \
+      "timeout" "1800" "${pkgs.systemd}/bin/systemctl suspend" \
+      "before-sleep"   "${config.programs.swaylock.package}/bin/swaylock"
 ''

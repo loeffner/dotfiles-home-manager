@@ -257,7 +257,8 @@ PanelWindow {
                             { key: "W", glyph: "󰓩" },   // tabbed column
                             { key: "C", glyph: "󰉠" },   // center column
                             { key: "Q", glyph: "󰅖" },   // close window
-                            { key: "1-5", glyph: "󰧨" }  // workspaces
+                            { key: "1-5", glyph: "󰧨" }, // workspaces
+                            { key: "Esc", glyph: "󰌾" }  // lock session (swaylock)
                         ]
                         delegate: KeyTile {
                             required property var modelData
