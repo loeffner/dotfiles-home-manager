@@ -5,6 +5,7 @@
   pkgs,
   config,
   superCheatWatchCmd,
+  shellSwitch,
 }:
 ''
   input {
@@ -32,7 +33,7 @@
           proportion 0.5
           proportion 0.66667
       }
-      default-column-width { proportion 0.5; }
+      default-column-width { proportion 0.4; }
 
       // Active border: warm earth-ivory (matches bar accent). Inactive: dark.
       border {
@@ -53,6 +54,14 @@
 
   // ── Window Rules ─────────────────────────────────────────────────────────
 
+  // Firefox draws its own 1px dark frame inside the window, which obscures one
+  // pixel of niri's border (making the active border look thinner and muted).
+  // clip-to-geometry clips that self-drawn edge so niri's full 2px border shows.
+  window-rule {
+    match app-id=r#"firefox$"#
+    clip-to-geometry true
+  }
+
   window-rule {
     match app-id=r#"firefox$"# title="^Picture-in-Picture|Library$"
     open-floating true
@@ -63,6 +72,12 @@
     open-floating true
     default-column-width { fixed 900; }
     default-window-height { fixed 550; }
+  }
+
+  window-rule {
+    match app-id="^luajit$"
+    match title="KOReader$"
+    default-column-width { fixed 900; }
   }
 
   // ── Environment ─────────────────────────────────────────────────────────
@@ -83,7 +98,10 @@
 
   spawn-at-startup "swaybg" "-i" "${config.home.homeDirectory}/Pictures/earth.png" "-m" "fill"
 
-  spawn-at-startup "${pkgs.quickshell}/bin/qs"
+  // Quickshell desktop shell. `restore` relaunches the last-selected shell
+  // (custom / dms), defaulting to the custom config on first run.
+  // Switch at runtime with Mod+Shift+S (see binds.nix).
+  spawn-at-startup "${shellSwitch}/bin/shell-switch" "restore"
 
   // Hold-Super cheatsheet watcher (evdev -> qs ipc). Wrapped in a restart loop
   // so a transient device hiccup (suspend/unplug) re-enumerates keyboards.
@@ -93,4 +111,15 @@
   // Ctrl+Alt+V picker (see binds.nix) has something to show. Absolute paths so
   // it starts regardless of PATH timing during session bring-up.
   spawn-at-startup "${pkgs.wl-clipboard}/bin/wl-paste" "--watch" "${pkgs.cliphist}/bin/cliphist" "store"
+
+  // Idle management. swayidle arms each timeout from the last input event:
+  // after 10 min blank the monitors (niri's DPMS; any key/mouse powers them
+  // back on, and `resume` makes that explicit), after 30 min suspend the box.
+  // niri honours the idle-inhibit protocol, so fullscreen video (mpv, browser)
+  // that inhibits idle pauses these timers — no special-casing needed. -w makes
+  // swayidle wait for each command so they can't overlap.
+  spawn-at-startup "${pkgs.swayidle}/bin/swayidle" "-w" \
+      "timeout" "600"  "${pkgs.niri}/bin/niri msg action power-off-monitors" \
+      "resume"         "${pkgs.niri}/bin/niri msg action power-on-monitors" \
+      "timeout" "1800" "${pkgs.systemd}/bin/systemctl suspend"
 ''

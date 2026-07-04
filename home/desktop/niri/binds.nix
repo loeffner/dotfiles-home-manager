@@ -18,9 +18,6 @@
       // Cycle keyboard layout (us → de → us). The bar shows "DE" when active.
       Mod+Alt+Space   { switch-layout "next"; }
 
-      // MX Master thumb button (BTN_FORWARD, evdev 277) → overview.
-      MouseForward repeat=false { toggle-overview; }
-
       // Apps — mirrors the Hyprland binds.
       Mod+Return    { spawn "kitty"; }
       Mod+E         { spawn "kitty" "-e" "yazi"; }
@@ -29,10 +26,13 @@
       Mod+D         { spawn "${runOrRaise}/bin/run-or-raise" "^discord$" "discord"; }
       Mod+G         { spawn "${runOrRaise}/bin/run-or-raise" "^steam$" "steam"; }
       Mod+S         { spawn "${runOrRaise}/bin/run-or-raise" "^signal$" "signal-desktop"; }
-      Mod+N         { spawn "${runOrRaise}/bin/run-or-raise" "^signal$" "zennotes-desktop"; }
+      Mod+N         { spawn "${runOrRaise}/bin/run-or-raise" "^zennotes$" "zennotes-desktop"; }
+      Mod+Y         { spawn "${runOrRaise}/bin/run-or-raise" "^geeqie$" "geeqie"; }
+      Mod+U         { spawn "${runOrRaise}/bin/run-or-raise" "^darktable$" "darktable"; }
       Mod+R         { spawn "sh" "-c" "pkill wofi || wofi --show drun"; }
       Mod+Space     { spawn "sh" "-c" "pkill wofi || wofi --show drun"; }
-      Mod+Shift+R   { spawn "sh" "-c" "pkill quickshell && qs -d"; }
+      Mod+Shift+S   { spawn "shell-switch" "pick"; }     // wofi menu: custom/dms
+      Mod+Shift+R   { spawn "shell-switch" "restore"; }  // restart the current shell
       Mod+Ctrl+R    { spawn "kitty" "--app-id" "hms-runner" "-e" "bash" "-c" "home-manager switch --flake ~/dotfiles#terra; echo; read -rp 'Press Enter to close...'"; }
 
       // Window lifecycle.
@@ -114,6 +114,8 @@
       Mod+Minus      { set-column-width "-10%"; }
       Mod+Equal      { set-column-width "+10%"; }
       Mod+0          { set-column-width "80%"; }  // Super+) → 80% (8 cols)
+      Mod+9          { set-column-width "20%"; }  // Super+( → 20% (2 cols)
+      Mod+8          { set-column-width "50%"; }  // Super+* → 50% (5 cols)
 
       // Volume (allow-when-locked keeps media keys working on the lock screen).
       XF86AudioRaiseVolume allow-when-locked=true { spawn "wpctl" "set-volume" "@DEFAULT_AUDIO_SINK@" "5%+"; }
