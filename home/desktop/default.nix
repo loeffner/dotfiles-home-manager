@@ -145,12 +145,15 @@
       show-failed-attempts = true;
 
       # Blurred screenshot of the session as the backdrop; flat color is only
-      # the fallback if the screenshot fails.
+      # the fallback if the screenshot fails. No vignette — its radial
+      # gradient bands visibly (discrete brightness steps) on this monitor.
       screenshots = true;
       effect-blur = "12x6";
-      effect-vignette = "0.4:0.4";
       fade-in = 0.15;
       color = "1d2021";
+      # The xkb layout indicator ("English (US)" in a box while typing) is
+      # ugly; the bar already shows a DE badge when the alternate is active.
+      hide-keyboard-layout = true;
 
       # Clock inside an always-visible ring (typing state replaces the time).
       clock = true;
