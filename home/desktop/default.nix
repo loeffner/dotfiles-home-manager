@@ -148,7 +148,7 @@
       # the fallback if the screenshot fails. No vignette — its radial
       # gradient bands visibly (discrete brightness steps) on this monitor.
       screenshots = true;
-      effect-blur = "12x6";
+      effect-blur = "20x6";
       fade-in = 0.15;
       color = "1d2021";
       # The xkb layout indicator ("English (US)" in a box while typing) is
