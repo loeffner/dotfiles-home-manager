@@ -6,12 +6,14 @@
 ###############################################################################
 
 himpact_branch() {
-  local GIT
+  # An array, because zsh doesn't word-split an unquoted scalar — a single
+  # "--git X...HEAD" string would reach himpact.py as one argument.
+  local -a GIT
   if [[ -n $1 ]]; then
-    GIT="--git $1...HEAD"
+    GIT=(--git "$1...HEAD")
   fi
-  echo "$___HIMPACT_DIR"/himpact.py --db /halcon/himpact/himpact.sqlite3 query "$GIT" --exclude-priority-list
-  "$___HIMPACT_DIR"/himpact.py --db /halcon/himpact/himpact.sqlite3 query $GIT --exclude-priority-list
+  echo "$___HIMPACT_DIR"/himpact.py --db /halcon/himpact/himpact.sqlite3 query "${GIT[@]}" --exclude-priority-list
+  "$___HIMPACT_DIR"/himpact.py --db /halcon/himpact/himpact.sqlite3 query "${GIT[@]}" --exclude-priority-list
 }
 
 hmake_print() {
@@ -35,7 +37,7 @@ hmake_master() {
   export HMAKE_TARGET_COMPACT="hlib hdl hodor hrun hdevelop"
   export HMAKE_TARGET="$HMAKE_TARGET_COMPACT"
   export HMAKE_ARCHDIR="$HOME/halcon/current/build/master"
-  export HMAKE_FLAGS= "-DWITH_DL_GRAPH_API_INTERNAL"
+  export HMAKE_FLAGS="-DWITH_DL_GRAPH_API_INTERNAL"
   export HMAKE_ARGS="--arch $HMAKE_ARCH --$HMAKE_MODE --target $HMAKE_TARGET --archdir $HMAKE_ARCHDIR $HMAKE_FLAGS --thirdparty-libs /opt/home/buildbot/halcon/thirdparty --thirdparty-tools /opt/home/buildbot/halcon/thirdparty/tools"
   hmake_print
 }
@@ -285,6 +287,7 @@ dlmodel() {
 }
 
 hdict() {
+  log_warning "hdict is currently identical to dlmodel (diff.sh --hdl) — check whether it should pass a different flag."
   if [[ -z "$HALCONROOT" ]]; then
     nightly >/dev/null || return 1
   fi
