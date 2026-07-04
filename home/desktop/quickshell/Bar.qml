@@ -19,11 +19,25 @@ PanelWindow {
     implicitHeight: Theme.barHeight
     color: Theme.bar
 
-    // A PopupWindow's focus grab can only receive keyboard events (e.g. the
-    // Wi-Fi passphrase field) if this parent layer surface declares keyboard
-    // interactivity. Only while a popup is open, so clicking the bar otherwise
-    // never steals focus from the active window.
-    WlrLayershell.keyboardFocus: PopupState.anyOpen ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+    // Instantiate Sound at launch so its global volume-feedback watcher is active
+    // from the start (not only after the first notification references it).
+    Component.onCompleted: Sound.volumeFeedback
+
+    // The bar itself never takes keyboard focus. The cluster popouts
+    // (PopoutManager / Popout.qml) own their own layer surfaces and grab
+    // EXCLUSIVE focus only for text fields — see Popout.qml. Any layer surface
+    // that holds keyboard focus makes niri consume the first outside-click as a
+    // focus transfer (a two-click dismiss); keeping the bar focus-free makes
+    // every dismiss click land immediately.
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
+
+    // Click empty bar area (not an icon) to dismiss an open cluster popout, DMS-
+    // style. Below the bar widgets in z, so icons still handle their own clicks.
+    MouseArea {
+        anchors.fill: parent
+        enabled: PopoutManager.anyOpen
+        onClicked: PopoutManager.close()
+    }
 
     RowLayout {
         anchors {
@@ -42,8 +56,26 @@ PanelWindow {
         }
     }
 
+    // Centre: the clock is pinned to the exact centre of the bar and never
+    // moves. Notifications flank it on the left, the now-playing play/pause
+    // glyph on the right — both anchored to the clock so its position is fixed
+    // regardless of whether they're present.
     Clock {
+        id: clock
+        bar: bar
         anchors.centerIn: parent
+    }
+    NotifCenter {
+        bar: bar
+        anchors.right: clock.left
+        anchors.rightMargin: Theme.pad + 6
+        anchors.verticalCenter: parent.verticalCenter
+    }
+    Media {
+        id: media
+        anchors.left: clock.right
+        anchors.leftMargin: Theme.pad + 6
+        anchors.verticalCenter: parent.verticalCenter
     }
 
     RowLayout {
@@ -54,8 +86,8 @@ PanelWindow {
         }
         spacing: Theme.pad
 
-        // Keyboard-layout badge — only visible on a non-default layout, so its
-        // separator follows its visibility.
+        // Keyboard-layout badge (only on a non-default layout) sits to the left
+        // of the M3 cluster.
         KbLayout {
             id: kbl
         }
@@ -63,48 +95,26 @@ PanelWindow {
             visible: kbl.visible
         }
 
-        Media {
-            id: media
+        // ── DMS-grade cluster: tray · clipboard · system · bell · control ─────
+        // Audio + network live inside the Control Center now; session power lives
+        // in its header. (Old Audio/Network/power-glyph widgets removed.)
+        Tray {
+            id: tray
             bar: bar
         }
         Sep {
-            visible: media.visible
+            visible: tray.visible
         }
-        Audio {
+        Clipboard {
             bar: bar
         }
         Sep {}
-        Network {
+        SysPill {
             bar: bar
         }
         Sep {}
-        SystemMon {
+        ControlCenter {
             bar: bar
-        }
-        Sep {}
-        NotifButton {
-            bar: bar
-        }
-        Sep {}
-        // Power button — opens the full-screen session modal.
-        Text {
-            text: "󰐦"
-            font.family: Theme.font
-            font.pixelSize: Theme.iconSize
-            color: Theme.dim
-            Layout.alignment: Qt.AlignVCenter
-
-            opacity: pwrMa.containsMouse ? 1.0 : 0.7
-            Behavior on opacity { NumberAnimation { duration: 120 } }
-
-            MouseArea {
-                id: pwrMa
-                anchors.fill: parent
-                anchors.margins: -4
-                hoverEnabled: true
-                cursorShape: Qt.PointingHandCursor
-                onClicked: ShellState.powerOpen = !ShellState.powerOpen
-            }
         }
     }
 }

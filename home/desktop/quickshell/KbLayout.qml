@@ -39,17 +39,16 @@ Item {
         anchors.centerIn: parent
         spacing: Theme.gap / 2
 
-        Text {
+        MIcon {
             anchors.verticalCenter: parent.verticalCenter
-            text: "󰌌"
-            color: Theme.accent
-            font.family: Theme.font
-            font.pixelSize: Theme.iconSize
+            text: "keyboard"
+            color: Theme.primary
+            size: Theme.iconSize + 2
         }
         Text {
             anchors.verticalCenter: parent.verticalCenter
             text: root.shortCode(Niri.layoutNames[Niri.layoutIdx])
-            color: Theme.accent
+            color: Theme.primary
             font.family: Theme.font
             font.pixelSize: Theme.fontSize
             font.bold: true

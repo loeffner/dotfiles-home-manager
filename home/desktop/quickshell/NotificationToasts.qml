@@ -65,10 +65,10 @@ PanelWindow {
                     id: card
                     width: parent.width
                     implicitHeight: body.implicitHeight + Theme.pad * 2
-                    radius: Theme.radius
-                    color: Theme.bgPopup
+                    radius: Theme.radiusL
+                    color: Theme.surface
                     border.width: 1
-                    border.color: toast.critical ? Theme.urgent : Theme.border
+                    border.color: toast.critical ? Theme.urgent : Theme.outline
 
                     // Slide + fade in on arrival; fade with swipe distance.
                     opacity: 0
@@ -150,7 +150,7 @@ PanelWindow {
                                 anchors.centerIn: parent
                                 visible: tIcon.status !== Image.Ready
                                 text: "󰂚"
-                                color: Theme.dim
+                                color: Theme.surfaceVariantText
                                 font.family: Theme.font
                                 font.pixelSize: Theme.iconSize + 4
                             }
@@ -165,7 +165,7 @@ PanelWindow {
                                 Text {
                                     Layout.fillWidth: true
                                     text: (toast.modelData.appName ? toast.modelData.appName + ":  " : "") + toast.modelData.summary
-                                    color: Theme.fg
+                                    color: Theme.surfaceText
                                     font.family: Theme.font
                                     font.pixelSize: Theme.fontSize
                                     font.bold: true
@@ -173,7 +173,7 @@ PanelWindow {
                                 }
                                 Text {
                                     text: "󰅖"
-                                    color: closeMa.containsMouse ? Theme.urgent : Theme.dim
+                                    color: closeMa.containsMouse ? Theme.urgent : Theme.surfaceVariantText
                                     font.family: Theme.font
                                     font.pixelSize: Theme.fontSize
                                     Behavior on color { ColorAnimation { duration: 80 } }
@@ -191,7 +191,7 @@ PanelWindow {
                                 Layout.fillWidth: true
                                 visible: (toast.modelData.body ?? "") !== ""
                                 text: toast.modelData.body
-                                color: Theme.dim
+                                color: Theme.surfaceVariantText
                                 font.family: Theme.font
                                 font.pixelSize: Theme.fontSize
                                 wrapMode: Text.WordWrap
@@ -211,14 +211,14 @@ PanelWindow {
                                         required property var modelData
                                         implicitWidth: aLabel.implicitWidth + Theme.pad * 2
                                         implicitHeight: aLabel.implicitHeight + Theme.gap
-                                        radius: Theme.radius - 4
-                                        color: aMa.containsMouse ? Theme.bg2 : Theme.bg1
+                                        radius: Theme.radiusS
+                                        color: aMa.containsMouse ? Theme.surfaceContainerHighest : Theme.surfaceContainerHigh
                                         Behavior on color { ColorAnimation { duration: 80 } }
                                         Text {
                                             id: aLabel
                                             anchors.centerIn: parent
                                             text: modelData.text
-                                            color: Theme.fg
+                                            color: Theme.surfaceText
                                             font.family: Theme.font
                                             font.pixelSize: Theme.fontSize - 1
                                         }
@@ -239,11 +239,13 @@ PanelWindow {
                         }
                     }
 
-                    // Auto-dismiss non-critical toasts. expireTimeout is in ms;
-                    // <=0 means "unspecified", so fall back to 5s.
+                    // Auto-dismiss non-critical toasts after the app's configured
+                    // on-screen time (Notifications.timeoutFor; -1 = never, so the
+                    // timer stays off and the toast persists until dismissed).
                     Timer {
-                        interval: toast.modelData.expireTimeout > 0 ? toast.modelData.expireTimeout : 5000
-                        running: !toast.critical
+                        readonly property int secs: Notifications.timeoutFor(toast.modelData.appName, toast.critical)
+                        interval: secs > 0 ? secs * 1000 : 5000
+                        running: secs >= 0
                         repeat: false
                         onTriggered: { const n = toast.modelData; Qt.callLater(() => Notifications.removeToast(n)); }
                     }

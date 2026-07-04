@@ -27,7 +27,7 @@ RowLayout {
                 width: parent.implicitWidth + 10
                 height: 10 + 10
                 radius: height / 2
-                color: Theme.accent
+                color: Theme.primary
                 opacity: 0.18
             }
 
@@ -37,9 +37,9 @@ RowLayout {
                 width: parent.implicitWidth
                 height: 8
                 radius: 4
-                color: parent.modelData.focused ? Theme.accent
-                     : parent.modelData.active  ? Theme.dim
-                     :                            Theme.bg2
+                color: parent.modelData.focused ? Theme.primary
+                     : parent.modelData.active  ? Theme.surfaceVariantText
+                     :                            Theme.surfaceContainerHighest
 
                 Behavior on color { ColorAnimation { duration: 80 } }
 

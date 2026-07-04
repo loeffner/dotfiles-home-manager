@@ -4,7 +4,7 @@ import QtQuick.Layouts
 
 Text {
     text: "·"
-    color: Theme.bg2
+    color: Theme.surfaceContainerHighest
     font.family: Theme.font
     font.pixelSize: Theme.fontSize
     Layout.alignment: Qt.AlignVCenter

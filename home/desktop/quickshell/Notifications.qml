@@ -22,8 +22,39 @@ Singleton {
     property var toastQueue: []           // Notification objects shown as toasts
     property var history: []              // plain [{id,summary,body,appName,appIcon,image,urgency,time}]
     property var mutedApps: []
+    // Fine-grained silencing: rules matching a notification's title/body substring
+    // — narrower than muting a whole app (many things share an app, e.g. Firefox).
+    // Each rule:
+    //   { id, app, field, op, pattern, mode }
+    //     app     — app name to scope to, or "" = any app
+    //     field   — "title" | "body" | "any" (which text to match) | "app" (all of it)
+    //     op      — "contains" | "not_contains" | "equals" | "regex"  (unused for "app")
+    //     pattern — the needle (substring / exact text / regex source); "" for "app"
+    //     mode    — "mute"  = suppress toast + sound, still log to history
+    //             — "block" = discard entirely (no toast, no sound, no history)
+    property var silenceRules: []
+    property int _nextRuleId: 1
     property int _nextId: 1
     property var _liveById: ({})          // history id -> live Notification (while alive)
+
+    // Settings (persisted). knownApps accrue as apps first notify, so the
+    // settings UI can list them. Two independent per-app timeouts, each with a
+    // global default an app inherits unless it has an override (unset in the map):
+    //   • on-screen toast time  — appTimeouts / defaultTimeout   (-1 = never)
+    //   • auto-dismiss from history — appAutoDismiss / defaultAutoDismiss (0 = off)
+    // Auto-dismiss keeps a session from piling up (e.g. across many rebuilds).
+    property var knownApps: []
+    // Timeouts are split by urgency: the "…Crit" variants apply to Critical
+    // notifications, the plain ones to normal. Defaults keep Critical on screen
+    // and in history until dismissed.
+    property var appTimeouts: ({})
+    property int defaultTimeout: 5
+    property var appTimeoutsCrit: ({})
+    property int defaultTimeoutCrit: -1
+    property var appAutoDismiss: ({})
+    property int defaultAutoDismiss: 0
+    property var appAutoDismissCrit: ({})
+    property int defaultAutoDismissCrit: 0
 
     readonly property string _dir: (Quickshell.env("HOME") || "") + "/.cache/quickshell"
 
@@ -32,6 +63,133 @@ Singleton {
         const a = app || "";
         mutedApps = isMuted(a) ? mutedApps.filter(x => x !== a) : [a, ...mutedApps];
         _save();
+    }
+    function unmute(app) { mutedApps = mutedApps.filter(x => x !== (app || "")); _save(); }
+    function clearAllMutes() { mutedApps = []; _save(); }
+
+    // Apply one operator to one text field. Regex is case-insensitive and guarded
+    // (an invalid pattern simply never matches).
+    function _txtMatch(text, op, pat) {
+        const t = text || "";
+        if (op === "regex") {
+            try {
+                return new RegExp(pat, "i").test(t);
+            } catch (e) {
+                return false;
+            }
+        }
+        const tl = t.toLowerCase(), pl = (pat || "").toLowerCase();
+        if (op === "equals")
+            return tl === pl;
+        if (op === "not_contains")
+            return tl.indexOf(pl) < 0;
+        return tl.indexOf(pl) >= 0; // "contains" (default)
+    }
+    // Does a history entry match a single silence rule?
+    function _silenceMatch(entry, r) {
+        if (r.app && (entry.appName || "") !== r.app)
+            return false;
+        if (r.field === "app")
+            return !!r.app; // whole-app rule (matches everything from that app)
+        const op = r.op || "contains";
+        const pat = r.pattern || "";
+        if (!pat)
+            return false;
+        const s = entry.summary || "", b = entry.body || "";
+        if (r.field === "body")
+            return _txtMatch(b, op, pat);
+        if (r.field === "any")
+            // "does not contain" must hold for BOTH fields; the rest match either.
+            return op === "not_contains" ? (_txtMatch(s, op, pat) && _txtMatch(b, op, pat)) : (_txtMatch(s, op, pat) || _txtMatch(b, op, pat));
+        return _txtMatch(s, op, pat); // "title" (default)
+    }
+    // Strongest silence mode for an entry: "block" wins over "mute", "" = none.
+    function silenceMode(entry) {
+        let mode = "";
+        for (const r of silenceRules) {
+            if (_silenceMatch(entry, r)) {
+                if ((r.mode || "mute") === "block")
+                    return "block";
+                mode = "mute";
+            }
+        }
+        return mode;
+    }
+    // Create a rule (usually from a notification the user clicked "silence" on, so
+    // the pattern is captured verbatim — no typing). De-dupes identical rules.
+    function addSilenceRule(app, field, pattern, mode, op) {
+        const f = field || "title";
+        const pat = (pattern || "").trim();
+        if (f !== "app" && !pat)
+            return;
+        const a = app || "", m = (mode === "block") ? "block" : "mute", o = op || "contains";
+        if (silenceRules.some(r => (r.app || "") === a && (r.field || "title") === f && (r.op || "contains") === o && (r.pattern || "") === pat && (r.mode || "mute") === m))
+            return;
+        silenceRules = [{ "id": _nextRuleId++, "app": a, "field": f, "op": o, "pattern": pat, "mode": m }, ...silenceRules];
+        _save();
+    }
+    function removeSilenceRule(id) { silenceRules = silenceRules.filter(r => r.id !== id); _save(); }
+    function clearSilenceRules() { silenceRules = []; _save(); }
+
+    // Generic per-app setting helpers: pass secs === undefined to clear the
+    // override (the app falls back to the global default).
+    function _setOverride(mapName, app, secs) {
+        const m = Object.assign({}, root[mapName]);
+        if (secs === undefined)
+            delete m[app || ""];
+        else
+            m[app || ""] = secs;
+        root[mapName] = m;
+        _save();
+    }
+
+    // All timeout getters/setters take a `crit` bool selecting the urgency track.
+    // On-screen (toast) duration for an app, in seconds; -1 = never auto-dismiss.
+    function timeoutFor(app, crit) {
+        const v = (crit ? appTimeoutsCrit : appTimeouts)[app || ""];
+        return (v === undefined || v === null) ? (crit ? defaultTimeoutCrit : defaultTimeout) : v;
+    }
+    function hasTimeout(app, crit) { return (crit ? appTimeoutsCrit : appTimeouts)[app || ""] !== undefined; }
+    function setAppTimeout(app, secs, crit) { _setOverride(crit ? "appTimeoutsCrit" : "appTimeouts", app, secs); }
+    function setDefaultTimeout(secs, crit) {
+        if (crit) defaultTimeoutCrit = secs; else defaultTimeout = secs;
+        _save();
+    }
+
+    // Auto-dismiss age for an app, in seconds; 0 = off.
+    function autoDismissFor(app, crit) {
+        const v = (crit ? appAutoDismissCrit : appAutoDismiss)[app || ""];
+        return (v === undefined || v === null) ? (crit ? defaultAutoDismissCrit : defaultAutoDismiss) : v;
+    }
+    function hasAutoDismiss(app, crit) { return (crit ? appAutoDismissCrit : appAutoDismiss)[app || ""] !== undefined; }
+    function setAppAutoDismiss(app, secs, crit) { _setOverride(crit ? "appAutoDismissCrit" : "appAutoDismiss", app, secs); pruneOld(); }
+    function setDefaultAutoDismiss(secs, crit) {
+        if (crit) defaultAutoDismissCrit = secs; else defaultAutoDismiss = secs;
+        _save();
+        pruneOld();
+    }
+
+    // Drop history (and any live retention) older than each entry's app's
+    // auto-dismiss age (per-app override, else the global default).
+    function pruneOld() {
+        const now = Date.now();
+        const keep = [], drop = [];
+        for (const e of history) {
+            const ad = autoDismissFor(e.appName, e.urgency === NotificationUrgency.Critical);
+            (ad > 0 && e.time < now - ad * 1000) ? drop.push(e) : keep.push(e);
+        }
+        if (drop.length === 0)
+            return;
+        for (const e of drop)
+            _drop(e.id);
+        history = keep;
+        _save();
+    }
+    Timer {
+        interval: 30000
+        running: true
+        repeat: true
+        onTriggered: root.pruneOld()
     }
 
     NotificationServer {
@@ -43,6 +201,8 @@ Singleton {
         bodyMarkupSupported: true
         onNotification: n => {
             const app = n.appName ?? "";
+            if (app && root.knownApps.indexOf(app) < 0)
+                root.knownApps = [...root.knownApps, app];
             const id = root._nextId++;
             const entry = {
                 id: id,
@@ -56,12 +216,27 @@ Singleton {
                 time: Date.now()
             };
 
-            if (root.dnd || root.isMuted(app)) {
+            // A "block" rule discards the notification outright — no toast, no
+            // sound, not even a history entry.
+            const sm = root.silenceMode(entry);
+            if (sm === "block") {
+                n.tracked = false;
+                return;
+            }
+
+            if (root.dnd || root.isMuted(app) || sm === "mute") {
                 n.tracked = false; // record to history only, no toast / retention
             } else {
                 n.tracked = true;  // retain alive for the center
                 root._liveById[id] = n;
                 root.toastQueue = [...root.toastQueue, n];
+
+                // Sound effect for a surfaced notification. Suppressed by DND/mute
+                // (above) and by the app's own `suppress-sound` hint (e.g. media
+                // players that play their own audio).
+                const sup = n.hints && n.hints["suppress-sound"];
+                if (!sup)
+                    Sound.notify(n.urgency === NotificationUrgency.Critical);
             }
 
             // Prepend, cap at 50, fully dropping anything evicted.
@@ -163,14 +338,42 @@ Singleton {
                 const d = JSON.parse(text());
                 root.history = (d.history || []).slice(0, 50);
                 root.mutedApps = d.mutedApps || [];
+                root.silenceRules = d.silenceRules || [];
+                root.knownApps = d.knownApps || [];
+                root.appTimeouts = d.appTimeouts || ({});
+                root.defaultTimeout = (d.defaultTimeout === undefined) ? 5 : d.defaultTimeout;
+                root.appTimeoutsCrit = d.appTimeoutsCrit || ({});
+                root.defaultTimeoutCrit = (d.defaultTimeoutCrit === undefined) ? -1 : d.defaultTimeoutCrit;
+                root.appAutoDismiss = d.appAutoDismiss || ({});
+                root.defaultAutoDismiss = d.defaultAutoDismiss || 0;
+                root.appAutoDismissCrit = d.appAutoDismissCrit || ({});
+                root.defaultAutoDismissCrit = d.defaultAutoDismissCrit || 0;
                 let mx = 0;
                 for (const e of root.history)
                     mx = Math.max(mx, e.id || 0);
                 root._nextId = mx + 1;
+                let rmx = 0;
+                for (const r of root.silenceRules)
+                    rmx = Math.max(rmx, r.id || 0);
+                root._nextRuleId = rmx + 1;
+                root.pruneOld(); // clear anything already past its auto-dismiss age
             } catch (e) {}
         }
     }
     function _save() {
-        store.setText(JSON.stringify({ history: history, mutedApps: mutedApps }));
+        store.setText(JSON.stringify({
+            history: history,
+            mutedApps: mutedApps,
+            silenceRules: silenceRules,
+            knownApps: knownApps,
+            appTimeouts: appTimeouts,
+            defaultTimeout: defaultTimeout,
+            appTimeoutsCrit: appTimeoutsCrit,
+            defaultTimeoutCrit: defaultTimeoutCrit,
+            appAutoDismiss: appAutoDismiss,
+            defaultAutoDismiss: defaultAutoDismiss,
+            appAutoDismissCrit: appAutoDismissCrit,
+            defaultAutoDismissCrit: defaultAutoDismissCrit
+        }));
     }
 }

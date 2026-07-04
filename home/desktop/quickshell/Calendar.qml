@@ -1,5 +1,5 @@
 // Self-contained month calendar. Monday-first grid, today highlighted,
-// ‹ › to page months. cellSize lets embedders make it more compact.
+// chevron buttons to page months. cellSize lets embedders make it more compact.
 import QtQuick
 import QtQuick.Layouts
 
@@ -24,19 +24,13 @@ ColumnLayout {
 
     RowLayout {
         Layout.fillWidth: true
-        Text {
-            text: "‹"; color: Theme.fg; font.family: Theme.font; font.pixelSize: Theme.iconSize
-            MouseArea { anchors.fill: parent; anchors.margins: -6; cursorShape: Qt.PointingHandCursor; onClicked: cal.step(-1) }
-        }
+        MIconButton { icon: "chevron_left"; size: 20; onClicked: cal.step(-1) }
         Text {
             Layout.fillWidth: true; horizontalAlignment: Text.AlignHCenter
             text: cal.monthNames[cal.month] + " " + cal.year
-            color: Theme.fg; font.family: Theme.font; font.pixelSize: Theme.fontSize; font.bold: true
+            color: Theme.surfaceText; font.family: Theme.font; font.pixelSize: Theme.fontSize; font.bold: true
         }
-        Text {
-            text: "›"; color: Theme.fg; font.family: Theme.font; font.pixelSize: Theme.iconSize
-            MouseArea { anchors.fill: parent; anchors.margins: -6; cursorShape: Qt.PointingHandCursor; onClicked: cal.step(1) }
-        }
+        MIconButton { icon: "chevron_right"; size: 20; onClicked: cal.step(1) }
     }
 
     Grid {
@@ -48,7 +42,7 @@ ColumnLayout {
             delegate: Item {
                 required property var modelData
                 width: cal.cellSize; height: cal.cellSize - 8
-                Text { anchors.centerIn: parent; text: parent.modelData; color: Theme.dim; font.family: Theme.font; font.pixelSize: Theme.fontSize - 2 }
+                Text { anchors.centerIn: parent; text: parent.modelData; color: Theme.surfaceVariantText; font.family: Theme.font; font.pixelSize: Theme.fontSize - 2 }
             }
         }
 
@@ -63,13 +57,15 @@ ColumnLayout {
                 Rectangle {
                     anchors.centerIn: parent
                     width: cal.cellSize - 8; height: cal.cellSize - 8; radius: (cal.cellSize - 8) / 2
-                    visible: parent.isToday; color: Theme.accent
+                    visible: parent.isToday || (dayMa.containsMouse && parent.valid)
+                    color: parent.isToday ? Theme.primary : Theme.surfaceContainerHigh
                 }
                 Text {
                     anchors.centerIn: parent; visible: parent.valid; text: parent.dayNum
-                    color: parent.isToday ? Theme.bar : Theme.fg
+                    color: parent.isToday ? Theme.primaryText : Theme.surfaceText
                     font.family: Theme.font; font.pixelSize: Theme.fontSize; font.bold: parent.isToday
                 }
+                MouseArea { id: dayMa; anchors.fill: parent; hoverEnabled: parent.valid }
             }
         }
     }

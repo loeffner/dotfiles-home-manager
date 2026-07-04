@@ -1,17 +1,13 @@
 pragma Singleton
 
-// Global visibility flags for full-screen shell layers (dashboard, power modal).
-// Distinct from PopupState which manages the bar's dropdown popups.
+// Global visibility flag for the full-screen cheatsheet overlay. Distinct from
+// PopoutManager, which manages the bar's cluster + clock dropdowns.
 import QtQuick
 import Quickshell
 
 Singleton {
-    property bool dashboardOpen: false
-    property bool powerOpen: false
     property bool cheatOpen: false // pictographic keybind cheatsheet (hold Super)
 
-    // Close any open bar popup when entering a full-screen mode.
-    onDashboardOpenChanged: if (dashboardOpen) PopupState.current?.hide()
-    onPowerOpenChanged: if (powerOpen) { PopupState.current?.hide(); dashboardOpen = false; cheatOpen = false; }
-    onCheatOpenChanged: if (cheatOpen) PopupState.current?.hide()
+    // Close any open popout when the cheatsheet takes over the screen.
+    onCheatOpenChanged: if (cheatOpen) PopoutManager.close()
 }

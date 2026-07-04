@@ -58,7 +58,7 @@ Row {
                         (root.mapHeight - (col.modelData.length - 1) * 2) / col.modelData.length
                     )
                     radius: 2
-                    color: modelData.focused ? Theme.accent : Theme.bg2
+                    color: modelData.focused ? Theme.primary : Theme.surfaceContainerHighest
 
                     Behavior on color { ColorAnimation { duration: 120 } }
                     Behavior on width { NumberAnimation { duration: 150; easing.type: Easing.OutCubic } }
