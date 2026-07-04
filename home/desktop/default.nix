@@ -119,40 +119,62 @@
     recursive = true;
   };
 
-  # Screen locker (ext-session-lock, works on niri). Gruvbox-styled ring
-  # indicator. daemonize=true makes every plain `swaylock` invocation fork —
-  # required for the swayidle before-sleep hook (swayidle -w would otherwise
-  # wait for the unlock before allowing the suspend). Triggers: Mod+Escape
-  # (binds.nix), the lock button in the bar's control center, idle timeout and
-  # before-sleep (both niri/settings.nix).
+  # Screen locker (ext-session-lock, works on niri). swaylock-effects rather
+  # than vanilla swaylock: plain swaylock draws NOTHING at idle (just the flat
+  # background color; the ring only appears while typing), which reads as a
+  # broken empty screen. This shows a blurred screenshot of the session with a
+  # clock inside an always-visible Gruvbox ring. daemonize=true makes every
+  # plain `swaylock` invocation fork — required for the swayidle before-sleep
+  # hook (swayidle -w would otherwise wait for the unlock before allowing the
+  # suspend). Triggers: Mod+Escape (binds.nix), the lock button in the bar's
+  # control center, idle timeout and before-sleep (both niri/settings.nix).
   #
   # NixOS side (NOT applied by home-manager — add to terra's system config):
   # swaylock authenticates through PAM, and a user-installed swaylock has no
   # /etc/pam.d/swaylock, so unlocking would ALWAYS fail (test with a throwaway
-  # lock before relying on it). Register the PAM service system-side:
+  # lock before relying on it). The binary and PAM service are still named
+  # `swaylock` in the -effects fork. Register the PAM service system-side:
   #
   #   security.pam.services.swaylock = { };
   programs.swaylock = {
     enable = true;
+    package = pkgs.swaylock-effects;
     settings = {
       daemonize = true;
       ignore-empty-password = true;
       show-failed-attempts = true;
-      indicator-radius = 80;
-      indicator-thickness = 8;
 
+      # Blurred screenshot of the session as the backdrop; flat color is only
+      # the fallback if the screenshot fails.
+      screenshots = true;
+      effect-blur = "12x6";
+      effect-vignette = "0.4:0.4";
+      fade-in = 0.15;
       color = "1d2021";
-      inside-color = "282828";
-      line-color = "1d2021";
-      separator-color = "1d2021";
+
+      # Clock inside an always-visible ring (typing state replaces the time).
+      clock = true;
+      timestr = "%H:%M";
+      datestr = "%a, %d %b";
+      indicator = true;
+      indicator-idle-visible = true;
+      indicator-radius = 110;
+      indicator-thickness = 8;
+      font = "MesloLGS Nerd Font";
+
+      # Gruvbox: translucent plate so the blur shows through, yellow ring,
+      # blue while verifying, red on a wrong password.
+      inside-color = "282828aa";
+      line-color = "00000000";
+      separator-color = "00000000";
       text-color = "ebdbb2";
       ring-color = "d79921";
       key-hl-color = "fabd2f";
       bs-hl-color = "d65d0e";
-      inside-ver-color = "282828";
+      inside-ver-color = "282828aa";
       ring-ver-color = "458588";
       text-ver-color = "ebdbb2";
-      inside-wrong-color = "282828";
+      inside-wrong-color = "282828aa";
       ring-wrong-color = "cc241d";
       text-wrong-color = "ebdbb2";
     };
