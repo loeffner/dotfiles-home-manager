@@ -97,7 +97,7 @@
   // starts regardless of PATH timing during session bring-up.
   spawn-at-startup "${pkgs.xwayland-satellite}/bin/xwayland-satellite" ":0"
 
-  spawn-at-startup "swaybg" "-i" "${config.home.homeDirectory}/Pictures/earth.png" "-m" "fill"
+  spawn-at-startup "${pkgs.swaybg}/bin/swaybg" "-i" "${config.home.homeDirectory}/Pictures/earth.png" "-m" "fill"
 
   // Quickshell desktop shell. `restore` relaunches the last-selected shell
   // (custom / dms), defaulting to the custom config on first run.
