@@ -3,9 +3,15 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     home-manager.url = "github:nix-community/home-manager";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
-    # Zen Notes — keyboard-first Markdown notes app (terra only, trying it out).
-    # Left on its own pinned nixpkgs intentionally; don't `follows` while trialing.
+    # Zen Notes — keyboard-first Markdown notes app (terra only).
+    # Pinned to our nixpkgs to share the closure and avoid drift.
     zennotes.url = "github:ZenNotes/zennotes";
+    zennotes.inputs.nixpkgs.follows = "nixpkgs";
+    # DankMaterialShell — alternative Quickshell desktop shell, switchable at
+    # runtime on terra alongside the custom shell (see home/desktop,
+    # shell-switch). Pinned to our nixpkgs to share the quickshell closure.
+    dms.url = "github:AvengeMedia/DankMaterialShell";
+    dms.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
@@ -14,6 +20,7 @@
       nixpkgs,
       home-manager,
       zennotes,
+      dms,
     }:
     let
       lib = nixpkgs.lib;
@@ -34,7 +41,7 @@
         system: hostModule:
         home-manager.lib.homeManagerConfiguration {
           pkgs = pkgsFor system;
-          extraSpecialArgs = { inherit zennotes; };
+          extraSpecialArgs = { inherit zennotes dms; };
           modules = [
             ./home/common.nix
             hostModule
