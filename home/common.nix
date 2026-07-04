@@ -155,8 +155,7 @@
     enableZshIntegration = false;
     settings.theme = "gruvbox-dark";
     settings.show_startup_tips = false;
-    # Minimalistic UI: compact bottom bar (no top status bar / help panes)
-    # and no pane borders.
+    # Minimalistic UI: compact bottom bar (no top status bar / help panes).
     settings.default_layout = "compact";
     settings.pane_frames = true;
 
