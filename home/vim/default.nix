@@ -154,68 +154,27 @@
     # `parser` ELF to `<lang>.so` in a small derivation.
     xdg.configFile."nvim/parser".source =
       let
-        tsParsers = with pkgs.vimPlugins.nvim-treesitter.passthru.builtGrammars; [
-          {
-            name = "bash";
-            drv = bash;
-          }
-          {
-            name = "c";
-            drv = c;
-          }
-          {
-            name = "cpp";
-            drv = cpp;
-          }
-          {
-            name = "lua";
-            drv = lua;
-          }
-          {
-            name = "nix";
-            drv = nix;
-          }
-          {
-            name = "python";
-            drv = python;
-          }
-          {
-            name = "markdown";
-            drv = markdown;
-          }
-          {
-            name = "markdown_inline";
-            drv = markdown_inline;
-          }
-          {
-            name = "vim";
-            drv = vim;
-          }
-          {
-            name = "vimdoc";
-            drv = vimdoc;
-          }
-          {
-            name = "yaml";
-            drv = yaml;
-          }
-          {
-            name = "json";
-            drv = json;
-          }
-          {
-            name = "toml";
-            drv = toml;
-          }
-          {
-            name = "cmake";
-            drv = cmake;
-          }
+        grammars = pkgs.vimPlugins.nvim-treesitter.passthru.builtGrammars;
+        tsParsers = [
+          "bash"
+          "c"
+          "cpp"
+          "lua"
+          "nix"
+          "python"
+          "markdown"
+          "markdown_inline"
+          "vim"
+          "vimdoc"
+          "yaml"
+          "json"
+          "toml"
+          "cmake"
         ];
       in
       pkgs.runCommand "nvim-ts-parsers" { } ''
         mkdir -p $out
-        ${lib.concatMapStringsSep "\n" (p: "ln -s ${p.drv}/parser $out/${p.name}.so") tsParsers}
+        ${lib.concatMapStringsSep "\n" (name: "ln -s ${grammars.${name}}/parser $out/${name}.so") tsParsers}
       '';
 
     # Treesitter queries — main-branch nvim-treesitter ships them under
