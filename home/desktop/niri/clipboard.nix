@@ -1,26 +1,27 @@
 # Clipboard-history picker: a wofi menu over cliphist's stored history, bound to
-# Ctrl+Alt+V in ./binds.nix. The store daemon (`wl-paste --watch cliphist store`)
-# is autostarted from ./settings.nix; this module ships the picker script and the
-# tools it needs.
+# Ctrl+Alt+V in ./binds.nix. The store daemon (`wl-paste --watch` + the filtered
+# store, see ./default.nix) is autostarted from ./settings.nix.
 { pkgs, ... }:
-{
-  home.packages = [
-    pkgs.cliphist # clipboard-history store + decoder (the "Win+V" backend)
-    pkgs.wl-clipboard # wl-copy / wl-paste — cliphist reads/writes via these
-    pkgs.wtype # synthesizes the paste keystroke so the picker auto-pastes
-  ];
-
+let
   # The chosen entry is copied back onto the clipboard and then pasted into the
   # window that was focused before the menu opened (Win+V style). Terminals paste
   # with Ctrl+Shift+V and GUI apps with Ctrl+V, so the focused window's app_id
   # decides which to synthesize. Guards against an empty/cancelled selection so
   # Esc never clears the clipboard or fires a stray paste.
-  home.file.".local/bin/clipboard-picker" = {
-    executable = true;
+  clipboardPicker = pkgs.writeShellApplication {
+    name = "clipboard-picker";
+    runtimeInputs = [
+      pkgs.cliphist
+      pkgs.wl-clipboard
+      pkgs.wtype # synthesizes the paste keystroke so the picker auto-pastes
+      pkgs.wofi
+      pkgs.niri
+      pkgs.gnugrep
+      pkgs.coreutils
+    ];
     text = ''
-      #!/usr/bin/env bash
       # Note the focused window now — wofi steals focus once it opens.
-      focused=$(niri msg --json focused-window 2>/dev/null)
+      focused=$(niri msg --json focused-window 2>/dev/null) || focused=""
 
       sel=$(cliphist list | wofi --dmenu --prompt "Clipboard") || exit 0
       [ -z "$sel" ] && exit 0
@@ -36,4 +37,13 @@
       fi
     '';
   };
+in
+{
+  home.packages = [
+    clipboardPicker
+    # cliphist + wl-copy stay on PATH: the Quickshell bar (Clipboard.qml /
+    # ClipStore.qml) shells out to them for list/decode/copy.
+    pkgs.cliphist
+    pkgs.wl-clipboard
+  ];
 }

@@ -83,7 +83,7 @@
       // Clipboard history — Win+V-style popup of past clipboard entries
       // (cliphist + wofi). On Ctrl+Alt+V so it stays clear of kitty's own
       // Ctrl+Shift+V paste. Pressing it again closes an already-open picker.
-      Ctrl+Alt+V { spawn "sh" "-c" "pkill wofi || $HOME/.local/bin/clipboard-picker"; }
+      Ctrl+Alt+V { spawn "sh" "-c" "pkill wofi || clipboard-picker"; }
 
       // Workspaces 1-5: switch and move active column.
       Mod+1 { focus-workspace 1; }
