@@ -45,7 +45,7 @@ Singleton {
 
     Process {
         id: readProc
-        command: ["sh", "-c", root.hwmon === "" ? "true" : "for p in " + root.hwmon + "/pwm[0-9]; do i=$(basename \"$p\" | tr -dc 0-9); printf '%s|%s|%s|%s\\n' \"$i\" \"$(cat " + root.hwmon + "/fan${i}_input 2>/dev/null)\" \"$(cat \"$p\" 2>/dev/null)\" \"$(cat \"${p}_enable\" 2>/dev/null)\"; done"]
+        command: root.hwmon === "" ? ["true"] : ["sh", "-c", "for p in \"$1\"/pwm[0-9]; do i=$(basename \"$p\" | tr -dc 0-9); printf '%s|%s|%s|%s\\n' \"$i\" \"$(cat \"$1/fan${i}_input\" 2>/dev/null)\" \"$(cat \"$p\" 2>/dev/null)\" \"$(cat \"${p}_enable\" 2>/dev/null)\"; done", "_", root.hwmon]
         stdout: StdioCollector {
             onStreamFinished: {
                 const out = [];
@@ -84,14 +84,14 @@ Singleton {
     function setManual(idx, on) {
         if (!available)
             return;
-        Quickshell.execDetached(["sh", "-c", "echo " + (on ? 1 : root._autoMode(idx)) + " > " + hwmon + "/pwm" + idx + "_enable"]);
+        Quickshell.execDetached(["sh", "-c", 'echo "$1" > "$2/pwm${3}_enable"', "_", String(on ? 1 : root._autoMode(idx)), hwmon, String(idx)]);
         readProc.running = true;
     }
     function setPct(idx, pct) {
         if (!available)
             return;
         const v = Math.max(0, Math.min(255, Math.round(pct / 100 * 255)));
-        Quickshell.execDetached(["sh", "-c", "echo 1 > " + hwmon + "/pwm" + idx + "_enable; echo " + v + " > " + hwmon + "/pwm" + idx]);
+        Quickshell.execDetached(["sh", "-c", 'echo 1 > "$2/pwm${3}_enable"; echo "$1" > "$2/pwm${3}"', "_", String(v), hwmon, String(idx)]);
     }
 
     // Temperature watchdog: force manual fans back to auto if the CPU gets hot.

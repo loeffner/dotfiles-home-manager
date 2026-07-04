@@ -30,7 +30,7 @@ Item {
     }
 
     function copy(id) {
-        Quickshell.execDetached(["sh", "-c", "cliphist decode " + id + " | wl-copy"]);
+        Quickshell.execDetached(["sh", "-c", 'cliphist decode "$1" | wl-copy', "_", String(id)]);
     }
     function wipe() {
         Quickshell.execDetached(["cliphist", "wipe"]);
@@ -200,7 +200,7 @@ Item {
                 property string thumbSrc: crow.isPin ? ("file://" + modelData.file) : ""
                 Process {
                     id: dec
-                    command: ["sh", "-c", "mkdir -p '" + root.thumbDir + "'; f='" + root.thumbDir + "/" + crow.modelData.id + "'; [ -s \"$f\" ] || cliphist decode " + crow.modelData.id + " > \"$f\"; echo \"$f\""]
+                    command: ["sh", "-c", 'mkdir -p "$1"; f="$1/$2"; [ -s "$f" ] || cliphist decode "$2" > "$f"; echo "$f"', "_", root.thumbDir, String(crow.modelData.id)]
                     stdout: StdioCollector {
                         onStreamFinished: crow.thumbSrc = "file://" + text.trim()
                     }

@@ -53,7 +53,8 @@ Singleton {
             return;
         const key = root._nextKey++;
         const file = root.dir + "/" + key + ".bin";
-        Quickshell.execDetached(["sh", "-c", "cliphist decode " + id + " > '" + file + "'"]);
+        // Values go in as positional args, never interpolated into the script.
+        Quickshell.execDetached(["sh", "-c", 'cliphist decode "$1" > "$2"', "_", String(id), file]);
         root.pins = [{
                     "key": key,
                     "preview": preview,
@@ -76,7 +77,9 @@ Singleton {
             unpin(p.key);
     }
     function copyPin(p) {
-        const t = p.mime ? ("-t '" + p.mime + "' ") : "";
-        Quickshell.execDetached(["sh", "-c", "wl-copy " + t + "< '" + p.file + "'"]);
+        if (p.mime)
+            Quickshell.execDetached(["sh", "-c", 'wl-copy -t "$1" < "$2"', "_", p.mime, p.file]);
+        else
+            Quickshell.execDetached(["sh", "-c", 'wl-copy < "$1"', "_", p.file]);
     }
 }
