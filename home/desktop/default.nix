@@ -89,12 +89,6 @@
     Name=Yazi
     NoDisplay=true
   '';
-  xdg.dataFile."applications/.desktop".text = ''
-    [Desktop Entry]
-    Type=Application
-    Name=Yazi
-    NoDisplay=true
-  '';
 
   # Extra desktop GUI tools.
   home.packages = with pkgs; [
