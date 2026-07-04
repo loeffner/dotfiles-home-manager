@@ -161,10 +161,15 @@ Item {
     // opens (external IP needs a network round-trip, so it's not kept live).
     property string localIp: ""
     property string externalIp: ""
+    property double _extIpAt: 0
     function refreshIps() {
         localIpProc.running = true;
-        externalIp = "";
-        extIpProc.running = true;
+        // The external IP costs a round-trip to api.ipify.org — reuse the last
+        // answer for a few minutes instead of re-querying on every panel open.
+        if (Date.now() - root._extIpAt > 5 * 60 * 1000) {
+            externalIp = "";
+            extIpProc.running = true;
+        }
     }
     Process {
         id: localIpProc
@@ -179,7 +184,11 @@ Item {
         id: extIpProc
         command: ["sh", "-c", "curl -s --max-time 4 https://api.ipify.org"]
         stdout: StdioCollector {
-            onStreamFinished: root.externalIp = text.trim()
+            onStreamFinished: {
+                root.externalIp = text.trim();
+                if (root.externalIp !== "")
+                    root._extIpAt = Date.now(); // only cache successful lookups
+            }
         }
     }
     // Wi-Fi passphrase state, hoisted so a rescan rebuild of the delegates doesn't
