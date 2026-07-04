@@ -2,21 +2,6 @@
 
 
 ###############################################################################
-# LLMs & AI
-###############################################################################
-
-pi() {
-  docker run --rm -it \
-    --cap-add NET_ADMIN \
-    -v "$PWD:$PWD" \
-    -v "$HOME/ai:$HOME/ai" \
-    -w "$PWD" \
-    -e STASH_TOKEN="$(cat "$HOME/dotfiles/home/hosts/work/.stash_token" 2>/dev/null)" \
-    artifactory-prod.mvtec.local/playground-docker-local/dev/clang_dev/ubuntu_2510:latest \
-    pi
-}
-
-###############################################################################
 # Halcon tools & build
 ###############################################################################
 
