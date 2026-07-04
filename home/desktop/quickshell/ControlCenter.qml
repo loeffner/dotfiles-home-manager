@@ -327,7 +327,7 @@ Item {
                 icon: "lock" // lock the session (swaylock daemonizes itself)
                 raised: true
                 onClicked: {
-                    Quickshell.execDetached(["swaylock"]);
+                    Quickshell.execDetached(["swaylock-themed"]);
                     pop.close();
                 }
             }

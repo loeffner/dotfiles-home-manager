@@ -7,6 +7,7 @@
   superCheatWatchCmd,
   shellSwitch,
   clipStore,
+  swaylockThemed,
 }:
 ''
   input {
@@ -126,7 +127,7 @@
   spawn-at-startup "${pkgs.swayidle}/bin/swayidle" "-w" \
       "timeout" "600"  "${pkgs.niri}/bin/niri msg action power-off-monitors" \
       "resume"         "${pkgs.niri}/bin/niri msg action power-on-monitors" \
-      "timeout" "1200" "${config.programs.swaylock.package}/bin/swaylock" \
+      "timeout" "1200" "${swaylockThemed}/bin/swaylock-themed" \
       "timeout" "1800" "${pkgs.systemd}/bin/systemctl suspend" \
-      "before-sleep"   "${config.programs.swaylock.package}/bin/swaylock"
+      "before-sleep"   "${swaylockThemed}/bin/swaylock-themed"
 ''

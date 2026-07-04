@@ -162,20 +162,24 @@
       indicator-thickness = 8;
       font = "MesloLGS Nerd Font";
 
-      # Gruvbox: translucent plate so the blur shows through, yellow ring,
-      # blue while verifying, red on a wrong password.
+      # Gruvbox: translucent plate so the blur shows through. The resting /
+      # verifying ring color is the BAR'S CURRENT ACCENT, injected at lock
+      # time by the swaylock-themed wrapper (niri/default.nix) — the values
+      # here are only the fallback for a bare `swaylock` call. Typing flashes
+      # near-white and backspace/wrong flash bright red, so both contrast
+      # against every accent hue.
       inside-color = "282828aa";
       line-color = "00000000";
       separator-color = "00000000";
       text-color = "ebdbb2";
-      ring-color = "d79921";
-      key-hl-color = "fabd2f";
-      bs-hl-color = "d65d0e";
+      ring-color = "458588";
+      key-hl-color = "fbf1c7";
+      bs-hl-color = "fb4934";
       inside-ver-color = "282828aa";
       ring-ver-color = "458588";
       text-ver-color = "ebdbb2";
       inside-wrong-color = "282828aa";
-      ring-wrong-color = "cc241d";
+      ring-wrong-color = "fb4934";
       text-wrong-color = "ebdbb2";
     };
   };

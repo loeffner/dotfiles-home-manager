@@ -59,6 +59,8 @@ Singleton {
     // Runtime-switchable via the Control Center accent picker; persisted to disk
     // (see accentFile) so the choice survives restarts. Set with setAccent().
     property string accentChoice: "blue" // blue aqua green yellow orange purple red ivory
+    // NB: swaylock-themed (niri/default.nix) mirrors this table so the lock
+    // screen's ring follows the accent — keep the two in sync.
     readonly property var accents: ({
             "blue": "#458588",
             "aqua": "#689d6a",

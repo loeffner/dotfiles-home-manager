@@ -95,6 +95,35 @@ let
     '';
   };
 
+  # Lock the session with the bar's CURRENT accent color. The Quickshell theme
+  # persists the accent name to ~/.cache/quickshell/accent (Theme.qml,
+  # runtime-switchable in the Control Center); map it to its Gruvbox hex and
+  # override the ring colors of the static swaylock config
+  # (../default.nix, programs.swaylock — blur, clock and the contrast colors
+  # all come from there). Keep the case table in sync with Theme.qml's
+  # `accents` map. All lock triggers (Mod+Escape, control-center button,
+  # swayidle timeout, before-sleep) go through this wrapper.
+  swaylockThemed = pkgs.writeShellApplication {
+    name = "swaylock-themed";
+    runtimeInputs = [ pkgs.coreutils ];
+    text = ''
+      name=$(cat "''${XDG_CACHE_HOME:-$HOME/.cache}/quickshell/accent" 2>/dev/null || echo blue)
+      case "$name" in
+        blue)   accent=458588 ;;
+        aqua)   accent=689d6a ;;
+        green)  accent=98971a ;;
+        yellow) accent=d79921 ;;
+        orange) accent=d65d0e ;;
+        purple) accent=b16286 ;;
+        red)    accent=cc241d ;;
+        ivory)  accent=bdae93 ;;
+        *)      accent=458588 ;;
+      esac
+      exec ${config.programs.swaylock.package}/bin/swaylock \
+        --ring-color "$accent" --ring-ver-color "$accent" "$@"
+    '';
+  };
+
   # run-or-raise: focus the most-recently-focused window whose app_id matches the
   # regex (case-insensitive); if none exists, launch the command. Lets a single
   # keybind toggle between starting an app and jumping to it — handy for
@@ -130,6 +159,7 @@ in
     pkgs.niri
     pkgs.xwayland-satellite
     shellSwitch
+    swaylockThemed # lock triggers: binds.nix, ControlCenter.qml, swayidle
   ];
 
   # Assemble the KDL from the settings fragment followed by the keybinds block.
@@ -141,6 +171,7 @@ in
         superCheatWatchCmd
         shellSwitch
         clipStore
+        swaylockThemed
         ;
     })
     + (import ./binds.nix { inherit runOrRaise; });
