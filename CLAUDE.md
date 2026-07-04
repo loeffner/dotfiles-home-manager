@@ -11,7 +11,7 @@ environments (shell, git, neovim, CLI tools) — not full NixOS systems.
 # Apply a configuration (standalone home-manager)
 home-manager switch --flake .#beehive          # personal host (NixOS)
 home-manager switch --flake .#ocean            # personal host (NixOS)
-home-manager switch --flake .#terra            # personal host, Hyprland desktop (NixOS)
+home-manager switch --flake .#terra            # personal host, niri desktop (NixOS)
 home-manager switch --flake .#island           # personal MacBook (macOS, aarch64-darwin)
 home-manager switch --flake .#work-x86_64-linux
 home-manager switch --flake .#work-aarch64-linux
@@ -52,20 +52,19 @@ The layering that every config goes through:
 1. `home/common.nix` — the bulk of the environment: zsh (with keybindings and
    auto-`exec zellij`), oh-my-posh, fzf, atuin, zoxide (aliased to `cd`), eza,
    zellij, ssh/gpg agents. It `imports` `./git` and `./vim`.
-2. `home/hosts/<host>` — per-machine identity (username, homeDirectory,
-   stateVersion), git user/email, and host-specific extras. Identity fields
-   use `lib.mkDefault` so a host module can override the shared defaults.
+2. `home/hosts/<host>` — host-specific extras. The personal hosts (beehive,
+   ocean, terra, island) share `home/personal.nix` for identity (username,
+   homeDirectory, stateVersion — `lib.mkDefault`, so a host can override),
+   git user/email and `claude-code` (unfree).
 
-Host modules differ mainly in identity + extras: `beehive` and `island`
-enable `claude-code` (unfree); `island` is the only macOS host
-(`aarch64-darwin`, standalone home-manager — not nix-darwin) and sets
-`homeDirectory` to `/Users/loeffner`. The shared `common.nix` services
-(`ssh-agent`, `gpg-agent`) work on Darwin too — home-manager wires them via
-`launchd.agents` there instead of systemd. `work` (a directory at
-`home/hosts/work/default.nix`) adds copilot CLI, git signing + a
-`~/.gitconfig.work` include, `umask 0027`, sources `.zsh-work-env` /
-`.zsh-work-aliases`, points atuin at a network home. `terra`
-imports `home/desktop` for a Hyprland desktop environment.
+`island` is the only macOS host (`aarch64-darwin`, standalone home-manager —
+not nix-darwin) and overrides `homeDirectory` to `/Users/loeffner`. The shared
+`common.nix` services (`ssh-agent`, `gpg-agent`) work on Darwin too —
+home-manager wires them via `launchd.agents` there instead of systemd. `work`
+(a directory at `home/hosts/work/default.nix`) has its own identity and adds
+copilot CLI, git signing + a `~/.gitconfig.work` include, `umask 0027`,
+sources `.zsh-work-env` / `.zsh-work-aliases`, points atuin at a network home.
+`terra` imports `home/desktop` for a niri desktop environment.
 
 Unfree packages are gated by an `allowUnfreePredicate` allowlist set in
 `pkgsFor` (flake.nix), which reads `home/unfree.nix`. To allow a new unfree
@@ -84,10 +83,13 @@ from `common.nix`. Work-only shell bits live in
 Imported by hosts that run the **niri** desktop (currently `terra`).
 Contains: niri config (hand-written KDL, split by concern across `niri/` —
 `default.nix` assembles `settings.nix` + `binds.nix` into `config.kdl`, plus
-`clipboard.nix`), a Quickshell status bar
+`clipboard.nix` and the packaged helper scripts: shell-switch, run-or-raise,
+clipboard-picker, the filtered cliphist store), a Quickshell status bar
 (hand-written QML, `quickshell/`), Wofi (app launcher, `wofi.nix`), Kitty
-(terminal), cursor theme, and helper scripts (wallpaper daemon, clipboard
-picker). All styled with Gruvbox dark.
+(terminal), swaylock (screen lock — Mod+Escape / control-center button / idle
+timeout / before-sleep; needs `security.pam.services.swaylock = { };` on the
+NixOS side, see `default.nix`), cursor theme, and the swaybg wallpaper +
+swayidle autostarts. All styled with Gruvbox dark.
 
 The **Quickshell bar** (`home/desktop/quickshell/`) is a from-scratch QML config
 deployed verbatim via `xdg.configFile."quickshell"` (recursive) and autostarted
