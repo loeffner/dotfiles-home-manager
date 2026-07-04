@@ -1,16 +1,8 @@
-{ lib, ... }:
+{ ... }:
 {
-  home.username = lib.mkDefault "loeffner";
-  home.homeDirectory = lib.mkDefault "/home/loeffner";
-  home.stateVersion = lib.mkDefault "25.11";
-
-  programs.git.settings.user = {
-    name = "Andreas Lösel";
-    email = "andreas.loesel@outlook.com";
-  };
-
-  programs.claude-code.enable = true;
-
-  # Personal SSH client config (terra + ocean only).
-  imports = [ ../ssh.nix ];
+  # ../ssh.nix is the personal SSH client config (terra + ocean only).
+  imports = [
+    ../personal.nix
+    ../ssh.nix
+  ];
 }

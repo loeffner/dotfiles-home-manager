@@ -1,4 +1,9 @@
-{ lib, pkgs, zennotes, ... }:
+{
+  lib,
+  pkgs,
+  zennotes,
+  ...
+}:
 let
   # The upstream zennotes flake ships an Electron binary that isn't wrapped with
   # libglvnd, so on NixOS it can't dlopen the GLVND loader libEGL.so.1: the GPU
@@ -63,10 +68,6 @@ let
     });
 in
 {
-  home.username = lib.mkDefault "loeffner";
-  home.homeDirectory = lib.mkDefault "/home/loeffner";
-  home.stateVersion = lib.mkDefault "25.11";
-
   home.packages = [
     pkgs.signal-desktop
     # Zen Notes desktop app — trialing it on terra (GL-wrapped, see above).
@@ -76,20 +77,15 @@ in
     # reject flow.
   ];
 
-  programs.git.settings.user = {
-    name = "Andreas Lösel";
-    email = "andreas.loesel@outlook.com";
-  };
-
-  programs.claude-code.enable = true;
   programs.discord = {
     enable = true;
     package = discord-blurfix;
   };
 
-  # terra is a desktop: pull in the minimal portable Hyprland environment.
+  # terra is a desktop: pull in the niri desktop environment.
   # ../ssh.nix is the personal SSH client config (terra + ocean only).
   imports = [
+    ../personal.nix
     ../desktop
     ../ssh.nix
   ];
