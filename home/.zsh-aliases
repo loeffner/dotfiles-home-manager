@@ -37,21 +37,10 @@ alias rawzsh="ZELLIJ=0 zsh"
 export CONFIG_HOME="$HOME/.config"
 alias zshrc="source $HOME/.zshrc"
 
-alias brc="code $HOME/.zshrc"
-alias bls="code $HOME/.zsh-aliases"
-alias bdx="code $HOME/.bash_display"
-alias gconf="code $HOME/.gitconfig"
-
-cf() {
-  local pattern=$1
-  code $(find . -type f -iname "$pattern")
-}
-
 ###############################################################################
 # Editors
 # ###############################################################################
 
-alias code="code-insiders"
 alias v="vim ."
 
 ###############################################################################
