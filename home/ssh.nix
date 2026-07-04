@@ -5,7 +5,9 @@
 # `enableDefaultConfig = false` opts out of home-manager's implicit `Host *`
 # defaults (now deprecated); the OpenSSH built-in defaults they mirrored apply
 # instead. We re-add only the one we care about: AddKeysToAgent, so a key is
-# handed to the running ssh-agent the first time it's used.
+# handed to the running ssh-agent the first time it's used. The time interval
+# (instead of plain "yes") caps how long the agent holds a key — without it,
+# keys stay usable until logout.
 { ... }:
 {
   programs.ssh = {
@@ -14,7 +16,7 @@
 
     settings = {
       "*" = {
-        AddKeysToAgent = "yes";
+        AddKeysToAgent = "12h";
       };
 
       terra = {
