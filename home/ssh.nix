@@ -30,6 +30,13 @@
         User = "loeffner";
         IdentityFile = "~/.ssh/id_ed25519";
       };
+
+      ploetze = {
+        HostName = "ploetze";
+        IdentityFile = "~/.ssh/ploetze";
+        Port = 2222;
+        User = "root";
+      };
     };
   };
 }
