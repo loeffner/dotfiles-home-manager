@@ -1,4 +1,4 @@
-{ config, pkgs, ... }:
+{ config, pkgs, dms, ... }:
 # Desktop environment: Niri#
 
 # All hardware machinery (GPU drivers, PRIME offload, autologin, AQ_DRM_DEVICES,
@@ -7,7 +7,17 @@
   imports = [
     ./niri
     ./wofi.nix
+    ./camera-import.nix
+    ./geeqie.nix
+    # DankMaterialShell, kept installed alongside the custom shell in
+    # ./quickshell for feature-by-feature comparison. It runs its QML from the
+    # Nix store (`dms run` wraps `qs -c <store>`), so it doesn't collide with the
+    # custom config at ~/.config/quickshell. Autostart stays off — shell-switch
+    # (niri) drives which one runs and remembers the choice.
+    dms.homeModules.dank-material-shell
   ];
+
+  programs.dank-material-shell.enable = true; # `dms run`
 
   # Cursor theme — sets XCURSOR_THEME/XCURSOR_SIZE/HYPRCURSOR_* and wires up GTK.
   home.pointerCursor = {
@@ -26,7 +36,14 @@
     ];
     config.niri = {
       default = [ "gnome" "gtk" ];
+      # File dialogs via the GTK portal so we don't need nautilus (the gnome
+      # portal's FileChooser shells out to nautilus on v47+).
       "org.freedesktop.impl.portal.FileChooser" = [ "gtk" ];
+      # This whole file *replaces* the niri module's /etc/xdg niri-portals.conf
+      # (first-found-wins, no merging), so the Secret backend must be named
+      # here explicitly — only gnome-keyring implements it, and dropping it
+      # leaves the Secret portal with no backend.
+      "org.freedesktop.impl.portal.Secret" = [ "gnome-keyring" ];
     };
   };
 
@@ -86,6 +103,10 @@
     libnotify # notify-send — emit notifications (testing the bar's notif server)
     playerctl # MPRIS control for the media function-key binds (niri.nix)
     quickshell # QtQuick desktop-shell toolkit; runs the bar in ./quickshell
+    material-symbols # Material Symbols Rounded — icon font for the DMS-grade cluster
+    libcanberra-gtk3 # canberra-gtk-play — notification sound effects (Sound.qml)
+    sound-theme-freedesktop # the freedesktop sound theme canberra plays from
+    dgop # system-metrics helper (same as DMS); backs SystemStats / the Processes panel
   ];
 
   # Quickshell bar config (hand-written QML, see ./quickshell). Static QML, so

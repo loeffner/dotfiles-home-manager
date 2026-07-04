@@ -71,6 +71,9 @@ in
     pkgs.signal-desktop
     # Zen Notes desktop app — trialing it on terra (GL-wrapped, see above).
     zennotes-desktop
+    pkgs.darktable
+    # geeqie (the culler) lives in ../desktop/geeqie.nix alongside its one-key
+    # reject flow.
   ];
 
   programs.git.settings.user = {
