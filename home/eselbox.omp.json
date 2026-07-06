@@ -76,6 +76,13 @@
       "alignment": "right",
       "segments": [
         {
+          "foreground": "#98971A",
+          "style": "plain",
+          "template": "{{ if .Env.DISPLAY }} \uf108 {{ .Env.DISPLAY }} {{ end }}",
+          "type": "text",
+          "min_width": 4
+        },
+        {
           "foreground": "#cc241d",
           "style": "plain",
           "template": "{{ if .Env.HALCONROOT }} \udb80\udfd2 {{ .Env.HALCONROOT | trimSuffix \"/\" | splitList \"/\" | last }} {{ end }}",
