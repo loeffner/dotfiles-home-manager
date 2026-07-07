@@ -224,20 +224,60 @@ file instead.
 
 Other related bindings (see [lua/plugins/git.lua](lua/plugins/git.lua)):
 
-| binding         | action                                       |
-| --------------- | -------------------------------------------- |
-| `<leader>gd`    | Diffview SCM panel (working tree vs index)   |
-| `<leader>gx`    | close Diffview                               |
-| `<leader>gh`    | file history of the current buffer           |
-| `<leader>gw`    | toggle ignoring whitespace changes in diffs  |
-| `]x` / `[x`     | next / previous conflict (git-conflict)      |
-| `<leader>co/ct` | conflict: choose ours / theirs               |
-| `<leader>cb/c0` | conflict: choose both / none                 |
-| `<leader>ghV`   | diff current buffer against an arbitrary ref |
-| `<leader>gD`    | change Gitsigns inline base ref              |
-| `]h` / `[h`     | next / previous hunk in current buffer       |
-| `<leader>ghs/r` | stage / reset hunk                           |
-| `<leader>ghp`   | preview hunk                                 |
+| binding          | action                                       |
+| ---------------- | -------------------------------------------- |
+| `<leader>gd`     | Diffview SCM panel (working tree vs index)   |
+| `<leader>gx`     | close Diffview                               |
+| `<leader>gf`     | file history of the current buffer           |
+| `<leader>gr`     | diff current buffer against an arbitrary ref |
+| `<leader>gS`     | diff whole tree against a branch (prompt)    |
+| `<leader>gE`     | neo-tree `git_status` sidebar                |
+| `<leader>gw`     | toggle ignoring whitespace changes in diffs  |
+| `<leader>gB`     | set Gitsigns inline base ref                 |
+| `]h` / `[h`      | next / previous hunk in current buffer       |
+| `<leader>ghs`    | stage / unstage hunk (toggle; also visual)   |
+| `<leader>ghr`    | reset (discard) hunk (also visual)           |
+| `<leader>ghp`    | preview hunk                                 |
+| `<leader>ghb`    | blame line                                   |
+| `<leader>ghB`    | toggle inline blame                          |
+| `<leader>ghd`    | toggle full inline diff                      |
+| `]x` / `[x`      | next / previous conflict (git-conflict)      |
+| `<leader>gco/gct`| conflict: choose ours / theirs               |
+| `<leader>gcb/gcn`| conflict: choose both / none                 |
+
+The `<leader>gh*` hunk keys are identical inside Diffview windows (they act on
+the working-tree pane via Gitsigns), so staging works the same everywhere.
+
+## Debugging (nvim-dap)
+
+The backend is GDB itself (`gdb --interpreter=dap`), reused by every native
+(C/C++/Rust) configuration. Keys live under `<leader>d` (see
+[lua/plugins/dap.lua](lua/plugins/dap.lua)); F5–F9 do the usual step/continue.
+Three built-in configs are always available (launch, launch-with-args, attach).
+
+**Per-project launch configs.** On `<leader>dc` / F5, nvim-dap reads a project
+`launch.json`. This config prefers **`.nvim/launch.json`** over
+`.vscode/launch.json`, so a repo whose VS Code config uses an incompatible
+adapter type (`cppdbg`, `lldb`, …) can ship an nvim-native one without touching
+its `.vscode/` setup:
+
+```jsonc
+// .nvim/launch.json
+{
+  "version": "0.2.0",
+  "configurations": [
+    { "name": "Debug app", "type": "gdb", "request": "launch",
+      "program": "${workspaceFolder}/build/app", "cwd": "${workspaceFolder}" }
+  ]
+}
+```
+
+If `.nvim/launch.json` is absent it falls back to `.vscode/launch.json`. As a
+convenience the VS Code C/C++ adapter types (`cppdbg`/`lldb`/`codelldb`) are
+aliased onto the `gdb` adapter, so an existing `.vscode/launch.json` is often
+launchable directly — only the shared `program`/`args`/`cwd` fields carry over;
+adapter-specific keys (`MIMode`, `miDebuggerPath`, `setupCommands`, …) are
+ignored. Edits to either file take effect on the next run; no reload needed.
 
 ## Activation
 
