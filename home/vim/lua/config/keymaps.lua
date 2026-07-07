@@ -66,9 +66,13 @@ map("n", "<leader>yf", function()
 end, { desc = "Yank file path" })
 
 -- Toggles
-map("n", "<leader>tw", function()
+map("n", "<leader>tl", function()
   vim.wo.wrap = not vim.wo.wrap
 end, { desc = "Toggle line wrap" })
+vim.opt.listchars = { tab = "» ", space = "•", nbsp = "␣" }
+map("n", "<leader>tw", function()
+  vim.wo.list = not vim.wo.list
+end, { desc = "Toggle whitespace" })
 
 -- Toggle scroll/cursor bind across windows
 map("n", "<leader>wb", function()

@@ -27,6 +27,9 @@ require("which-key").add({
   { "<leader>d", group = "debug" },
   { "<leader>f", group = "find" },
   { "<leader>g", group = "git" },
+  { "<leader>n", group = "notify" },
   { "<leader>r", group = "replace" },
+  { "<leader>t", group = "toggle" },
   { "<leader>w", group = "window" },
+  { "<leader>y", group = "yank" },
 })

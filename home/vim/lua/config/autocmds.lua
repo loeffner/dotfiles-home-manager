@@ -84,5 +84,30 @@ vim.api.nvim_create_autocmd({ "ColorScheme", "VimEnter" }, {
 
 set_diff_highlights()
 
+-- Highlight trailing whitespace. The highlight group is (re)defined on every
+-- ColorScheme so it survives theme changes, and a per-window `matchadd`
+-- applies the `\s\+$` pattern. Skip special buffers (no filetype / non-normal
+-- buftype) so prompts, terminals and the like stay clean.
+local trailing_group = augroup("trailing_whitespace")
+
+vim.api.nvim_create_autocmd({ "ColorScheme", "VimEnter" }, {
+  group = trailing_group,
+  callback = function()
+    vim.api.nvim_set_hl(0, "TrailingWhitespace", { bg = "#cc241d" }) -- gruvbox red
+  end,
+})
+vim.api.nvim_set_hl(0, "TrailingWhitespace", { bg = "#cc241d" })
+
+vim.api.nvim_create_autocmd({ "BufWinEnter", "WinNew" }, {
+  group = trailing_group,
+  callback = function()
+    if vim.bo.buftype ~= "" then return end
+    for _, m in ipairs(vim.fn.getmatches()) do
+      if m.group == "TrailingWhitespace" then return end
+    end
+    vim.fn.matchadd("TrailingWhitespace", [[\s\+$]])
+  end,
+})
+
 -- Colored frame around the focused split. Helps spot which pane has the
 -- cursor when several windows are open. See plugins/ui.lua for the setup.

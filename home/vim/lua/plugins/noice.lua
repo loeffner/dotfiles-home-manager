@@ -69,6 +69,6 @@ require("noice").setup({
 })
 
 local map = vim.keymap.set
-map("n", "<leader>sn", function() require("noice").cmd("history") end, { desc = "Noice: message history" })
-map("n", "<leader>sl", function() require("noice").cmd("last")    end, { desc = "Noice: last message" })
-map("n", "<leader>sd", function() require("noice").cmd("dismiss") end, { desc = "Noice: dismiss" })
+map("n", "<leader>nh", function() require("noice").cmd("history") end, { desc = "Message history" })
+map("n", "<leader>nl", function() require("noice").cmd("last")    end, { desc = "Last message" })
+map("n", "<leader>nd", function() require("noice").cmd("dismiss") end, { desc = "Dismiss notifications" })

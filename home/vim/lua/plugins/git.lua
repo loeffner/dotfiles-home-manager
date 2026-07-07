@@ -16,25 +16,30 @@ require("gitsigns").setup({
       vim.keymap.set(mode, l, r, { buffer = buf, desc = desc })
     end
 
+    -- Label the hunk sub-group only in buffers where these maps exist.
+    require("which-key").add({ "<leader>gh", group = "hunk", buffer = buf })
+
     map("n", "]h", function() gs.nav_hunk("next") end, "Next hunk")
     map("n", "[h", function() gs.nav_hunk("prev") end, "Previous hunk")
-    map("n", "<leader>ghs", gs.stage_hunk,        "Stage hunk")
-    map("n", "<leader>ghr", gs.reset_hunk,        "Reset hunk")
+    map("n", "<leader>ghs", gs.stage_hunk,        "Stage/unstage hunk (toggle)")
+    map("v", "<leader>ghs", function() gs.stage_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, "Stage/unstage selection")
+    map("n", "<leader>ghr", gs.reset_hunk,        "Reset hunk (discard)")
+    map("v", "<leader>ghr", function() gs.reset_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, "Reset selection (discard)")
     map("n", "<leader>ghp", gs.preview_hunk,      "Preview hunk")
     map("n", "<leader>ghb", function() gs.blame_line({ full = true }) end, "Blame line")
     map("n", "<leader>ghB", gs.toggle_current_line_blame, "Toggle inline blame")
 
-    map("n", "<leader>ghv", function()
+    map("n", "<leader>ghd", function()
       gs.toggle_linehl()
       gs.toggle_deleted()
       gs.toggle_word_diff()
-    end, "Toggle full inline diff view")
+    end, "Toggle full inline diff")
 
-    map("n", "<leader>gD", function()
+    map("n", "<leader>gB", function()
       vim.ui.input({ prompt = "Gitsigns base ref: ", default = "main" }, function(ref)
         if ref and ref ~= "" then gs.change_base(ref, true) end
       end)
-    end, "Change base ref")
+    end, "Set gitsigns base ref")
   end,
 })
 
@@ -42,8 +47,8 @@ require("gitsigns").setup({
 -- `<leader>gd` opens the working tree vs the index, giving VS Code-style
 -- "Changes" (unstaged) and "Staged changes" sections in the file panel.
 -- In the file panel: `s`/`-` toggle stage on a file, `S` stage all,
--- `U` unstage all, `X` discard. Hunk-level staging via `<leader>hs` in a
--- diff window, or by editing the index buffer directly.
+-- `U` unstage all, `X` discard. Hunk-level staging via `<leader>ghs` in a
+-- diff window (same keys as everywhere else), or by editing the index buffer.
 local function gs() return require("gitsigns") end
 
 require("diffview").setup({
@@ -78,21 +83,22 @@ require("diffview").setup({
     end,
   },
   keymaps = {
-    -- Hunk staging inside the diff windows themselves (the right pane is
-    -- the actual working-tree buffer, so gitsigns is already attached).
-    -- These shadow Diffview's defaults for those keys, but only inside
-    -- Diffview windows — normal buffers are unaffected.
+    -- Hunk staging inside the diff windows themselves. The right pane is the
+    -- working-tree buffer (gitsigns attached), so `<leader>gh*` already work
+    -- there via gitsigns' on_attach. Mirror the same keys onto the whole
+    -- Diffview so staging works from either pane, using the identical
+    -- `<leader>gh*` scheme as normal buffers — no separate `<leader>h*` set.
     view = {
-      { "n", "<leader>hs", function() gs().stage_hunk()                      end, { desc = "Stage hunk"   } },
-      { "n", "<leader>hu", function() gs().stage_hunk()                      end, { desc = "Unstage hunk (toggle)" } },
-      { "n", "<leader>hr", function() gs().reset_hunk()                      end, { desc = "Restore hunk (discard)" } },
-      { "v", "<leader>hs", function() gs().stage_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, { desc = "Stage selection" } },
-      { "v", "<leader>hr", function() gs().reset_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, { desc = "Restore selection" } },
+      { "n", "<leader>ghs", function() gs().stage_hunk()                      end, { desc = "Stage/unstage hunk (toggle)" } },
+      { "n", "<leader>ghr", function() gs().reset_hunk()                      end, { desc = "Reset hunk (discard)" } },
+      { "n", "<leader>ghp", function() gs().preview_hunk()                    end, { desc = "Preview hunk" } },
+      { "v", "<leader>ghs", function() gs().stage_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, { desc = "Stage/unstage selection" } },
+      { "v", "<leader>ghr", function() gs().reset_hunk({ vim.fn.line("."), vim.fn.line("v") }) end, { desc = "Reset selection (discard)" } },
     },
   },
 })
 
-vim.keymap.set("n", "<leader>ghV", function()
+vim.keymap.set("n", "<leader>gr", function()
   local current_file = vim.api.nvim_buf_get_name(0)
   if current_file == "" then
     vim.notify("Current buffer has no file name", vim.log.levels.WARN)
@@ -117,11 +123,11 @@ vim.keymap.set("n", "<leader>ghV", function()
     vim.cmd("update")
     vim.cmd("DiffviewOpen " .. vim.fn.fnameescape(ref) .. " -- " .. vim.fn.fnameescape(rel))
   end)
-end, { desc = "Diff split: buffer vs ref" })
+end, { desc = "Diff: buffer vs ref (prompt)" })
 
 vim.keymap.set("n", "<leader>gd", "<cmd>DiffviewOpen<cr>", { desc = "Source control (working tree vs index)" })
 vim.keymap.set("n", "<leader>gx", "<cmd>DiffviewClose<cr>",      { desc = "Diffview: close" })
-vim.keymap.set("n", "<leader>gh", "<cmd>DiffviewFileHistory %<cr>", { desc = "File history" })
+vim.keymap.set("n", "<leader>gf", "<cmd>DiffviewFileHistory %<cr>", { desc = "File history (current file)" })
 
 -- Toggle ignoring *all* whitespace in diffs (on top of the always-on
 -- `iwhiteeol`). Handy for reverts/merges where reindentation would otherwise
@@ -139,16 +145,46 @@ end, { desc = "Toggle ignore whitespace in diffs" })
 
 -- git-conflict: highlight ONLY the conflict regions (ours/theirs/ancestor) in
 -- the plain buffer and leave the rest untouched — the VS Code "merge editor"
--- feel, without a full diff view. Buffer-local mappings appear only in files
--- that actually contain conflict markers:
+-- feel, without a full diff view.
+--
+-- The plugin's `default_mappings` bind the *unprefixed* `co`/`ct`/`cb`/`c0`,
+-- which shadow the `c` (change) operator and make every `c…` motion hang.
+-- So disable them and define our own buffer-local maps under a labelled
+-- `<leader>gc` (conflict) sub-group that only exists in files with real
+-- conflicts:
 --   ]x / [x        next / previous conflict
---   <leader>co     choose ours (HEAD / current)
---   <leader>ct     choose theirs (incoming)
---   <leader>cb     choose both
---   <leader>c0     choose none
+--   <leader>gco    choose ours (HEAD / current)
+--   <leader>gct    choose theirs (incoming)
+--   <leader>gcb    choose both
+--   <leader>gcn    choose none
 require("git-conflict").setup({
-  default_mappings = true,
+  default_mappings = false,
   default_commands = true,
   -- No `highlights` override: the plugin's defaults already tint ours green
   -- and theirs blue (the VS Code merge-editor look).
+})
+
+vim.api.nvim_create_autocmd("User", {
+  pattern = "GitConflictDetected",
+  callback = function(ev)
+    require("which-key").add({ "<leader>gc", group = "conflict", buffer = ev.buf })
+    local function map(lhs, rhs, desc)
+      vim.keymap.set("n", lhs, rhs, { buffer = ev.buf, desc = desc })
+    end
+    map("]x", "<cmd>GitConflictNextConflict<cr>", "Next conflict")
+    map("[x", "<cmd>GitConflictPrevConflict<cr>", "Previous conflict")
+    map("<leader>gco", "<cmd>GitConflictChooseOurs<cr>",   "Choose ours (current)")
+    map("<leader>gct", "<cmd>GitConflictChooseTheirs<cr>", "Choose theirs (incoming)")
+    map("<leader>gcb", "<cmd>GitConflictChooseBoth<cr>",   "Choose both")
+    map("<leader>gcn", "<cmd>GitConflictChooseNone<cr>",   "Choose none")
+  end,
+})
+
+vim.api.nvim_create_autocmd("User", {
+  pattern = "GitConflictResolved",
+  callback = function(ev)
+    for _, lhs in ipairs({ "]x", "[x", "<leader>gco", "<leader>gct", "<leader>gcb", "<leader>gcn" }) do
+      pcall(vim.keymap.del, "n", lhs, { buffer = ev.buf })
+    end
+  end,
 })
