@@ -178,6 +178,13 @@
     '';
   };
 
+  programs.delta = {
+      enable = true;
+      enableGitIntegration = true;
+      options.syntax-theme = "gruvbox-dark";
+      options.line-numbers = true;
+    };
+
   services.ssh-agent.enable = true;
 
   services.gpg-agent = {
