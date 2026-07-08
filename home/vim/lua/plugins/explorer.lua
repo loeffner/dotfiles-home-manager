@@ -1,5 +1,6 @@
 -- neo-tree.nvim: sidebar file explorer.
--- Toggle with <leader>e (reveal current file) or <leader>E (cwd root).
+-- <leader>e toggles it (rooted at cwd); <leader>o jumps to/from the tree
+-- without hiding it.
 
 -- Disable netrw so neo-tree owns directory buffers.
 vim.g.loaded_netrw = 1
@@ -80,20 +81,28 @@ require("neo-tree").setup({
 
 local map = vim.keymap.set
 
+-- Toggle the tree open/closed, always rooted at the current working dir.
 map("n", "<leader>e", function()
-  require("neo-tree.command").execute({
-    toggle = true,
-    dir    = vim.fn.expand("%:p:h"),
-    reveal = true,
-  })
-end, { desc = "Explorer (file dir)" })
-
-map("n", "<leader>E", function()
   require("neo-tree.command").execute({
     toggle = true,
     dir    = vim.uv.cwd(),
   })
-end, { desc = "Explorer (cwd)" })
+end, { desc = "Explorer: toggle (cwd)" })
+
+-- Jump between the tree and the editor without ever hiding the tree.
+-- In the tree → go back to the previous window; anywhere else → focus the
+-- tree (opening it at cwd if it isn't visible yet).
+map("n", "<leader>o", function()
+  if vim.bo.filetype == "neo-tree" then
+    vim.cmd.wincmd("p")
+  else
+    require("neo-tree.command").execute({
+      action = "focus",
+      dir    = vim.uv.cwd(),
+      reveal = true,
+    })
+  end
+end, { desc = "Explorer: jump to/from tree" })
 
 map("n", "<leader>fe", function()
   require("neo-tree.command").execute({ source = "filesystem", toggle = true })

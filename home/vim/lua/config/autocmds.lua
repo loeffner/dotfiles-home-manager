@@ -98,14 +98,23 @@ vim.api.nvim_create_autocmd({ "ColorScheme", "VimEnter" }, {
 })
 vim.api.nvim_set_hl(0, "TrailingWhitespace", { bg = "#cc241d" })
 
-vim.api.nvim_create_autocmd({ "BufWinEnter", "WinNew" }, {
+vim.api.nvim_create_autocmd("BufWinEnter", {
   group = trailing_group,
   callback = function()
-    if vim.bo.buftype ~= "" then return end
-    for _, m in ipairs(vim.fn.getmatches()) do
-      if m.group == "TrailingWhitespace" then return end
+    local matches = vim.fn.getmatches()
+    local has = false
+    for _, m in ipairs(matches) do
+      if m.group == "TrailingWhitespace" then has = true break end
     end
-    vim.fn.matchadd("TrailingWhitespace", [[\s\+$]])
+    if vim.bo.buftype ~= "" then
+      -- Special buffer (neo-tree, terminals, prompts): make sure this window
+      -- carries no trailing-whitespace match, even if it once held a file.
+      for _, m in ipairs(matches) do
+        if m.group == "TrailingWhitespace" then vim.fn.matchdelete(m.id) end
+      end
+    elseif not has then
+      vim.fn.matchadd("TrailingWhitespace", [[\s\+$]])
+    end
   end,
 })
 
