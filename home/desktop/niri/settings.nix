@@ -50,6 +50,12 @@
 
   prefer-no-csd
 
+  // Don't show the "Important Hotkeys" panel at session start — the session
+  // boots into the lock screen and the panel is on Mod+Shift+/ anyway.
+  hotkey-overlay {
+      skip-at-startup
+  }
+
   screenshot-path "~/Pictures/Screenshots/%Y-%m-%d-%H-%M-%S.png"
 
   animations {}
@@ -92,6 +98,13 @@
   }
 
   // ── Autostart ─────────────────────────────────────────────────────────
+
+  // Boot into the lock screen. greetd autologs straight into niri-session
+  // (hosts/terra in ~/beehive), so lock the session immediately — the rest of
+  // the desktop (bar, wallpaper, daemons) starts up behind the blurred lock.
+  // Also fires after a logout → tuigreet login (a second auth), which is rare
+  // enough here not to special-case.
+  spawn-at-startup "${swaylockThemed}/bin/swaylock-themed"
 
   // XWayland for X11-only apps (Steam) and X11-by-default Electron (Discord).
   // Pinned to :0 to match the DISPLAY exported above. Absolute path so it

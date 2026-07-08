@@ -156,14 +156,14 @@
       daemonize = true;
       ignore-empty-password = true;
       show-failed-attempts = true;
-      auto-submit-delay = 400;
+      auto-submit-delay = 50;
 
       # Blurred screenshot of the session as the backdrop; flat color is only
       # the fallback if the screenshot fails. No vignette — its radial
       # gradient bands visibly (discrete brightness steps) on this monitor.
       screenshots = true;
       effect-blur = "20x6";
-      fade-in = 0.15;
+      fade-in = 2;
       color = "1d2021";
       # The xkb layout indicator ("English (US)" in a box while typing) is
       # ugly; the bar already shows a DE badge when the alternate is active.
