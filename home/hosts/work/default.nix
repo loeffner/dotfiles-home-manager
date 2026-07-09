@@ -15,7 +15,7 @@
     github-copilot-cli
   ];
 
-  custom.copilot.enable = true;
+  custom.copilot.enable = false;
 
   programs.git = {
     settings.user.name = "Andreas Lösel";
