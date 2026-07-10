@@ -114,6 +114,6 @@ end, { desc = "Explorer: git status" })
 -- Diff against a specific ref (prompt).
 map("n", "<leader>gS", function()
   vim.ui.input({ prompt = "Diff against ref: ", default = "master" }, function(ref)
-    if ref and ref ~= "" then vim.cmd("DiffviewOpen " .. vim.fn.fnameescape(ref)) end
+    if ref and ref ~= "" then vim.cmd("DiffviewOpen " .. vim.fn.fnameescape(ref .. "...HEAD")) end
   end)
 end, { desc = "Diff vs branch (prompt)" })
