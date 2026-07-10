@@ -5,7 +5,7 @@
       "segments": [
         {
           "foreground": "#d65d0e",
-          "background": "transparent",
+          "background": "#282828",
           "leading_diamond": "\ue0b6",
           "trailing_diamond": "\ue0b4",
           "style": "diamond",
@@ -15,7 +15,7 @@
         },
         {
           "foreground": "#458588",
-          "background": "transparent",
+          "background": "#282828",
           "leading_diamond": "\ue0b6",
           "trailing_diamond": "\ue0b4",
           "style": "diamond",
@@ -28,7 +28,7 @@
         },
         {
           "foreground": "#458588",
-          "background": "transparent",
+          "background": "#282828",
           "leading_diamond": "\ue0b6",
           "trailing_diamond": "\ue0b4",
           "style": "diamond",
@@ -47,7 +47,7 @@
             "{{ if gt .Ahead 0 }}#B388FF{{ end }}",
             "{{ if gt .Behind 0 }}#B388FF{{ end }}"
           ],
-          "background": "transparent",
+          "background": "#282828",
           "leading_diamond": "\ue0b6",
           "trailing_diamond": "\ue0b4",
           "style": "diamond",
@@ -62,7 +62,7 @@
         },
         {
           "foreground": "#fabd2f",
-          "background": "transparent",
+          "background": "#282828",
           "leading_diamond": "\ue0b6",
           "trailing_diamond": "\ue0b4",
           "style": "diamond",
