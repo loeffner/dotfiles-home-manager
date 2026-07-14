@@ -10,7 +10,6 @@
   home.packages = with pkgs; [
     nixfmt
     fd
-    bat
     ripgrep
     tealdeer
     zellij
@@ -112,6 +111,7 @@
   };
 
   programs.bat = {
+    enable = true;
     config = {
       theme = "gruvbox-dark";
     };
