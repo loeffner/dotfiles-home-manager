@@ -42,13 +42,17 @@ PanelWindow {
                 required property var modelData
                 readonly property bool critical: modelData.urgency === NotificationUrgency.Critical
                 // Visible action buttons (skip the implicit "default" action).
-                readonly property var btns: (modelData.actions || []).filter(a => a.identifier !== "default" && (a.text ?? "") !== "")
+                // modelData is a plain history entry; the live Notification is
+                // only reachable via its id, so a closed notification can never
+                // dangle in the model.
+                readonly property var btns: Notifications.actionsFor(modelData.id)
 
                 Layout.fillWidth: true
                 implicitHeight: card.implicitHeight
 
                 function invokeDefault() {
-                    for (const a of (modelData.actions || []))
+                    const n = Notifications.liveFor(modelData.id);
+                    for (const a of (n && n.actions) || [])
                         if (a.identifier === "default") { a.invoke(); return true; }
                     return false;
                 }
@@ -120,7 +124,7 @@ PanelWindow {
                         id: fling; target: card; property: "x"; duration: 140; easing.type: Easing.InQuart
                         // Defer: removing from the queue destroys this delegate, which
                         // must not happen inside its own animation callback.
-                        onFinished: { const n = toast.modelData; Qt.callLater(() => Notifications.removeToast(n)); }
+                        onFinished: { const id = toast.modelData.id; Qt.callLater(() => Notifications.removeToast(id)); }
                     }
                     NumberAnimation {
                         id: snapBack; target: card; property: "x"; to: 0; duration: 120; easing.type: Easing.OutQuart
@@ -183,7 +187,7 @@ PanelWindow {
                                         anchors.margins: -4
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
-                                        onClicked: { const n = toast.modelData; Qt.callLater(() => Notifications.removeToast(n)); }
+                                        onClicked: { const id = toast.modelData.id; Qt.callLater(() => Notifications.removeToast(id)); }
                                     }
                                 }
                             }
@@ -247,7 +251,7 @@ PanelWindow {
                         interval: secs > 0 ? secs * 1000 : 5000
                         running: secs >= 0
                         repeat: false
-                        onTriggered: { const n = toast.modelData; Qt.callLater(() => Notifications.removeToast(n)); }
+                        onTriggered: { const id = toast.modelData.id; Qt.callLater(() => Notifications.removeToast(id)); }
                     }
                 }
             }

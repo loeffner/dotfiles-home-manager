@@ -19,7 +19,7 @@ Singleton {
 
     property bool dnd: false
     readonly property var live: server.trackedNotifications
-    property var toastQueue: []           // Notification objects shown as toasts
+    property var toastQueue: []           // plain entries (same shape as history) shown as toasts
     property var history: []              // plain [{id,summary,body,appName,appIcon,image,urgency,time}]
     property var mutedApps: []
     // Fine-grained silencing: rules matching a notification's title/body substring
@@ -229,7 +229,7 @@ Singleton {
             } else {
                 n.tracked = true;  // retain alive for the center
                 root._liveById[id] = n;
-                root.toastQueue = [...root.toastQueue, n];
+                root.toastQueue = [...root.toastQueue, entry];
 
                 // Sound effect for a surfaced notification. Suppressed by DND/mute
                 // (above) and by the app's own `suppress-sound` hint (e.g. media
@@ -237,6 +237,28 @@ Singleton {
                 const sup = n.hints && n.hints["suppress-sound"];
                 if (!sup)
                     Sound.notify(n.urgency === NotificationUrgency.Critical);
+
+                // quickshell destroys the Notification synchronously right after
+                // `closed` fires (expiry / dismissal / client CloseNotification),
+                // so every live ref must be pruned here. The queue holds only the
+                // plain entry, so deferring its removal past destruction is safe.
+                n.closed.connect(() => {
+                    delete root._liveById[id];
+                    Qt.callLater(() => root.removeToast(id));
+                });
+
+                // In-place updates (replaces_id — e.g. Discord coalescing
+                // "3 new messages"): quickshell reuses the object, updates its
+                // properties and does NOT re-emit `notification`. callLater
+                // collapses the burst of change signals from one update into a
+                // single refresh.
+                const refresh = () => Qt.callLater(() => root._refresh(id));
+                n.summaryChanged.connect(refresh);
+                n.bodyChanged.connect(refresh);
+                n.imageChanged.connect(refresh);
+                n.urgencyChanged.connect(refresh);
+                n.actionsChanged.connect(refresh);
+                n.hintsChanged.connect(refresh);
             }
 
             // Prepend, cap at 50, fully dropping anything evicted.
@@ -248,19 +270,65 @@ Singleton {
         }
     }
 
-    function removeToast(n) { toastQueue = toastQueue.filter(x => x !== n); }
+    function removeToast(id) { toastQueue = toastQueue.filter(e => e.id !== id); }
+
+    // Re-sync after an in-place update (replaces_id): rebuild the snapshot, move
+    // it to the front of history, and resurface the toast with a fresh timer and
+    // sound — an update is effectively the newest notification.
+    function _refresh(id) {
+        const n = _liveById[id];
+        if (!n)
+            return; // closed before the deferred refresh ran
+        const entry = {
+            id: id,
+            summary: n.summary ?? "",
+            body: n.body ?? "",
+            appName: n.appName ?? "",
+            desktopEntry: n.desktopEntry ?? "",
+            appIcon: n.appIcon ?? "",
+            image: n.image ?? "",
+            urgency: n.urgency,
+            time: Date.now()
+        };
+
+        // Re-apply silence rules to the new content. Untracking destroys n
+        // without a `closed` signal, so clean up the live refs explicitly.
+        const sm = silenceMode(entry);
+        if (sm === "block") {
+            delete _liveById[id];
+            toastQueue = toastQueue.filter(e => e.id !== id);
+            history = history.filter(e => e.id !== id);
+            n.tracked = false;
+            _save();
+            return;
+        }
+
+        history = [entry, ...history.filter(e => e.id !== id)].slice(0, 50);
+        _save();
+
+        if (dnd || isMuted(entry.appName) || sm === "mute") {
+            toastQueue = toastQueue.filter(e => e.id !== id);
+            return;
+        }
+        // Replace in place if still visible, else resurface at the end. Either
+        // way the fresh entry object recreates the delegate, restarting its
+        // auto-dismiss timer and replaying the entry animation.
+        const visible = toastQueue.some(e => e.id === id);
+        toastQueue = visible ? toastQueue.map(e => e.id === id ? entry : e) : [...toastQueue, entry];
+        const sup = n.hints && n.hints["suppress-sound"];
+        if (!sup)
+            Sound.notify(n.urgency === NotificationUrgency.Critical);
+    }
 
     // Single dismissal path: dismiss the live notification (if any) and prune it
     // from every place it can linger (toastQueue + _liveById). Callers update
-    // `history` separately. Without this, paths other than removeToast/clearAll
-    // left stale Notification objects stuck in toastQueue.
+    // `history` separately.
     function _drop(id) {
         const n = _liveById[id];
-        if (n) {
-            n.dismiss();
-            toastQueue = toastQueue.filter(x => x !== n);
-            delete _liveById[id];
-        }
+        if (n)
+            n.dismiss(); // its closed handler also prunes _liveById
+        toastQueue = toastQueue.filter(e => e.id !== id);
+        delete _liveById[id];
     }
 
     // The live Notification for a history id, only if still alive (else null).
