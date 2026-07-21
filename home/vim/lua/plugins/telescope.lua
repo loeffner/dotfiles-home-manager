@@ -24,8 +24,27 @@ pcall(telescope.load_extension, "fzf")
 
 local builtin = require("telescope.builtin")
 local map = vim.keymap.set
-map("n", "<leader>ff", builtin.find_files,  { desc = "Find files" })
-map("n", "<leader>fg", builtin.live_grep,   { desc = "Live grep" })
+
+local last_grep_query = ""
+local function live_grep_with_memory()
+  builtin.live_grep({
+    default_text = last_grep_query,
+    attach_mappings = function(prompt_bufnr, _)
+      local action_state = require("telescope.actions.state")
+      vim.api.nvim_create_autocmd("BufLeave", {
+        buffer = prompt_bufnr,
+        once = true,
+        callback = function()
+          last_grep_query = action_state.get_current_line()
+        end,
+      })
+      return true
+    end,
+  })
+end
+
+map("n", "<leader>ff", builtin.find_files,      { desc = "Find files" })
+map("n", "<leader>fg", live_grep_with_memory,   { desc = "Live grep" })
 map("n", "<leader>fb", builtin.buffers,     { desc = "Buffers" })
 map("n", "<leader>fh", builtin.help_tags,   { desc = "Help tags" })
 map("n", "<leader>fr", builtin.oldfiles,    { desc = "Recent files" })
