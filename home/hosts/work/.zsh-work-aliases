@@ -30,6 +30,18 @@ hmake_print() {
   printf "${BLUE}%-20s${NC} : ${YELLOW}%s${NC}\n" "FLAGS" "$HMAKE_FLAGS"
 }
 
+hmake_arch() {
+  HMAKE_ARCH="${HMAKE_ARCH:+$HMAKE_ARCH }$*"
+}
+
+hmake_target() {
+  HMAKE_TARGET="${HMAKE_TARGET:+$HMAKE_TARGET }$*"
+}
+
+hmake_flags() {
+  HMAKE_FLAGS="${HMAKE_FLAGS:+$HMAKE_FLAGS }$*"
+}
+
 hmake_master() {
   export HMAKE_ARCH="x64-linux-clang21_1"
   export HMAKE_MODE="debug"
@@ -55,7 +67,8 @@ hmake_release() {
 }
 
 hmake_build() {
-  $HOME/halcon/current/tools/build/hmake.pl --arch "$HMAKE_ARCH" --"$HMAKE_MODE" --target "$HMAKE_TARGET" --archdir "$HMAKE_ARCHDIR" "$HMAKE_FLAGS" --thirdparty-libs /opt/home/buildbot/halcon/thirdparty --thirdparty-tools /opt/home/buildbot/halcon/thirdparty/tools
+  echo $HOME/halcon/current/tools/build/hmake.pl --arch "$HMAKE_ARCH" --"$HMAKE_MODE" --target "$HMAKE_TARGET" --archdir "$HMAKE_ARCHDIR" ${=HMAKE_FLAGS} --thirdparty-libs /opt/home/buildbot/halcon/thirdparty --thirdparty-tools /opt/home/buildbot/halcon/thirdparty/tools
+  $HOME/halcon/current/tools/build/hmake.pl --arch "$HMAKE_ARCH" --"$HMAKE_MODE" --target "$HMAKE_TARGET" --archdir "$HMAKE_ARCHDIR" ${=HMAKE_FLAGS} --thirdparty-libs /opt/home/buildbot/halcon/thirdparty --thirdparty-tools /opt/home/buildbot/halcon/thirdparty/tools
 }
 
 vscmaster() {
