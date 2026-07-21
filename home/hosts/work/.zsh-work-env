@@ -70,6 +70,42 @@ fi
 
 
 ###############################################################################
+# HALCON AI2 interfaces (prompt segment)
+###############################################################################
+#
+# Scan $HALCON_AI2_PATH for `libhAI2ib*.so` inference-backend libraries and
+# export a compact list of the available interfaces (e.g. "TRT OV ORT") in
+# $HALCON_AI2_INTERFACES, which the oh-my-posh prompt renders next to
+# HALCONROOT. Runs on every prompt so it tracks changes to HALCON_AI2_PATH.
+
+_halcon_ai2_interfaces() {
+  local dir="$HALCON_AI2_PATH"
+  local -a found
+  local f base iface
+  if [[ -n "$dir" && -d "$dir" ]]; then
+    for f in "$dir"/libhAI2ib*.so(N); do
+      base="${f:t}"
+      iface="${base#libhAI2ib}"
+      iface="${iface%.so}"
+      case "$iface" in
+        OpenVINO)    found+=("OV") ;;
+        TensorRT)    found+=("TRT") ;;
+        OnnxRuntime) found+=("ORT") ;;
+        *)           found+=("$iface") ;;
+      esac
+    done
+  fi
+  export HALCON_AI2_INTERFACES="${(j: │ :)found}"
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook precmd _halcon_ai2_interfaces
+# Run before oh-my-posh's precmd (registered earlier) so the segment reflects
+# the current value on the same prompt; otherwise oh-my-posh renders the
+# previous value and the display lags one prompt behind.
+precmd_functions=(_halcon_ai2_interfaces ${precmd_functions:#_halcon_ai2_interfaces})
+
+
+###############################################################################
 # Rename all `mvtec_bash_` commands
 ###############################################################################
 

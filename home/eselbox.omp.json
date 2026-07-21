@@ -90,6 +90,13 @@
           "min_width": 55
         },
         {
+          "foreground": "#689d6a",
+          "style": "plain",
+          "template": "{{ if .Env.HALCON_AI2_INTERFACES }} \uf2db {{ .Env.HALCON_AI2_INTERFACES }} {{ end }}",
+          "type": "text",
+          "min_width": 55
+        },
+        {
           "foreground": "#d79921",
           "style": "plain",
           "template": " \uf252 {{ .FormattedMs }} ",
