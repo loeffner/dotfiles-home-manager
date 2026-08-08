@@ -58,17 +58,19 @@
   gtk = {
     enable = true;
     theme = {
-      name = "Gruvbox-Dark";
-      package = pkgs.gruvbox-gtk-theme;
+      name = "gruvbox-dark";
+      package = pkgs.gruvbox-dark-gtk;
     };
     iconTheme = {
       name = "Papirus-Dark";
       package = pkgs.papirus-icon-theme;
     };
-    # Keep the pre-26.05 behavior of theming GTK4 apps with the GTK3 theme
-    # (gruvbox-gtk-theme ships gtk-4.0 assets). The default changed to `null`;
-    # set it explicitly to silence the deprecation warning.
-    gtk4.theme = config.gtk.theme;
+    # Opt out of GTK4 theming explicitly: gruvbox-dark-gtk ships no gtk-4.0
+    # assets, so pointing gtk4.theme at it would only emit a broken CSS @import.
+    # `null` is the 26.05 default, but our stateVersion is older so the legacy
+    # default (config.gtk.theme) applies unless set here. GTK4 apps fall back to
+    # Adwaita, tracking prefer-dark below.
+    gtk4.theme = null;
   };
 
   dconf.settings."org/gnome/desktop/interface".color-scheme = "prefer-dark";
