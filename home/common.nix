@@ -75,7 +75,7 @@
 
       ''
       (lib.mkAfter ''
-        if [[ -z "$ZELLIJ" ]]; then
+        if [[ -z "$ZELLIJ" && -z NO_ZELLIJ ]]; then
           # Autostart zellij. Use `zellij` (not `exec`) so that if it crashes
           # the shell — and therefore the terminal window — stays open. On a
           # clean exit, close the shell so the window closes along with it.
