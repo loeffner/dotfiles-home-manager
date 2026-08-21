@@ -37,6 +37,7 @@
         # Telescope deps
         ripgrep
         fd
+        sqlite
 
         # LSP servers
         lua-language-server
@@ -86,6 +87,8 @@
         plenary-nvim
         telescope-nvim
         telescope-fzf-native-nvim
+        telescope-frecency-nvim
+        sqlite-lua
 
         # Git
         gitsigns-nvim
@@ -125,6 +128,7 @@
       initLua = ''
         vim.g.copilot_enabled = ${if config.custom.copilot.enable then "true" else "false"}
         vim.g.copilot_node_command = "${pkgs.nodejs}/bin/node"
+        vim.g.sqlite_clib_path = "${pkgs.sqlite.out}/lib/libsqlite3.so"
         require("config.options")
         require("config.keymaps")
         require("config.autocmds")

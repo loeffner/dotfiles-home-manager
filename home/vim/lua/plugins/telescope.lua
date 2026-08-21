@@ -21,6 +21,7 @@ telescope.setup({
 })
 
 pcall(telescope.load_extension, "fzf")
+pcall(telescope.load_extension, "frecency")
 
 local builtin = require("telescope.builtin")
 local map = vim.keymap.set
@@ -43,7 +44,7 @@ local function live_grep_with_memory()
   })
 end
 
-map("n", "<leader>ff", builtin.find_files,      { desc = "Find files" })
+map("n", "<leader>ff", function() telescope.extensions.frecency.frecency({ workspace = "CWD" }) end, { desc = "Find files (frecency)" })
 map("n", "<leader>fg", live_grep_with_memory,   { desc = "Live grep" })
 map("n", "<leader>fb", builtin.buffers,     { desc = "Buffers" })
 map("n", "<leader>fh", builtin.help_tags,   { desc = "Help tags" })
