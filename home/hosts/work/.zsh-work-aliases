@@ -217,10 +217,10 @@ alias hodor_repeat="hodor --loop-last-test --no-dispatch -p $HOME/halcon/current
 alias hodor_mem="hodor -p $HOME/halcon/current/tests/templates/procedures/ -n 1 --num-aop-threads 4 --peak-memory"
 
 hlibu() {
-  hlib_unittests --gtest_filter=*$1*
+  hlib_unittests --gtest_filter="*$1*"
 }
 hdlu() {
-  hdl_unittests --gtest_filter=*$1*
+  hdl_unittests --gtest_filter="*$1*"
 }
 door() {
   hodor --autotests --problem-reports --filter=.*$1.*
