@@ -95,6 +95,7 @@
   programs.fzf = {
     enable = true;
     enableZshIntegration = true;
+    historyWidget.command = "";
   };
 
   programs.atuin = {
@@ -179,17 +180,17 @@
   };
 
   programs.delta = {
-      enable = true;
-      enableGitIntegration = true;
-      options.syntax-theme = "gruvbox-dark";
-      options.line-numbers = true;
-      # Delta 0.19 queries the terminal (OSC 11 / DA1) to auto-detect a
-      # dark/light background. Inside zellij those query responses leak to the
-      # prompt (`11;rgb:...`, `62;4;52c`). Declaring the background dark makes
-      # delta skip the query entirely.
-      options.dark = true;
-      options.detect-dark-light = "never";
-    };
+    enable = true;
+    enableGitIntegration = true;
+    options.syntax-theme = "gruvbox-dark";
+    options.line-numbers = true;
+    # Delta 0.19 queries the terminal (OSC 11 / DA1) to auto-detect a
+    # dark/light background. Inside zellij those query responses leak to the
+    # prompt (`11;rgb:...`, `62;4;52c`). Declaring the background dark makes
+    # delta skip the query entirely.
+    options.dark = true;
+    options.detect-dark-light = "never";
+  };
 
   services.ssh-agent.enable = true;
 
