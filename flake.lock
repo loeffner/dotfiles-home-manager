@@ -1,18 +1,35 @@
 {
   "nodes": {
+    "dank-qml-common": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788376015,
+        "narHash": "sha256-/tT8rTznLADndTwLBzdgzzgfJH1ZhYQibYo5v/F8U+U=",
+        "owner": "AvengeMedia",
+        "repo": "dank-qml-common",
+        "rev": "26396ce432d6c71c3f5367438f96f4a8d667e160",
+        "type": "github"
+      },
+      "original": {
+        "owner": "AvengeMedia",
+        "repo": "dank-qml-common",
+        "type": "github"
+      }
+    },
     "dms": {
       "inputs": {
+        "dank-qml-common": "dank-qml-common",
         "flake-compat": "flake-compat",
         "nixpkgs": [
           "nixpkgs"
         ]
       },
       "locked": {
-        "lastModified": 1782845289,
-        "narHash": "sha256-OlwDuysSJWRWQ4A75j8WtA9t76wWp1nNyMWDcEuCcEM=",
+        "lastModified": 1788532117,
+        "narHash": "sha256-61AE2ioGtV81WCar1ozMxgB9XqMQWIiU48yTl6q3KWQ=",
         "owner": "AvengeMedia",
         "repo": "DankMaterialShell",
-        "rev": "19406e99b9c3b8cc17bb22017138af509b3f6f8c",
+        "rev": "07d8e286682eacbd2a19f59663a11a9cb4b4f8a7",
         "type": "github"
       },
       "original": {
@@ -44,11 +61,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1782423922,
-        "narHash": "sha256-qPNd6lUohHP5gcJhqQ7rLV87RwIx0xYR2A4Frb9Zjc4=",
+        "lastModified": 1788487777,
+        "narHash": "sha256-Ro/e1N4ZR8/XaFF+sF9SgfPK79HM5YNEppzFj8p+0Ak=",
         "owner": "nix-community",
         "repo": "home-manager",
-        "rev": "5d320ab301cfaaca7d32514f13815d19d109f5f4",
+        "rev": "693e8ce0fb240a73c116a03cfd7b19269c87af88",
         "type": "github"
       },
       "original": {
@@ -59,11 +76,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1785967620,
-        "narHash": "sha256-IItrdb7Puk05RqOBWZYFC5X6Wl1sJmCfh5MWVHw5iMM=",
+        "lastModified": 1788316716,
+        "narHash": "sha256-bc7rSpXIdn9QWGNqfWcPZWOhEVF8NoeAZkWq0XWnf/k=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "b7c2ada94fe99c15b0dbcf4d11fd7850b957a436",
+        "rev": "3ed67ec0a4d3c7ab4ae1f04f8ee8df07bfa506a2",
         "type": "github"
       },
       "original": {
@@ -88,11 +105,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1782420622,
-        "narHash": "sha256-UwOJUn/VvSt4p9jGvZ2kmQvyAeEd9ubqTF8lSBeTS70=",
+        "lastModified": 1788376644,
+        "narHash": "sha256-JaKVSk2jmkSVVhqfG9gWzq8sGveR2/tuFgTbRk5PPkY=",
         "owner": "ZenNotes",
         "repo": "zennotes",
-        "rev": "3854237e9411c65aa0b48a4d70c5d617043a8b13",
+        "rev": "e2fb64c796efc3d46e74d4397c69427fe210f3b7",
         "type": "github"
       },
       "original": {
