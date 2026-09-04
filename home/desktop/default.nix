@@ -26,6 +26,7 @@
 
   # Cursor theme — sets XCURSOR_THEME/XCURSOR_SIZE/HYPRCURSOR_* and wires up GTK.
   home.pointerCursor = {
+    enable = true;
     gtk.enable = true;
     hyprcursor.enable = true;
     package = pkgs.bibata-cursors;
