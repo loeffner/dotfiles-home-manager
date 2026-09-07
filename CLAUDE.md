@@ -83,7 +83,7 @@ from `common.nix`. Work-only shell bits live in
 Imported by hosts that run the **niri** desktop (currently `terra`).
 Contains: niri config (hand-written KDL, split by concern across `niri/` —
 `default.nix` assembles `settings.nix` + `binds.nix` into `config.kdl`, plus
-`clipboard.nix` and the packaged helper scripts: shell-switch, run-or-raise,
+`clipboard.nix` and the packaged helper scripts: shell-restart, run-or-raise,
 clipboard-picker, the filtered cliphist store, swaylock-themed — the lock
 wrapper that injects the bar's current accent), a Quickshell status bar
 (hand-written QML, `quickshell/`), Wofi (app launcher, `wofi.nix`), Kitty

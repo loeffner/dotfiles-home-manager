@@ -5,7 +5,6 @@
   pkgs,
   config,
   superCheatWatchCmd,
-  shellSwitch,
   clipStore,
   swaylockThemed,
 }:
@@ -113,10 +112,9 @@
 
   spawn-at-startup "${pkgs.swaybg}/bin/swaybg" "-i" "${config.home.homeDirectory}/Pictures/earth.png" "-m" "fill"
 
-  // Quickshell desktop shell. `restore` relaunches the last-selected shell
-  // (custom / dms), defaulting to the custom config on first run.
-  // Switch at runtime with Mod+Shift+S (see binds.nix).
-  spawn-at-startup "${shellSwitch}/bin/shell-switch" "restore"
+  // Quickshell desktop shell (the hand-written config in ../quickshell).
+  // Restart it at runtime with Mod+Shift+R (see binds.nix).
+  spawn-at-startup "${pkgs.quickshell}/bin/qs"
 
   // Hold-Super cheatsheet watcher (evdev -> qs ipc). Wrapped in a restart loop
   // so a transient device hiccup (suspend/unplug) re-enumerates keyboards.

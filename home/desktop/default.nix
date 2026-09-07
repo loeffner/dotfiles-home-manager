@@ -1,7 +1,6 @@
 {
   config,
   pkgs,
-  dms,
   ...
 }:
 # Desktop environment: Niri#
@@ -14,15 +13,7 @@
     ./wofi.nix
     ./camera-import.nix
     ./geeqie.nix
-    # DankMaterialShell, kept installed alongside the custom shell in
-    # ./quickshell for feature-by-feature comparison. It runs its QML from the
-    # Nix store (`dms run` wraps `qs -c <store>`), so it doesn't collide with the
-    # custom config at ~/.config/quickshell. Autostart stays off — shell-switch
-    # (niri) drives which one runs and remembers the choice.
-    dms.homeModules.dank-material-shell
   ];
-
-  programs.dank-material-shell.enable = true; # `dms run`
 
   # Cursor theme — sets XCURSOR_THEME/XCURSOR_SIZE/HYPRCURSOR_* and wires up GTK.
   home.pointerCursor = {
@@ -108,10 +99,10 @@
     libnotify # notify-send — emit notifications (testing the bar's notif server)
     playerctl # MPRIS control for the media function-key binds (niri.nix)
     quickshell # QtQuick desktop-shell toolkit; runs the bar in ./quickshell
-    material-symbols # Material Symbols Rounded — icon font for the DMS-grade cluster
+    material-symbols # Material Symbols Rounded — icon font for the bar cluster
     libcanberra-gtk3 # canberra-gtk-play — notification sound effects (Sound.qml)
     sound-theme-freedesktop # the freedesktop sound theme canberra plays from
-    dgop # system-metrics helper (same as DMS); backs SystemStats / the Processes panel
+    dgop # system-metrics helper; backs SystemStats / the Processes panel
   ];
 
   # Quickshell bar config (hand-written QML, see ./quickshell). Static QML, so

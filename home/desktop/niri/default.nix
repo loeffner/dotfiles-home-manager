@@ -6,67 +6,23 @@
 {
   config,
   pkgs,
-  dms,
   ...
 }:
 let
-  inherit (pkgs) lib;
-  system = pkgs.stdenv.hostPlatform.system;
-
-  # Runtime switcher between the custom shell and DankMaterialShell. Remembers
-  # the choice in a state file so the niri autostart (`shell-switch restore`)
-  # brings back the last-used shell; `pick` shows a wofi menu (Mod+Shift+S),
-  # `use <name>` sets one directly. Stops whatever is running (only one shell at
-  # a time) and launches the chosen one detached. dms runs its own bundled
-  # quickshell from the store; `custom` is the hand-written config in
-  # ../quickshell launched with bare `qs`.
-  shellSwitch = pkgs.writeShellApplication {
-    name = "shell-switch";
+  # Restart the Quickshell bar in place (Mod+Shift+R). nixpkgs wraps the
+  # launcher, so the process (comm) name is .quickshell-wra — match by
+  # substring, NOT -x. Comm-only (no -f) so the cheatsheet watcher (a python3
+  # process whose args mention qs) is never hit.
+  shellRestart = pkgs.writeShellApplication {
+    name = "shell-restart";
     runtimeInputs = [
-      pkgs.wofi
       pkgs.procps
-      pkgs.util-linux
       pkgs.coreutils
     ];
     text = ''
-      state="''${XDG_STATE_HOME:-$HOME/.local/state}/current-shell"
-
-      launch() {
-        case "$1" in
-          custom) setsid -f ${pkgs.quickshell}/bin/qs                       >/dev/null 2>&1 ;;
-          dms)    setsid -f ${lib.getExe dms.packages.${system}.default} run >/dev/null 2>&1 ;;
-          *) echo "shell-switch: unknown shell '$1'" >&2; return 1 ;;
-        esac
-      }
-
-      stop_all() {
-        # nixpkgs wraps the launchers, so the process (comm) names are
-        # .quickshell-wra / .dms-wrapped — match by substring, NOT -x. Comm-only
-        # (no -f) so the cheatsheet watcher (a python3 process whose args mention
-        # qs) is never hit. `custom`'s qs execs quickshell, so it shares the
-        # .quickshell-wra name. Two passes: killing the dms supervisor first
-        # stops it respawning its quickshell child.
-        for _ in 1 2; do
-          pkill dms        || true
-          pkill quickshell || true
-          sleep 0.3
-        done
-      }
-
-      switch_to() {
-        mkdir -p "$(dirname "$state")"
-        printf '%s\n' "$1" > "$state"
-        stop_all
-        launch "$1"
-      }
-
-      case "''${1:-restore}" in
-        use)     switch_to "''${2:?usage: shell-switch use <custom|dms>}" ;;
-        pick)    choice=$(printf 'custom\ndms\n' | wofi --dmenu --prompt 'Shell')
-                 [ -n "$choice" ] && switch_to "$choice" ;;
-        restore) stop_all; launch "$(cat "$state" 2>/dev/null || echo custom)" ;;
-        *) echo "usage: shell-switch [pick|use <name>|restore]" >&2; exit 1 ;;
-      esac
+      pkill quickshell || true
+      sleep 0.3
+      exec ${pkgs.quickshell}/bin/qs
     '';
   };
 
@@ -158,7 +114,7 @@ in
   home.packages = [
     pkgs.niri
     pkgs.xwayland-satellite
-    shellSwitch
+    shellRestart
     swaylockThemed # lock triggers: binds.nix, ControlCenter.qml, swayidle
   ];
 
@@ -169,7 +125,6 @@ in
         pkgs
         config
         superCheatWatchCmd
-        shellSwitch
         clipStore
         swaylockThemed
         ;

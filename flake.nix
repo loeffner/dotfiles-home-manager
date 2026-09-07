@@ -7,11 +7,6 @@
     # Pinned to our nixpkgs to share the closure and avoid drift.
     zennotes.url = "github:ZenNotes/zennotes";
     zennotes.inputs.nixpkgs.follows = "nixpkgs";
-    # DankMaterialShell — alternative Quickshell desktop shell, switchable at
-    # runtime on terra alongside the custom shell (see home/desktop,
-    # shell-switch). Pinned to our nixpkgs to share the quickshell closure.
-    dms.url = "github:AvengeMedia/DankMaterialShell";
-    dms.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   outputs =
@@ -20,7 +15,6 @@
       nixpkgs,
       home-manager,
       zennotes,
-      dms,
     }:
     let
       lib = nixpkgs.lib;
@@ -41,7 +35,7 @@
         system: hostModule:
         home-manager.lib.homeManagerConfiguration {
           pkgs = pkgsFor system;
-          extraSpecialArgs = { inherit zennotes dms; };
+          extraSpecialArgs = { inherit zennotes; };
           modules = [
             ./home/common.nix
             hostModule

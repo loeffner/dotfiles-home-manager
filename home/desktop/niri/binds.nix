@@ -32,8 +32,7 @@
       Mod+U         { spawn "${runOrRaise}/bin/run-or-raise" "^darktable$" "darktable"; }
       Mod+R         { spawn "sh" "-c" "pkill wofi || wofi --show drun"; }
       Mod+Space     { spawn "sh" "-c" "pkill wofi || wofi --show drun"; }
-      Mod+Shift+S   { spawn "shell-switch" "pick"; }     // wofi menu: custom/dms
-      Mod+Shift+R   { spawn "shell-switch" "restore"; }  // restart the current shell
+      Mod+Shift+R   { spawn "shell-restart"; }          // restart the Quickshell bar
       Mod+Ctrl+R    { spawn "kitty" "--app-id" "hms-runner" "-e" "bash" "-c" "home-manager switch --flake ~/dotfiles#terra; echo; read -rp 'Press Enter to close...'"; }
 
       // Window lifecycle.
