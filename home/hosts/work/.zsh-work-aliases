@@ -495,6 +495,14 @@ alias netron='uvx netron'
 
 
 ###############################################################################
+# Devcontainer
+###############################################################################
+
+alias devdown='./.devcontainer/devcontainer-base/devcontainer-down.sh'
+alias devup='./.devcontainer/devcontainer-base/devcontainer-exec.sh bash'
+
+
+###############################################################################
 # Python Environments
 ###############################################################################
 
