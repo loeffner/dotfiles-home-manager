@@ -278,7 +278,7 @@ review() {
 }
 
 nightly() {
-  sethalcon "/halcon/nightly/nightly-master"
+  sethalcon "$HNIGHTLY"
 }
 
 alias mdx='master && hdx'
@@ -324,14 +324,6 @@ ai2() {
   echo $HALCON_AI2_PATH
 }
 
-set-ortenv() {
-  master
-  export HALCON_AI2_PATH="/home/loesela/halcon/qualcomm/build/x64-linux-debug/install/libd/x64-linux"
-  export ADSP_LIBRARY_PATH=""
-  export LD_LIBRARY_PATH="/home/loesela/halcon/qualcomm/build/x64-linux-debug/install/libd/x64-linux/thirdparty/onnxruntime"
-  ortenv
-}
-
 ortenv() {
   [[ -n "$HALCONROOT" ]] && echo "HALCONROOT=$HALCONROOT" || echo "No \$HALCONROOT set."
   [[ -n "$HALCON_AI2_PATH" ]] && echo "HALCON_AI2_PATH=$HALCON_AI2_PATH" || echo "No \$HALCON_AI2_PATH set."
@@ -357,8 +349,6 @@ hailoenv() {
 # Self code review (for halcon)
 ###############################################################################
 
-alias tidy='python3 tools/ci/run-clang-tidy.py -clang-tidy-binary=/halcon/toolchains/x64-linux/clang-17.0.1/bin/clang-tidy -p build/master/ $(git diff --name-only origin/master...HEAD)'
-alias eclint='/halcon/thirdparty/tools/bin/eclint-linux64'
 alias tags='cd $HOME/halcon/current && ctags -f .tags -V --c-kinds=+xfdev --cpp-kinds=+xfdev --exclude=./build/ --fields=+iaS source/hlib/**/*.c* source/hlib/**/*.h* include/**/*.h* tests/tools/gmock/gtest/include/gtest/gtest.h source/hlib_unittests/**/*.h* source/hlib_unittests/**/*.c* && cd -'
 
 
@@ -396,95 +386,6 @@ chmodtmp() {
 }
 
 alias cleantmp="rm -r /public/tmp/alo"
-
-
-###############################################################################
-# Documentation
-###############################################################################
-
-_DOC_OP_BASE="$HOME/halcon/current/build/master"
-_DOC_OP_EN_DIR="$_DOC_OP_BASE/doc_en_US/html/reference/operators"
-
-typeset -ga _DOC_OPS_CACHE=()
-_DOC_OPS_CACHE_MTIME=""
-
-_doc_operator_build_cache() {
-  local dir="$_DOC_OP_EN_DIR"
-  [[ -d "$dir" ]] || { _DOC_OPS_CACHE=(); _DOC_OPS_CACHE_MTIME=""; return; }
-
-  local mtime
-  mtime="$(stat -c %Y "$dir" 2>/dev/null || echo "")"
-
-  if (( ${#_DOC_OPS_CACHE[@]} == 0 )) || [[ "$mtime" != "$_DOC_OPS_CACHE_MTIME" ]]; then
-    setopt local_options NULL_GLOB
-    _DOC_OPS_CACHE=()
-    local f name
-    for f in "$dir"/*.html; do
-      name="${f:t:r}"
-      _DOC_OPS_CACHE+=("$name")
-    done
-    _DOC_OPS_CACHE_MTIME="$mtime"
-  fi
-}
-
-doc_operator() {
-  if [[ "$1" == "--refresh-cache" ]]; then
-    _DOC_OPS_CACHE=()
-    _DOC_OPS_CACHE_MTIME=""
-    _doc_operator_build_cache
-    log_success "doc_operator: cache refreshed (${#_DOC_OPS_CACHE[@]} operators)."
-    return 0
-  fi
-
-  local op="$1"
-  local lang="${2:-en}"
-
-  if [[ -z "$op" ]]; then
-    log_error "Usage: doc_operator <OPERATOR_NAME> [de|en|jp|ja]"
-    return 2
-  fi
-
-  local locale
-  case "$lang" in
-    en) locale="en_US" ;;
-    de) locale="de_DE" ;;
-    jp|ja) locale="ja_JP" ;;
-    *)
-      log_error "Unsupported language: $lang (use: de, en, jp/ja)"
-      return 2
-      ;;
-  esac
-
-  local dir="$_DOC_OP_BASE/doc_${locale}/html/reference/operators"
-  local file="${dir}/${op}.html"
-
-  if [[ ! -f "$file" ]]; then
-    log_error "Not found: $file"
-    return 1
-  fi
-
-  command -v code >/dev/null 2>&1 || { log_error "VS Code 'code' CLI not found."; return 127; }
-  code "$file"
-}
-
-doc_operator_ops() {
-  _doc_operator_build_cache
-  printf '%s\n' "${_DOC_OPS_CACHE[@]}"
-}
-
-_doc_operator_completion() {
-  if (( CURRENT == 3 )); then
-    compadd de en jp ja
-    return
-  fi
-
-  _doc_operator_build_cache
-  if (( ${#_DOC_OPS_CACHE[@]} )); then
-    compadd "${_DOC_OPS_CACHE[@]}"
-  fi
-}
-compdef _doc_operator_completion doc_operator
-compdef _doc_operator_completion doc_operator_ops
 
 
 ###############################################################################
