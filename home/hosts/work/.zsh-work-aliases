@@ -198,9 +198,6 @@ hdx() {
   if [[ -z "$HALCONROOT" ]]; then
     nightly >/dev/null || return 1
   fi
-  if [[ -z "$HALCON_AI2_PATH" ]]; then
-    ai2 /home/loesela/halcon/qualcomm/build/x64-linux-debug/install/libd/x64-linux >/dev/null || return 1
-  fi
 
   echo HALCONROOT: "$HALCONROOT"
   echo HALCON_AI2_PATH: "$HALCON_AI2_PATH"
