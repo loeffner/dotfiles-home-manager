@@ -37,7 +37,7 @@ fi
 ###############################################################################
 
 if [[ "$HOST" = "hawking" || "$HOST" = "labor-zen4" || "$HOST" = "lin-rb3gen2-01" || "$HOST" = "lin-aarch64-01" ]]; then
-  export HNIGHTLY="/labor/halcon/halcon/nightly/nightly-masters"
+  export HNIGHTLY="/labor/halcon/halcon/nightly/nightly-master"
 else
   export HNIGHTLY="/halcon/nightly/nightly-master"
 fi
