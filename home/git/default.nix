@@ -27,6 +27,7 @@
 
         # Push/Pull
         force = "push --force-with-lease";
+        forcepull = ''!f() { git fetch "''${1:-origin}" && git reset --hard "@{upstream}"; }; f'';
 
         # Rebase
         reb = "rebase -i --autosquash";
