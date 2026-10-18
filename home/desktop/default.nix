@@ -13,6 +13,7 @@
     ./wofi.nix
     ./camera-import.nix
     ./geeqie.nix
+    ./default-apps.nix
   ];
 
   # Cursor theme — sets XCURSOR_THEME/XCURSOR_SIZE/HYPRCURSOR_* and wires up GTK.
