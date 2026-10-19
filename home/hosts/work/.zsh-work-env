@@ -71,13 +71,40 @@ _halcon_ai2_interfaces() {
   fi
   export HALCON_AI2_INTERFACES="${(j: │ :)found}"
 }
-autoload -Uz add-zsh-hook
-add-zsh-hook precmd _halcon_ai2_interfaces
-# Run before oh-my-posh's precmd (registered earlier) so the segment reflects
-# the current value on the same prompt; otherwise oh-my-posh renders the
-# previous value and the display lags one prompt behind.
-precmd_functions=(_halcon_ai2_interfaces ${precmd_functions:#_halcon_ai2_interfaces})
 
+
+###############################################################################
+# Quota (prompt segment)
+###############################################################################
+#
+# Query the quota and put it into an env variable for use in my prompt
+
+_query_quota() {
+  export DISK_QUOTA="$(quota --human-readable | awk '/^\// { next } /^[[:space:]]+[0-9]/ { printf "%.0f/%.0f GB", $1, $2; exit }')"
+}
+_query_quota
+
+
+# Run the quota query only every 5 prompts
+_query_quota_throttled() {
+  (( ++_query_quota_counter < 5 )) && return
+  _query_quota_counter=0
+  _query_quota
+}
+
+# Register hooks (remove existing registrations first to avoid duplicates)
+autoload -Uz add-zsh-hook
+
+# Remove any existing registrations.
+precmd_functions=(${precmd_functions:#_halcon_ai2_interfaces})
+precmd_functions=(${precmd_functions:#_query_quota_throttled})
+
+# Register exactly once, before Oh My Posh.
+precmd_functions=(
+  _halcon_ai2_interfaces
+  _query_quota_throttled
+  $precmd_functions
+)
 
 ###############################################################################
 # Rename all `mvtec_bash_` commands
