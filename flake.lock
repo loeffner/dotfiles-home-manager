@@ -50,11 +50,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1792008475,
-        "narHash": "sha256-cWLGTY/5G4jLSO2HjUYDVUzXu+YlPuhvT7a2xpoPzpc=",
+        "lastModified": 1792372234,
+        "narHash": "sha256-VDTkZpBDMeWfnYeaxuby2BN07S+Drh0cNZ1dmVn82kc=",
         "owner": "ZenNotes",
         "repo": "zennotes",
-        "rev": "5ff943dfd311b4bd1290b77f00ad2792a89aa0e9",
+        "rev": "ae28816697a8bed4c402f95af25aa81216b809b9",
         "type": "github"
       },
       "original": {
