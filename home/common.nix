@@ -179,6 +179,11 @@
     '';
   };
 
+  programs.lazygit = {
+      enable = true;
+      enableZshIntegration = true;
+    };
+
   programs.delta = {
     enable = true;
     enableGitIntegration = true;
