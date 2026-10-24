@@ -189,7 +189,7 @@ Item {
                 width: ListView.view.width
                 implicitHeight: crow.img ? 42 : 30
                 radius: Theme.radiusS
-                color: crow.hovered ? Theme.surfaceContainer : Theme.surface
+                color: crow.hovered ? Theme.surfaceContainer : Theme.popout
                 Behavior on color { ColorAnimation { duration: 110 } }
 
                 HoverHandler { id: crowHover }

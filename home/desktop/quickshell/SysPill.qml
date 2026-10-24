@@ -416,7 +416,7 @@ Item {
                 // Base is the opaque panel surface (NOT "transparent"): animating a
                 // colour to transparent interpolates through semi-transparent black,
                 // which flashed dark when leaving hover.
-                color: row.copied ? Theme.surfaceContainerHigh : row.hovered ? Theme.surfaceContainer : Theme.surface
+                color: row.copied ? Theme.surfaceContainerHigh : row.hovered ? Theme.surfaceContainer : Theme.popout
                 Behavior on color { ColorAnimation { duration: 110 } }
 
                 HoverHandler { id: rowHover }

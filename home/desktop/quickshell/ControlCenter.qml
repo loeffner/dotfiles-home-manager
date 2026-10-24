@@ -89,7 +89,7 @@ Item {
                 Layout.fillWidth: true
                 implicitHeight: 36
                 radius: Theme.radiusM
-                color: devRow.sel ? Theme.surfaceContainerHigh : (dma.containsMouse ? Theme.surfaceContainer : Theme.surface)
+                color: devRow.sel ? Theme.surfaceContainerHigh : (dma.containsMouse ? Theme.surfaceContainer : Theme.popout)
                 Behavior on color { ColorAnimation { duration: 110 } }
 
                 RowLayout {

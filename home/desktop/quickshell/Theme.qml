@@ -16,6 +16,9 @@ Singleton {
     // below). The two token sets were converged — surface/surfaceContainer* +
     // outline are the single vocabulary now.
     readonly property color bar: bg.bar // bar background
+    // Popout background: the bar's own colour, so popouts read as the bar
+    // extending downward. Hover rows inside popouts rest on this (opaque) colour.
+    readonly property color popout: bar
 
     // ── Status colours (used sparingly, by meaning) ─────────────────────────
     readonly property color good: "#b8bb26" // connected / strong signal
@@ -138,13 +141,12 @@ Singleton {
     readonly property int gapL: 12 // popout section spacing
 
     // ── Motion (lifted verbatim from DankMaterialShell) ─────────────────────
-    // The popout's signature feel: a short spring-overshoot enter and an
-    // emphasized-decelerate exit, applied to scale + opacity + a small offset.
-    readonly property int popoutDur: 150 // DMS popoutAnimationDuration (Short)
+    // The popout's signature feel: the shape morphs out of the bar with a
+    // spring-overshoot enter and folds back with an emphasized exit.
     readonly property int durShort: 150
     readonly property int durMed: 250
-    readonly property real scaleCollapsed: 0.90 // collapsed scale; lower = springier overshoot
-    readonly property real animOffset: 16 // DMS effectAnimOffset (Standard), px
+    readonly property int islandEnterDur: 280 // bar → popout morph
+    readonly property int islandExitDur: 200 // popout → bar morph
     // Cubic-bezier control points (Anims.expressiveDefaultSpatial / .emphasized).
     readonly property list<real> springEnter: [0.38, 1.21, 0.22, 1, 1, 1]
     readonly property list<real> emphExit: [0.05, 0.0, 0.133333, 0.06, 0.166667, 0.40, 0.208333, 0.82, 0.25, 1.0, 1.0, 1.0]

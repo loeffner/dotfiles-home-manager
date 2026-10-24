@@ -1,6 +1,15 @@
 // Popout — the Material-3 dropdown for the DMS-grade cluster (the shell's single
 // popup framework; replaced the retired BarPopup).
 //
+// Drawn as the bar itself extending downward (dynamic-island style): the shape is
+// the bar's colour, borderless, flush under the bar, joined to it by concave
+// flares (Flare.qml) with only its bottom corners rounded. Opening morphs the
+// shape out of the trigger icon — from the icon's width and zero height to the
+// full card, with a spring overshoot — and the content fades in once the shape
+// has mostly formed; closing runs the morph back into the icon. A popout that
+// would land within a flare's width of the screen edge snaps flush to it instead
+// (that side's flare is dropped), so it reads as the bar's end turning down.
+//
 // A transparent, full-width layershell window that starts *below the bar* (so the
 // bar strip stays live and clickable). Its backdrop MouseArea is the click-outside
 // dismiss. Every popout holds EXCLUSIVE keyboard focus while open (see win), so all
@@ -8,8 +17,7 @@
 // one click anywhere behaves like DankMaterialShell — click another icon and the
 // shared PopoutManager closes this one and opens that one in the same click; click
 // empty space and it just closes. Open/close is driven entirely by
-// PopoutManager.openId, and the card animates with DMS's spring-overshoot enter /
-// emphasized exit.
+// PopoutManager.openId.
 //
 // Usage: `Popout { id: pop; bar: root.bar; anchorItem: root; popId: "audio";
 // popWidth: N; ...content... }` and call pop.toggle().
@@ -33,6 +41,12 @@ Item {
     readonly property bool isOpen: PopoutManager.openId === popId
     // Kept true while the window must stay mapped — open, or still animating out.
     property bool _alive: false
+    // Morph progress: 0 = collapsed into the trigger, 1 = full card (the spring
+    // overshoots slightly past 1).
+    property real progress: 0
+    // True once the enter morph has finished — gates the height Behavior so it
+    // only smooths in-place resizes (e.g. a section expanding), not the morph.
+    property bool _settled: false
 
     function open() {
         PopoutManager.open(popId);
@@ -46,7 +60,14 @@ Item {
     }
 
     onIsOpenChanged: {
+        _settled = false;
         if (isOpen) {
+            // mapToItem() isn't reactive, so measure the trigger on every open
+            // (a binding would freeze at its pre-layout position).
+            if (anchorItem && bar) {
+                _anchorX = anchorItem.mapToItem(bar.contentItem, 0, 0).x;
+                _anchorW = anchorItem.width;
+            }
             // Re-scatter the backdrop starfield on every open.
             starfield.seed = Math.floor(Math.random() * 2147483647);
             _alive = true;
@@ -58,13 +79,38 @@ Item {
         }
     }
 
-    // x of the card within the screen-wide window: trigger centre, clamped.
-    readonly property real cardX: {
-        if (!anchorItem || !bar)
-            return 8;
-        const c = anchorItem.mapToItem(bar.contentItem, 0, 0).x + anchorItem.width / 2 - popWidth / 2;
-        return Math.max(8, Math.min(c, bar.width - popWidth - 8));
+    NumberAnimation {
+        id: enterAnim
+        target: root
+        property: "progress"
+        to: 1
+        duration: Theme.islandEnterDur
+        easing.type: Easing.BezierSpline
+        easing.bezierCurve: Theme.springEnter
+        onFinished: root._settled = true
     }
+    NumberAnimation {
+        id: exitAnim
+        target: root
+        property: "progress"
+        to: 0
+        duration: Theme.islandExitDur
+        easing.type: Easing.BezierSpline
+        easing.bezierCurve: Theme.emphExit
+        onFinished: root._alive = false
+    }
+
+    // ── Geometry (bar coordinates) ───────────────────────────────────────────
+    // Trigger rect — where the morph starts and ends. Set on open (see onIsOpenChanged).
+    property real _anchorX: 0
+    property real _anchorW: 0
+    // Card x: trigger centre, snapped flush to a screen edge when it would land
+    // closer to it than a flare is wide.
+    readonly property real _wantX: _anchorX + _anchorW / 2 - popWidth / 2
+    readonly property bool _atLeft: !!bar && _wantX < Theme.flareRadius
+    readonly property bool _atRight: !!bar && _wantX > bar.width - popWidth - Theme.flareRadius
+    readonly property real cardX: !bar ? 0 : _atRight ? bar.width - popWidth : _atLeft ? 0 : _wantX
+    readonly property real _fullH: body.implicitHeight + Theme.padL * 2
 
     PanelWindow {
         id: win
@@ -89,64 +135,84 @@ Item {
             onClicked: root.close()
         }
 
-        // ── The animated card ───────────────────────────────────────────────
+        // ── The morphing shape ──────────────────────────────────────────────
         Item {
-            id: cardWrap
-            x: root.cardX
+            id: shape
+            readonly property real p: root.progress
+            x: root._anchorX + (root.cardX - root._anchorX) * p
             y: 0
-            width: card.width
-            height: card.height
-            transformOrigin: Item.Top
-            opacity: 0
+            width: Math.max(0, root._anchorW + (root.popWidth - root._anchorW) * p)
+            height: Math.max(0, shownH * p)
+            // Full card height, smoothed for in-place resizes once settled.
+            property real shownH: root._fullH
+            Behavior on shownH {
+                enabled: root._settled
+                NumberAnimation { duration: Theme.durMed; easing.type: Easing.OutCubic }
+            }
+
             // Default focus item of the surface, and an ancestor of every field in
             // the card — so Escape lands here either directly or by propagating up
             // from a field that doesn't consume it (MTextField.consumeEscape).
             focus: true
             Keys.onEscapePressed: root.close()
-            scale: Theme.scaleCollapsed
-            transform: Translate { id: tr; y: Theme.animOffset }
 
-            ParallelAnimation {
-                id: enterAnim
-                NumberAnimation { target: cardWrap; property: "opacity"; to: 1; duration: Theme.popoutDur; easing.type: Easing.OutCubic }
-                NumberAnimation { target: cardWrap; property: "scale"; to: 1; duration: Theme.popoutDur; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.springEnter }
-                NumberAnimation { target: tr; property: "y"; to: 0; duration: Theme.popoutDur; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.springEnter }
+            // Concave shoulders joining the shape to the bar. Scaled in with the
+            // morph from the corner where they touch the shape.
+            Flare {
+                visible: !root._atLeft
+                x: -width
+                width: Theme.flareRadius
+                height: Theme.flareRadius
+                transformOrigin: Item.TopRight
+                scale: Math.min(1, shape.p)
+                color: Theme.popout
             }
-            ParallelAnimation {
-                id: exitAnim
-                NumberAnimation { target: cardWrap; property: "opacity"; to: 0; duration: Theme.popoutDur; easing.type: Easing.OutCubic }
-                NumberAnimation { target: cardWrap; property: "scale"; to: Theme.scaleCollapsed; duration: Theme.popoutDur; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphExit }
-                NumberAnimation { target: tr; property: "y"; to: Theme.animOffset; duration: Theme.popoutDur; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.emphExit }
-                onFinished: root._alive = false
+            Flare {
+                visible: !root._atRight
+                x: shape.width
+                width: Theme.flareRadius
+                height: Theme.flareRadius
+                mirrored: true
+                transformOrigin: Item.TopLeft
+                scale: Math.min(1, shape.p)
+                color: Theme.popout
             }
 
             Rectangle {
                 id: card
-                width: root.popWidth
-                implicitHeight: body.implicitHeight + Theme.padL * 2
-                height: implicitHeight
-                radius: Theme.radiusL
-                color: Theme.surface
-                border.width: 1
-                border.color: Theme.outline
-                clip: true // keep the starfield inside the rounded corners
-
-                // Subtle starfield backdrop, re-scattered each open (see onIsOpenChanged).
-                StarField {
-                    id: starfield
-                    anchors.fill: parent
-                    starCount: Math.max(24, Math.min(120, Math.round(width * height / 1400)))
-                    maxOpacity: 0.18
-                    maxRadius: 1.3
-                }
+                anchors.fill: parent
+                color: Theme.popout
+                topLeftRadius: 0
+                topRightRadius: 0
+                bottomLeftRadius: Math.min(Theme.radiusL, height / 2, width / 2)
+                bottomRightRadius: Math.min(Theme.radiusL, height / 2, width / 2)
+                clip: true // the content is laid out at full size; the morph reveals it
 
                 // Swallow clicks so card controls don't reach the backdrop.
                 MouseArea { anchors.fill: parent }
 
-                ColumnLayout {
-                    id: body
-                    anchors { fill: parent; margins: Theme.padL }
-                    spacing: Theme.gapL
+                // Content at its final position and size, independent of the morph
+                // (so neither the layout nor the starfield re-flow every frame).
+                Item {
+                    x: root.cardX - shape.x
+                    width: root.popWidth
+                    height: root._fullH
+                    opacity: Math.max(0, Math.min(1, (shape.p - 0.4) / 0.6))
+
+                    // Subtle starfield backdrop, re-scattered each open (see onIsOpenChanged).
+                    StarField {
+                        id: starfield
+                        anchors.fill: parent
+                        starCount: Math.max(24, Math.min(120, Math.round(width * height / 1400)))
+                        maxOpacity: 0.18
+                        maxRadius: 1.3
+                    }
+
+                    ColumnLayout {
+                        id: body
+                        anchors { fill: parent; margins: Theme.padL }
+                        spacing: Theme.gapL
+                    }
                 }
             }
         }
