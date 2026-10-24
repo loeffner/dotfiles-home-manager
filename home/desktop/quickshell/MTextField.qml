@@ -1,10 +1,6 @@
 // MTextField — a Material-3 single-line text field with an optional leading icon.
-//
-// The cluster popouts take no keyboard focus by default (so dismiss clicks never
-// hit niri's focus-transfer dance). This field opts in *transiently*: pressing it
-// sets `wantFocus`, which the caller binds to Popout.wantsFocus so the surface
-// gains keyboard interactivity; the input then grabs focus, and losing focus
-// clears it again. Bind it in the caller:  Popout { wantsFocus: myField.wantFocus }
+// Popouts always hold keyboard focus while open, so pressing the field (or
+// calling focusInput()) just gives the input active focus.
 import QtQuick
 
 Rectangle {
@@ -14,7 +10,9 @@ Rectangle {
     property string icon: ""
     property bool password: false
     property bool _reveal: false // password shown (eye toggled)
-    property bool wantFocus: false
+    // Escape always emits canceled(); unless consumed it then propagates up to the
+    // Popout, which closes. Set for fields whose cancel is a local action.
+    property bool consumeEscape: false
     signal accepted
     signal canceled
 
@@ -22,7 +20,6 @@ Rectangle {
         input.text = "";
     }
     function focusInput() {
-        wantFocus = true;
         input.forceActiveFocus();
     }
 
@@ -55,10 +52,11 @@ Rectangle {
             font.pixelSize: Theme.fontSize
             clip: true
             echoMode: (root.password && !root._reveal) ? TextInput.Password : TextInput.Normal
-            onActiveFocusChanged: if (!activeFocus)
-                root.wantFocus = false
             onAccepted: root.accepted()
-            Keys.onEscapePressed: root.canceled()
+            Keys.onEscapePressed: e => {
+                root.canceled();
+                e.accepted = root.consumeEscape;
+            }
 
             Text {
                 anchors.verticalCenter: parent.verticalCenter

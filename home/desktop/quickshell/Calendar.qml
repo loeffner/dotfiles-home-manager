@@ -2,13 +2,17 @@
 // chevron buttons to page months. cellSize lets embedders make it more compact.
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
 
 ColumnLayout {
     id: cal
     spacing: Theme.gap
     property int cellSize: 34 // reduce for compact embeddings
 
-    readonly property date today: new Date()
+    // Live date (hour precision is enough to roll over at midnight) — a one-shot
+    // new Date() would pin "today" to the day the shell started.
+    SystemClock { id: sysClock; precision: SystemClock.Hours }
+    readonly property date today: sysClock.date
     property int year: today.getFullYear()
     property int month: today.getMonth()
 

@@ -173,7 +173,6 @@ Item {
         anchorItem: root
         popId: "processes"
         popWidth: 540
-        keyboardOnOpen: true
 
         // Auto-focus the search box when the panel opens, so you can type at once.
         Connections {

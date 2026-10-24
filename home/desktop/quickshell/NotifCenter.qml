@@ -161,9 +161,6 @@ Item {
         anchorItem: root
         popId: "notifications"
         popWidth: 400
-        // The custom-filter builder (settings) has a text field; let it grab
-        // keyboard focus while being edited.
-        wantsFocus: filterField.wantFocus
 
         Connections {
             target: pop

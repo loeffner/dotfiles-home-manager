@@ -25,7 +25,7 @@ Item {
         const okType = e => root.typeFilter === 0 || (root.typeFilter === 1 && !e.isImage) || (root.typeFilter === 2 && e.isImage);
         const okSearch = e => !q || e.preview.toLowerCase().indexOf(q) >= 0;
         const pins = ClipStore.pins.filter(p => okType(p) && okSearch(p));
-        const rest = root.entries.filter(e => okType(e) && okSearch(e) && !ClipStore.isPinned(e.preview));
+        const rest = root.entries.filter(e => okType(e) && okSearch(e) && !ClipStore.isPinned(e));
         return pins.concat(rest);
     }
 
@@ -110,7 +110,6 @@ Item {
         anchorItem: root
         popId: "clipboard"
         popWidth: 400
-        keyboardOnOpen: true
 
         RowLayout {
             Layout.fillWidth: true
@@ -184,7 +183,7 @@ Item {
                 required property var modelData
                 readonly property bool isPin: modelData.key !== undefined
                 readonly property bool img: modelData.isImage === true
-                readonly property bool pinned: crow.isPin || ClipStore.isPinned(modelData.preview)
+                readonly property bool pinned: crow.isPin || ClipStore.isPinned(modelData)
                 readonly property bool hovered: crowHover.hovered
 
                 width: ListView.view.width
@@ -262,10 +261,10 @@ Item {
                                 const d = crow.modelData;
                                 if (crow.isPin)
                                     ClipStore.unpin(d.key);
-                                else if (ClipStore.isPinned(d.preview))
-                                    ClipStore.unpinByPreview(d.preview);
+                                else if (ClipStore.isPinned(d))
+                                    ClipStore.unpinEntry(d);
                                 else
-                                    ClipStore.pin(d.id, d.preview, d.isImage, d.mime);
+                                    ClipStore.pin(d);
                             }
                         }
                     }

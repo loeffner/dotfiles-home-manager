@@ -44,19 +44,30 @@ Singleton {
         }));
     }
 
-    function isPinned(preview) {
-        return root.pins.some(p => p.preview === preview);
+    // Does pin p hold cliphist entry e? Text matches by preview (so a re-copied
+    // pinned text, which cliphist stores under a new id, stays deduped). Image
+    // previews are just "Image · WxH" — every same-size image would collide — so
+    // images match by the cliphist id they were pinned from (srcId).
+    function _holds(p, e) {
+        if (e.isImage)
+            return p.isImage && p.srcId !== undefined && p.srcId === String(e.id);
+        return !p.isImage && p.preview === e.preview;
+    }
+    function isPinned(e) {
+        return root.pins.some(p => _holds(p, e));
     }
 
-    function pin(id, preview, isImage, mime) {
-        if (isPinned(preview))
+    function pin(e) {
+        if (isPinned(e))
             return;
+        const id = e.id, preview = e.preview, isImage = e.isImage, mime = e.mime;
         const key = root._nextKey++;
         const file = root.dir + "/" + key + ".bin";
         // Values go in as positional args, never interpolated into the script.
         Quickshell.execDetached(["sh", "-c", 'cliphist decode "$1" > "$2"', "_", String(id), file]);
         root.pins = [{
                     "key": key,
+                    "srcId": String(id),
                     "preview": preview,
                     "isImage": !!isImage,
                     "mime": mime || "",
@@ -71,8 +82,8 @@ Singleton {
         root.pins = root.pins.filter(x => x.key !== key);
         _save();
     }
-    function unpinByPreview(preview) {
-        const p = root.pins.find(x => x.preview === preview);
+    function unpinEntry(e) {
+        const p = root.pins.find(x => _holds(x, e));
         if (p)
             unpin(p.key);
     }

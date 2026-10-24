@@ -113,8 +113,8 @@ PanelWindow {
                                 return;
                             if (!dragging) {
                                 toast.activate();
-                                const n = toast.modelData;
-                                Qt.callLater(() => Notifications.removeToast(n));
+                                const id = toast.modelData.id;
+                                Qt.callLater(() => Notifications.removeToast(id));
                             } else {
                                 snapBack.start();
                             }
@@ -233,8 +233,8 @@ PanelWindow {
                                             cursorShape: Qt.PointingHandCursor
                                             onClicked: {
                                                 modelData.invoke();
-                                                const n = toast.modelData;
-                                                Qt.callLater(() => Notifications.removeToast(n));
+                                                const id = toast.modelData.id;
+                                                Qt.callLater(() => Notifications.removeToast(id));
                                             }
                                         }
                                     }

@@ -3,13 +3,13 @@
 //
 // A transparent, full-width layershell window that starts *below the bar* (so the
 // bar strip stays live and clickable). Its backdrop MouseArea is the click-outside
-// dismiss. It deliberately takes NO keyboard focus: grabbing focus made the first
-// click on the bar merely transfer focus (a two-click dismiss); without it, one
-// click anywhere behaves like DankMaterialShell — click another icon and the
+// dismiss. Every popout holds EXCLUSIVE keyboard focus while open (see win), so all
+// of them behave alike: Escape closes, text fields focus on the first click, and
+// one click anywhere behaves like DankMaterialShell — click another icon and the
 // shared PopoutManager closes this one and opens that one in the same click; click
-// empty space and it just closes. Escape is handled by the bar (which holds the
-// keyboard focus). Open/close is driven entirely by PopoutManager.openId, and the
-// card animates with DMS's spring-overshoot enter / emphasized exit.
+// empty space and it just closes. Open/close is driven entirely by
+// PopoutManager.openId, and the card animates with DMS's spring-overshoot enter /
+// emphasized exit.
 //
 // Usage: `Popout { id: pop; bar: root.bar; anchorItem: root; popId: "audio";
 // popWidth: N; ...content... }` and call pop.toggle().
@@ -24,15 +24,6 @@ Item {
     required property Item anchorItem // trigger to centre the card under
     required property string popId // unique id for the shared PopoutManager
     property int popWidth: 360
-    // Opt-in keyboard focus for text fields (search, Wi-Fi password). Off by
-    // default so dismiss clicks never hit niri's focus-transfer dance.
-    //   • keyboardOnOpen: the popout is keyboard-focusable for its whole open
-    //     life (so a text field focuses on the FIRST click / auto-focus works).
-    //     Set this for popouts that contain a text field.
-    //   • wantsFocus: a field flips this while being edited (used when the popout
-    //     is otherwise focus-free).
-    property bool keyboardOnOpen: false
-    property bool wantsFocus: false
 
     default property alias content: body.data
 
@@ -85,12 +76,12 @@ Item {
         color: "transparent"
         visible: root._alive
 
-        // Keyboard focus while a field asks for it, or the whole time for popouts
-        // that declare keyboardOnOpen. Uses EXCLUSIVE (like DMS on niri): unlike
-        // OnDemand, an exclusive grab means niri never transfers focus on a click
-        // — so dismiss clicks land on the first try everywhere, and the field is
-        // focused on map (type immediately). niri still handles its own keybinds.
-        WlrLayershell.keyboardFocus: (root.isOpen && (root.wantsFocus || root.keyboardOnOpen)) ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+        // Keyboard focus for the whole open life. EXCLUSIVE (like DMS on niri):
+        // unlike OnDemand, an exclusive grab means niri never transfers focus on a
+        // click — so dismiss clicks land on the first try everywhere, and fields
+        // can be focused on map (type immediately). niri still handles its own
+        // keybinds.
+        WlrLayershell.keyboardFocus: root.isOpen ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
         // Click anywhere outside the card to dismiss.
         MouseArea {
@@ -107,6 +98,11 @@ Item {
             height: card.height
             transformOrigin: Item.Top
             opacity: 0
+            // Default focus item of the surface, and an ancestor of every field in
+            // the card — so Escape lands here either directly or by propagating up
+            // from a field that doesn't consume it (MTextField.consumeEscape).
+            focus: true
+            Keys.onEscapePressed: root.close()
             scale: Theme.scaleCollapsed
             transform: Translate { id: tr; y: Theme.animOffset }
 

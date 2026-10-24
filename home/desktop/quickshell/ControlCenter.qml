@@ -307,7 +307,6 @@ Item {
         anchorItem: root
         popId: "control"
         popWidth: 420
-        keyboardOnOpen: true
 
         // Header — title + round session buttons (Suspend / Reboot / Power Off).
         // Full-width, above the controls/rail split so the accent rail lines up
@@ -651,7 +650,8 @@ Item {
                                         netRow.modelData.connectWithPsk(psk.text);
                                         root.pskSsid = "";
                                     }
-                                    onCanceled: root.pskSsid = "" // Escape cancels
+                                    consumeEscape: true // Escape cancels the passphrase, not the popout
+                                    onCanceled: root.pskSsid = ""
                                 }
                                 MIconButton {
                                     icon: "close"
@@ -916,7 +916,6 @@ Item {
         anchorItem: root
         popId: "ccconfirm"
         popWidth: 260
-        keyboardOnOpen: true
 
         Item {
             id: keyCatcher
