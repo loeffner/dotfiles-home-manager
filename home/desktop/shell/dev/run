@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+# Dev harness: run one test scene (dev/scenes/<name>.qml) against the shell's
+# real modules, without touching the running bar or your real state.
+#
+#   dev/run <scene> [seconds] [--real-home] [--keep-home] [--private-bus] [--old]
+#
+# The shell tree is mirrored (symlinks) into a temp root whose shell.qml is the
+# scene, so `import qs.*` resolves to this tree. By default HOME points at a
+# throwaway copy seeded from your real ~/.cache/quickshell and
+# ~/.local/state/quickshell, so tests never write real state (--keep-home reuses
+# the previous run's throwaway home). --private-bus runs under dbus-run-session
+# (needed to own org.freedesktop.Notifications while the real bar holds it on
+# the session bus). Scenes write screenshots/logs to $QS_DEV_OUT (printed at
+# the end).
+set -euo pipefail
+
+here=$(cd "$(dirname "$0")/.." && pwd)
+src=$here
+scene=${1:?usage: dev/run <scene> [seconds] [--real-home] [--keep-home] [--private-bus] [--old]}
+shift
+secs=8
+real_home=0
+keep_home=0
+private_bus=0
+old=0
+for a in "$@"; do
+  case "$a" in
+    --real-home) real_home=1 ;;
+    --keep-home) keep_home=1 ;;
+    --private-bus) private_bus=1 ;;
+    --old) old=1 ;;
+    *) secs=$a ;;
+  esac
+done
+
+base=${XDG_RUNTIME_DIR:-/tmp}/qs-dev
+# --old: mirror the previous shell (../quickshell) instead, for side-by-side
+# comparisons; the dev helpers (Snap, Quit) are linked in as plain files.
+[ "$old" = 1 ] && src=$(cd "$here/../quickshell" && pwd)
+root=$base/root-$scene
+out=$base/out-$scene
+rm -rf "$root" "$out"
+mkdir -p "$root" "$out"
+for entry in "$src"/*; do
+  name=$(basename "$entry")
+  [ "$name" = shell.qml ] && continue
+  ln -s "$entry" "$root/$name"
+done
+cp "$here/dev/scenes/$scene.qml" "$root/shell.qml"
+if [ "$old" = 1 ]; then
+  ln -s "$here/dev/Snap.qml" "$root/Snap.qml"
+  ln -s "$here/dev/Quit.qml" "$root/Quit.qml"
+fi
+
+if [ "$real_home" = 0 ]; then
+  fake=$base/home-$scene
+  if [ "$keep_home" = 0 ] || [ ! -d "$fake" ]; then
+    rm -rf "$fake"
+    mkdir -p "$fake/.cache" "$fake/.local/state"
+    [ -d "$HOME/.cache/quickshell" ] && cp -r "$HOME/.cache/quickshell" "$fake/.cache/" 2>/dev/null || true
+    [ -d "$HOME/.local/state/quickshell" ] && cp -r "$HOME/.local/state/quickshell" "$fake/.local/state/" 2>/dev/null || true
+    rm -rf "$fake/.cache/quickshell/by-shell" "$fake/.cache/quickshell/qmlcache"
+    # A copy (never a link) of the clipboard history, so a test can't wipe yours.
+    [ -d "$HOME/.cache/cliphist" ] && cp -r "$HOME/.cache/cliphist" "$fake/.cache/" 2>/dev/null || true
+  fi
+  export HOME=$fake
+  unset XDG_STATE_HOME XDG_CACHE_HOME
+fi
+export QS_DEV_OUT=$out
+# Screenshots: grim from PATH, else from the flake's nixpkgs (cached in the store).
+if command -v grim >/dev/null; then
+  QS_DEV_GRIM=$(command -v grim)
+else
+  QS_DEV_GRIM=$(nix build --inputs-from "$here/../../.." nixpkgs#grim --no-link --print-out-paths 2>/dev/null)/bin/grim
+fi
+export QS_DEV_GRIM
+export WAYLAND_DISPLAY=${WAYLAND_DISPLAY:-wayland-1}
+if [ -z "${NIRI_SOCKET:-}" ]; then
+  NIRI_SOCKET=$(find "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}" -maxdepth 1 -name "niri.*.sock" 2>/dev/null | head -1)
+  export NIRI_SOCKET
+fi
+
+cmd=(qs -p "$root")
+[ "$private_bus" = 1 ] && cmd=(dbus-run-session -- "${cmd[@]}")
+timeout "$secs" "${cmd[@]}" >"$out/log.txt" 2>&1 || true
+grep -E 'WARN|ERROR|FATAL|TEST|qml:' "$out/log.txt" | grep -v -E 'textinput|QEngine::quit|Signal QQmlEngine' || true
+echo "out: $out"

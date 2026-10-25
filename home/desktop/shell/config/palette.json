@@ -1,0 +1,23 @@
+{
+  "_comment": "Single source of the shell's colours. Read by config/Theme.qml at runtime and by Nix (swaylock-themed in ../niri/default.nix) at build time.",
+  "accentOrder": ["blue", "aqua", "green", "yellow", "orange", "purple", "red", "ivory"],
+  "accents": {
+    "blue": "#458588",
+    "aqua": "#689d6a",
+    "green": "#98971a",
+    "yellow": "#d79921",
+    "orange": "#d65d0e",
+    "purple": "#b16286",
+    "red": "#cc241d",
+    "ivory": "#bdae93"
+  },
+  "backgroundOrder": ["soft", "medium", "hard"],
+  "backgrounds": {
+    "medium": { "surface": "#282828", "container": "#32302f", "high": "#3c3836", "highest": "#504945", "outline": "#665c54", "bar": "#1d2021" },
+    "hard": { "surface": "#1d2021", "container": "#282828", "high": "#32302f", "highest": "#3c3836", "outline": "#504945", "bar": "#141617" },
+    "soft": { "surface": "#32302f", "container": "#3c3836", "high": "#504945", "highest": "#665c54", "outline": "#7c6f64", "bar": "#282828" }
+  },
+  "text": { "primary": "#ebdbb2", "secondary": "#928374", "bright": "#fbf1c7", "dark": "#1d2021" },
+  "status": { "good": "#b8bb26", "warn": "#d79921", "urgent": "#fb4934" },
+  "starTint": "#bdae93"
+}

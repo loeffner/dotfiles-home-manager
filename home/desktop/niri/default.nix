@@ -5,6 +5,7 @@
 # https://github.com/YaLTeR/niri/wiki/Configuration:-Overview
 {
   config,
+  lib,
   pkgs,
   ...
 }:
@@ -51,29 +52,33 @@ let
     '';
   };
 
-  # Lock the session with the bar's CURRENT accent color. The Quickshell theme
-  # persists the accent name to ~/.cache/quickshell/accent (Theme.qml,
-  # runtime-switchable in the Control Center); map it to its Gruvbox hex and
-  # override the ring colors of the static swaylock config
-  # (../default.nix, programs.swaylock — blur, clock and the contrast colors
-  # all come from there). Keep the case table in sync with Theme.qml's
-  # `accents` map. All lock triggers (Mod+Escape, control-center button,
-  # swayidle timeout, before-sleep) go through this wrapper.
+  # Lock the session with the bar's CURRENT accent color. The Quickshell shell
+  # persists the accent name in $XDG_STATE_HOME/quickshell/settings.json
+  # (services/Settings.qml, runtime-switchable in the Control Center); map it to
+  # its hex — the table is generated from the shell's palette
+  # (../shell/config/palette.json, the single palette source) — and override
+  # the ring colors of the static swaylock config (../default.nix,
+  # programs.swaylock — blur, clock and the contrast colors all come from
+  # there). All lock triggers (Mod+Escape, control-center button, swayidle
+  # timeout, before-sleep) go through this wrapper.
+  palette = builtins.fromJSON (builtins.readFile ../shell/config/palette.json);
+  accentCases = lib.concatStringsSep "\n" (
+    lib.mapAttrsToList (
+      name: hex: "  ${name}) accent=${lib.removePrefix "#" hex} ;;"
+    ) palette.accents
+  );
   swaylockThemed = pkgs.writeShellApplication {
     name = "swaylock-themed";
-    runtimeInputs = [ pkgs.coreutils ];
+    runtimeInputs = [
+      pkgs.coreutils
+      pkgs.jq
+    ];
     text = ''
-      name=$(cat "''${XDG_CACHE_HOME:-$HOME/.cache}/quickshell/accent" 2>/dev/null || echo blue)
+      settings="''${XDG_STATE_HOME:-$HOME/.local/state}/quickshell/settings.json"
+      name=$(jq -r '.accent // "blue"' "$settings" 2>/dev/null || echo blue)
       case "$name" in
-        blue)   accent=458588 ;;
-        aqua)   accent=689d6a ;;
-        green)  accent=98971a ;;
-        yellow) accent=d79921 ;;
-        orange) accent=d65d0e ;;
-        purple) accent=b16286 ;;
-        red)    accent=cc241d ;;
-        ivory)  accent=bdae93 ;;
-        *)      accent=458588 ;;
+      ${accentCases}
+        *) accent=${lib.removePrefix "#" palette.accents.blue} ;;
       esac
       exec ${config.programs.swaylock.package}/bin/swaylock \
         --ring-color "$accent" --ring-ver-color "$accent" "$@"

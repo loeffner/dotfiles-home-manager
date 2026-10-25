@@ -85,24 +85,30 @@ Contains: niri config (hand-written KDL, split by concern across `niri/` —
 `default.nix` assembles `settings.nix` + `binds.nix` into `config.kdl`, plus
 `clipboard.nix` and the packaged helper scripts: shell-restart, run-or-raise,
 clipboard-picker, the filtered cliphist store, swaylock-themed — the lock
-wrapper that injects the bar's current accent), a Quickshell status bar
-(hand-written QML, `quickshell/`), Wofi (app launcher, `wofi.nix`), Kitty
+wrapper that injects the bar's current accent), a Quickshell desktop shell
+(hand-written QML, `shell/`), Wofi (app launcher, `wofi.nix`), Kitty
 (terminal), swaylock (screen lock — Mod+Escape / control-center button / idle
 timeout / before-sleep; carries `swaylock-auto-submit.patch` for unlocking
 without pressing Enter; needs `security.pam.services.swaylock = { };` plus
 `.nodelay = true` on the NixOS side, see `default.nix`), cursor theme, and the
 swaybg wallpaper + swayidle autostarts. All styled with Gruvbox dark.
 
-The **Quickshell bar** (`home/desktop/quickshell/`) is a from-scratch QML config
-deployed verbatim via `xdg.configFile."quickshell"` (recursive) and autostarted
-from niri (`spawn-at-startup "qs"`). Components are flat `.qml` files referenced
-by filename; `Theme.qml` (`pragma Singleton`) is the palette/metrics single
-source of truth. Services used: `Pipewire` (audio), `Notifications`,
-`Networking` (NetworkManager), `Mpris`, `SystemTray`, `SystemClock`; workspaces
-come from `niri msg --json event-stream` via `Quickshell.Io.Process` (no niri
-QML plugin). Quickshell live-reloads on QML edits.
+The **Quickshell shell** (`home/desktop/shell/`) is a from-scratch QML config
+deployed verbatim via `xdg.configFile."quickshell"` (recursive, minus `dev/`) and
+autostarted from niri (`spawn-at-startup "qs"`). **Read `shell/README.md` before
+changing it** — layout (`config/ services/ components/ island/ panels/ bar/
+overlays/ scripts/`, `qs.*` imports), house rules, external contracts, and the
+`dev/` test harness (`dev/run <scene>` renders scenes against the real modules
+with a throwaway HOME; `--old` runs them against the previous tree for
+side-by-side checks). `config/palette.json` is the single colour source (Nix reads
+it for swaylock-themed); popouts are panels hosted by one morphing "island"
+window per screen; state persists under `~/.local/state/quickshell/`. The
+previous tree `home/desktop/quickshell/` is no longer deployed and only kept for
+`dev/run --old` comparisons until it's deleted. Quickshell live-reloads on QML
+edits.
 
-The **hold-Super cheatsheet** (`Cheatsheet.qml`) is a pictographic keybind overlay
+The **hold-Super cheatsheet** (`shell/overlays/KeybindSheet.qml`, state +
+IPC in `shell/services/Cheatsheet.qml`) is a pictographic keybind overlay
 shown while Super is held. niri can't bind on modifier-hold or key-release, so a
 small read-only evdev watcher (`super-cheatsheet-watch.py`, python-evdev,
 autostarted from niri, defined in `niri/settings.nix`) drives it over Quickshell IPC

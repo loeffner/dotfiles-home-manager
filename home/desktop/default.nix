@@ -1,5 +1,6 @@
 {
   config,
+  lib,
   pkgs,
   ...
 }:
@@ -106,11 +107,15 @@
     dgop # system-metrics helper; backs SystemStats / the Processes panel
   ];
 
-  # Quickshell bar config (hand-written QML, see ./quickshell). Static QML, so
-  # the whole tree is symlinked verbatim. Autostarted from niri (see niri.nix).
+  # Quickshell desktop shell (hand-written QML, see ./shell and its README).
+  # Static QML, so the tree is symlinked verbatim — minus the dev/ harness,
+  # which runs from the repo. Autostarted from niri (see niri/settings.nix).
   # NOTE: new files here must be `git add`-ed before the flake will see them.
   xdg.configFile."quickshell" = {
-    source = ./quickshell;
+    source = lib.cleanSourceWith {
+      src = ./shell;
+      filter = path: _type: baseNameOf path != "dev";
+    };
     recursive = true;
   };
 

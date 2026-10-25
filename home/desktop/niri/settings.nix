@@ -112,7 +112,7 @@
 
   spawn-at-startup "${pkgs.swaybg}/bin/swaybg" "-i" "${config.home.homeDirectory}/Pictures/earth.png" "-m" "fill"
 
-  // Quickshell desktop shell (the hand-written config in ../quickshell).
+  // Quickshell desktop shell (the hand-written config in ../shell).
   // Restart it at runtime with Mod+Shift+R (see binds.nix).
   spawn-at-startup "${pkgs.quickshell}/bin/qs"
 

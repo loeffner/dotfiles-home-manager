@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Pixel-compare the screenshots of two dev scenes (typically a new scene and its
+# --old twin): for every <name>.png in both outputs, print the number of
+# differing pixels (a small fuzz absorbs antialiasing noise) and write a
+# highlighted diff to <a-out>/diff-<name>.png.
+#
+#   dev/compare <scene-a> <scene-b>
+set -euo pipefail
+here=$(cd "$(dirname "$0")/.." && pwd)
+base=${XDG_RUNTIME_DIR:-/tmp}/qs-dev
+a=$base/out-${1:?usage: dev/compare <scene-a> <scene-b>}
+b=$base/out-${2:?usage: dev/compare <scene-a> <scene-b>}
+if command -v magick >/dev/null; then
+  magick=$(command -v magick)
+else
+  magick=$(nix build --inputs-from "$here/../../.." nixpkgs#imagemagick --no-link --print-out-paths 2>/dev/null)/bin/magick
+fi
+for img in "$a"/*.png; do
+  name=$(basename "$img")
+  case "$name" in diff-*) continue ;; esac
+  [ -f "$b/$name" ] || { echo "$name: missing in $(basename "$b")"; continue; }
+  px=$("$magick" compare -metric AE -fuzz 4% "$img" "$b/$name" "$a/diff-$name" 2>&1 || true)
+  echo "$name: $px px differ"
+done
