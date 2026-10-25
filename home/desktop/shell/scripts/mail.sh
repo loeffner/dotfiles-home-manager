@@ -10,6 +10,10 @@
 #   mail.sh move <folder> <message-id>...
 #                                  move them from <account>/Inbox to
 #                                  <account>/<folder> (Archive, or Deleted)
+#   mail.sh open <message-id> <part> <name>
+#                                  unpack that attachment (MIME part number, as
+#                                  `thread` lists it) into $XDG_RUNTIME_DIR and
+#                                  open it with its default app
 # Read/star state is plain `notmuch tag` (flags sync to the maildir, mbsync
 # pushes them), so it needs no helper. Mail in the trash or junk folders is
 # left out of conversations.
@@ -28,7 +32,7 @@ JQ_DEFS='
 def messages: [.. | objects | select(has("tags") and has("headers"))];
 def leaves: [.body[]? | recurse(if (.content | type) == "array" then .content[] else empty end)];
 def part($t): [leaves[] | select(."content-type" == $t and (.content | type) == "string") | .content] | first;
-def attachments: [leaves[] | select(."content-disposition" == "attachment") | .filename // "attachment"];
+def attachments: [leaves[] | select(."content-disposition" == "attachment") | { name: (.filename // "attachment"), part: .id }];
 def addr: (try capture("^\\s*\"?(?<name>[^\"<]*?)\"?\\s*<(?<address>[^>]+)>\\s*$") catch null)
   // { name: "", address: . };
 def sender: (.headers.From // "" | addr) | .mine = ((.address | ascii_downcase) == $me)
@@ -75,7 +79,7 @@ case "$1" in
                 count: length,
                 unreadCount: map(select(tagged("unread"))) | length,
                 starred: any(.[]; tagged("flagged")),
-                attachments: [.[] | attachments[]],
+                attachments: [.[] | attachments[] | .name],
                 inbox: [sort_by(.timestamp)[] | select(.match) | .id],
                 all: [.[].id]
               } | .unread = (.unreadCount > 0)]
@@ -128,5 +132,16 @@ case "$1" in
       done
     done
     notmuch new --no-hooks --quiet
+    ;;
+  open)
+    # One private folder per message (runtime dir: tmpfs, user-only, gone at
+    # logout), under the attachment's own name minus any path or control chars.
+    dir=${XDG_RUNTIME_DIR:?}/mail-attachments/$(printf %s "$2" | sha1sum | cut -c1-16)
+    name=$(basename -- "$4" | tr -d '\000-\037')
+    [ -n "$name" ] || name="attachment-$3"
+    mkdir -p "$dir"
+    chmod 700 "${XDG_RUNTIME_DIR}/mail-attachments"
+    notmuch show --format=raw --part="$3" -- "$(idq "$2")" > "$dir/$name" &&
+      xdg-open "$dir/$name"
     ;;
 esac

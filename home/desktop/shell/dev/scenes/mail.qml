@@ -1,6 +1,7 @@
 // Scene: the mail panel (mock inbox, as conversations) — list, a single
 // message with attachments, a conversation (folded history, own replies,
-// quoted text), the unread filter and its empty state, archive + delete.
+// quoted text), the unread filter and its empty state, archive + delete, the
+// shortcut sheet over the inbox and over a conversation.
 // Screenshots each state.
 import QtQuick
 import Quickshell
@@ -72,6 +73,16 @@ ShellRoot {
                 Mail.trash("m1");
                 Mail.archive("m2");
                 shell.shot("7-after-trash-archive");
+                break;
+            case 7:
+                mail.help = true;
+                shell.shot("8-help-inbox");
+                break;
+            case 8:
+                mail.help = false;
+                mail.openThread("m4a");
+                mail.help = true;
+                shell.shot("9-help-conversation");
                 break;
             default:
                 console.log("TEST unread=" + Mail.unreadCount + " threads=" + Mail.threads.length + " w=" + island.shownW.toFixed(0) + " h=" + island.shownH.toFixed(0));

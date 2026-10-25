@@ -12,7 +12,8 @@ pragma Singleton
 // latest message), count, unread, unreadCount, starred, attachments: [name],
 // inbox: [ids in the inbox], all: [ids] }. Conversations load on demand into
 // `conversations` (thread id -> [message]); a message: { id, from, address,
-// mine, to, date, unread, starred, attachments, text }.
+// mine, to, date, unread, starred, attachments: [{ name, part }], text }
+// (part: the MIME part number, for openAttachment()).
 //
 // Under the dev harness (QS_MAIL_MOCK=1, set by dev/run unless --real-home) it
 // serves dev/mail-mock.json and changes stay in memory.
@@ -136,6 +137,15 @@ Singleton {
         all[id] = msgs;
         conversations = all;
     }
+    // Unpack an attachment ({ name, part } of a conversation message) and open
+    // it with its default app.
+    function openAttachment(messageId, attachment) {
+        if (mock) {
+            console.log("mail: open attachment " + attachment.name);
+            return;
+        }
+        Quickshell.execDetached(_script(["open", messageId, String(attachment.part), attachment.name]));
+    }
     // Outlook on the web, for sending and whatever else the panel can't do.
     function openWebmail() {
         Quickshell.execDetached(["xdg-open", "https://outlook.live.com/mail/"]);
@@ -245,7 +255,11 @@ Singleton {
                     "attachments": []
                 }, m, {
                     "date": now - m.ago * 60000,
-                    "text": m.body
+                    "text": m.body,
+                    "attachments": (m.attachments ?? []).map((name, i) => ({
+                                "name": name,
+                                "part": i + 2
+                            }))
                 }));
             const last = msgs[msgs.length - 1];
             const people = [];
@@ -266,7 +280,7 @@ Singleton {
                 "unreadCount": msgs.filter(m => m.unread).length,
                 "unread": msgs.some(m => m.unread),
                 "starred": msgs.some(m => m.starred),
-                "attachments": msgs.reduce((a, m) => a.concat(m.attachments), []),
+                "attachments": msgs.reduce((a, m) => a.concat(m.attachments.map(x => x.name)), []),
                 "inbox": msgs.filter(m => !m.mine).map(m => m.id),
                 "all": msgs.map(m => m.id)
             };

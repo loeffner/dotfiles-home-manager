@@ -9,9 +9,9 @@
 // folder, like webmail. The header syncs now, or opens Outlook on the web (for
 // sending and anything else the panel can't do).
 //
-// Keys: j/k or ↑/↓ move, Enter opens, / searches, r syncs; e archives and d (or
+// Keys: j/k or ↑/↓ move, Enter or Space opens, / searches, r syncs; e archives and d (or
 // Delete) deletes the selected conversation; in the reader j/k scroll, s stars,
-// u marks unread, e archives, d deletes.
+// u marks unread, e archives, d deletes. ? shows them all (`shortcuts` below).
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -30,9 +30,39 @@ IslandPanel {
     property bool kbNav: false // highlight the current row only once keys move it
     readonly property var reading: readingId !== "" ? Mail.find(readingId) : null
     property int openedUnread: 0 // unread messages when the conversation was opened
+    property bool help: false // the shortcut sheet is up
+
+    // The shortcut sheet (?); keep in step with keys' Keys.onPressed.
+    readonly property var shortcuts: [
+        {
+            "title": "Inbox",
+            "keys": [
+                [["j", "k"], "Move down / up"],
+                [["Enter", "Space"], "Open conversation"],
+                [["/"], "Search"],
+                [["e"], "Archive selected"],
+                [["d", "Del"], "Delete selected"],
+                [["r"], "Sync now"],
+                [["Esc"], "Clear search / close"]
+            ]
+        },
+        {
+            "title": "Conversation",
+            "keys": [
+                [["j", "k"], "Scroll"],
+                [["s"], "Star"],
+                [["u"], "Mark unread"],
+                [["e"], "Archive"],
+                [["d", "Del"], "Delete"],
+                [["⌫", "h"], "Back to inbox"],
+                [["Esc"], "Back"]
+            ]
+        }
+    ]
 
     onOpened: {
         readingId = "";
+        help = false;
         kbNav = false;
         search.clear();
         list.currentIndex = 0;
@@ -146,10 +176,15 @@ IslandPanel {
         }
     }
 
+    // An attachment of one message: click to unpack and open it in its default
+    // app. Hover swaps the file-type icon for an open icon; a click shows
+    // "Opening…" briefly while the app starts.
     component AttachmentChip: Rectangle {
         id: chip
-        required property string modelData
+        required property var modelData // { name, part }
+        required property string messageId
         readonly property bool hovered: chipHover.hovered
+        property bool opening: false
         implicitHeight: 28
         implicitWidth: chipRow.implicitWidth + 18
         radius: Theme.radiusS
@@ -159,19 +194,31 @@ IslandPanel {
             id: chipHover
             cursorShape: Qt.PointingHandCursor
         }
+        TapHandler {
+            onTapped: {
+                Mail.openAttachment(chip.messageId, chip.modelData);
+                chip.opening = true;
+                openingTimer.restart();
+            }
+        }
+        Timer {
+            id: openingTimer
+            interval: 1500
+            onTriggered: chip.opening = false
+        }
         Row {
             id: chipRow
             anchors.centerIn: parent
             spacing: 6
             MIcon {
                 anchors.verticalCenter: parent.verticalCenter
-                text: /\.pdf$/i.test(chip.modelData) ? "picture_as_pdf" : /\.(jpe?g|png|gif|webp)$/i.test(chip.modelData) ? "image" : "description"
+                text: chip.hovered || chip.opening ? "open_in_new" : /\.pdf$/i.test(chip.modelData.name) ? "picture_as_pdf" : /\.(jpe?g|png|gif|webp|heic)$/i.test(chip.modelData.name) ? "image" : "description"
                 size: 15
                 color: Theme.primary
             }
             MText {
                 anchors.verticalCenter: parent.verticalCenter
-                text: chip.modelData
+                text: chip.opening ? "Opening…" : chip.modelData.name
                 sizeDelta: -1
             }
         }
@@ -220,14 +267,30 @@ IslandPanel {
     }
 
     // ── List ⇄ reader ────────────────────────────────────────────────────────
+    // The reader always gets the full height; the list only what it needs, up
+    // to the same cap (an empty filter or a short inbox gives a compact panel;
+    // the island animates the change).
+    readonly property int maxBodyHeight: 560
+    readonly property int rowHeight: 64
+    // Day header above the first row of each group (less room at the very top).
+    function headerHeight(index) {
+        return index === 0 ? 22 : 32;
+    }
+
     Item {
         id: keys
         Layout.fillWidth: true
-        Layout.preferredHeight: 560
+        Layout.preferredHeight: root.readingId !== "" || root.help ? root.maxBodyHeight : Math.min(root.maxBodyHeight, listPage.naturalHeight)
         clip: true
         focus: true
 
         Keys.onPressed: e => {
+            // ? toggles the shortcut sheet; while it's up, any key closes it.
+            if (e.key === Qt.Key_Question || e.text === "?" || root.help) {
+                root.help = !root.help && (e.key === Qt.Key_Question || e.text === "?");
+                e.accepted = true;
+                return;
+            }
             const reading = root.readingId !== "";
             if (reading) {
                 switch (e.key) {
@@ -275,6 +338,7 @@ IslandPanel {
                     break;
                 case Qt.Key_Return:
                 case Qt.Key_Enter:
+                case Qt.Key_Space:
                     if (root.entries[list.currentIndex])
                         root.openThread(root.entries[list.currentIndex].id);
                     break;
@@ -301,7 +365,9 @@ IslandPanel {
         }
         // Escape: reader → list, search text → cleared, otherwise close.
         Keys.onEscapePressed: e => {
-            if (root.readingId !== "")
+            if (root.help)
+                root.help = false;
+            else if (root.readingId !== "")
                 root.back();
             else if (search.text !== "")
                 search.clear();
@@ -324,7 +390,27 @@ IslandPanel {
             Behavior on x { NumberAnimation { duration: Theme.durMed; easing.type: Easing.OutCubic } }
             Behavior on opacity { NumberAnimation { duration: Theme.durShort } }
 
+            // Height with everything shown at full size. The list's is counted
+            // from its rows (ListView only builds the rows it has room for, so
+            // its contentHeight can't size it).
+            readonly property real listHeight: {
+                let h = 0, prev = "";
+                for (let i = 0; i < root.entries.length; i++) {
+                    const g = root.dayGroup(root.entries[i].date);
+                    h += root.rowHeight + (g !== prev ? root.headerHeight(i) : 0);
+                    prev = g;
+                }
+                return h;
+            }
+            readonly property real naturalHeight: {
+                const parts = [filterRow.implicitHeight, search.implicitHeight, root.entries.length > 0 ? listHeight : empty.implicitHeight];
+                if (footer.visible)
+                    parts.push(footer.implicitHeight);
+                return parts.reduce((a, b) => a + b, 0) + (parts.length - 1) * spacing;
+            }
+
             RowLayout {
+                id: filterRow
                 Layout.fillWidth: true
                 spacing: 4
                 Repeater {
@@ -348,15 +434,17 @@ IslandPanel {
                 placeholder: "Search mail"
             }
 
-            // Empty state: takes the list's place (and height), centred.
+            // Empty state: takes the list's place, centred in a compact block.
             Item {
+                id: empty
                 visible: root.entries.length === 0
                 Layout.fillWidth: true
                 Layout.fillHeight: true
+                implicitHeight: emptyColumn.implicitHeight + Theme.padL * 3
 
                 Column {
+                    id: emptyColumn
                     anchors.centerIn: parent
-                    anchors.verticalCenterOffset: -Theme.padL
                     spacing: Theme.gap
 
                     Rectangle {
@@ -415,7 +503,7 @@ IslandPanel {
 
                     MText {
                         visible: cell.firstOfGroup
-                        height: visible ? (cell.index === 0 ? 22 : 32) : 0
+                        height: visible ? root.headerHeight(cell.index) : 0
                         verticalAlignment: Text.AlignBottom
                         bottomPadding: 6
                         leftPadding: 8
@@ -429,7 +517,7 @@ IslandPanel {
                     ListRow {
                         id: row
                         width: parent.width
-                        implicitHeight: 64
+                        implicitHeight: root.rowHeight
                         selected: root.kbNav && list.currentIndex === cell.index
                         onClicked: {
                             list.currentIndex = cell.index;
@@ -580,10 +668,11 @@ IslandPanel {
             }
 
             MText {
+                id: footer
                 Layout.fillWidth: true
                 horizontalAlignment: Text.AlignHCenter
                 visible: Mail.available
-                text: Mail.syncing ? "Syncing…" : (Mail.mock ? "Preview data · " : "") + "Updated " + Qt.formatTime(new Date(Mail.lastSync), "hh:mm")
+                text: (Mail.syncing ? "Syncing…" : (Mail.mock ? "Preview data · " : "") + "Updated " + Qt.formatTime(new Date(Mail.lastSync), "hh:mm")) + "  ·  ? for shortcuts"
                 sizeDelta: -3
                 muted: true
             }
@@ -825,7 +914,9 @@ IslandPanel {
                                     spacing: Theme.gap
                                     Repeater {
                                         model: card.m.attachments
-                                        delegate: AttachmentChip {}
+                                        delegate: AttachmentChip {
+                                            messageId: card.m.id
+                                        }
                                     }
                                 }
 
@@ -884,6 +975,108 @@ IslandPanel {
                                     font.family: Theme.font
                                     font.pixelSize: Theme.fontSize - 1
                                     onLinkActivated: link => Qt.openUrlExternally(link)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Shortcut sheet (?) — over the list or reader; the section for the
+        // page you're on is highlighted. Any key or a click closes it.
+        Rectangle {
+            anchors.fill: parent
+            color: Theme.popout
+            opacity: root.help ? 1 : 0
+            visible: opacity > 0
+            Behavior on opacity { NumberAnimation { duration: Theme.durShort } }
+
+            MouseArea {
+                anchors.fill: parent
+                onClicked: root.help = false
+            }
+
+            Column {
+                anchors.centerIn: parent
+                width: Math.min(parent.width - Theme.padL * 2, 360)
+                spacing: Theme.gapL + 4
+
+                RowLayout {
+                    width: parent.width
+                    spacing: Theme.gap
+                    MIcon {
+                        text: "keyboard"
+                        size: 18
+                        color: Theme.primary
+                    }
+                    MText {
+                        Layout.fillWidth: true
+                        text: "Keyboard shortcuts"
+                        font.bold: true
+                    }
+                    MText {
+                        text: "any key closes"
+                        muted: true
+                        sizeDelta: -2
+                    }
+                }
+
+                Repeater {
+                    model: root.shortcuts
+                    delegate: Column {
+                        id: section
+                        required property var modelData
+                        required property int index
+                        readonly property bool current: (index === 1) === (root.readingId !== "")
+                        width: parent.width
+                        spacing: 5
+
+                        MText {
+                            text: section.modelData.title.toUpperCase()
+                            sizeDelta: -3
+                            font.bold: true
+                            font.letterSpacing: 0.8
+                            color: section.current ? Theme.primary : Theme.surfaceVariantText
+                            bottomPadding: 2
+                        }
+                        Repeater {
+                            model: section.modelData.keys
+                            delegate: RowLayout {
+                                id: shortcut
+                                required property var modelData
+                                width: section.width
+                                spacing: Theme.gap
+                                opacity: section.current ? 1 : 0.6
+
+                                Row {
+                                    Layout.preferredWidth: 112 // fits "Enter" + "Space"
+                                    spacing: 4
+                                    Repeater {
+                                        model: shortcut.modelData[0]
+                                        // A keycap.
+                                        delegate: Rectangle {
+                                            required property string modelData
+                                            implicitWidth: Math.max(24, cap.implicitWidth + 12)
+                                            implicitHeight: 22
+                                            radius: 5
+                                            color: Theme.surfaceContainerHigh
+                                            border.width: 1
+                                            border.color: Theme.outline
+                                            MText {
+                                                id: cap
+                                                anchors.centerIn: parent
+                                                text: parent.modelData
+                                                sizeDelta: -2
+                                                font.bold: true
+                                            }
+                                        }
+                                    }
+                                }
+                                MText {
+                                    Layout.fillWidth: true
+                                    text: shortcut.modelData[1]
+                                    sizeDelta: -1
                                 }
                             }
                         }
