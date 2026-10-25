@@ -1,9 +1,10 @@
 // Pictographic keybind cheatsheet — a light overlay shown while Super is held
 // (services/Cheatsheet, driven over IPC by the evdev watcher and Mod+/). It
 // floats over the desktop on a light dim wash; clicking anywhere outside a
-// panel dismisses it. Three zones fade in together:
+// panel dismisses it. Four zones fade in together:
 //   • top-centre  — function-row media cluster (volume | playback)
 //   • left edge   — program launches, vertical strip (keycap + app glyph)
+//   • right edge  — the shell's popouts (control centre, mail, …), same strip
 //   • bottom-centre — movement (HJKL) + window / workspace management
 // Only Super-prefixed binds appear, since the sheet is shown while Super is held.
 //
@@ -160,6 +161,35 @@ PanelWindow {
                         { key: "G", glyph: "󰓓" },  // steam
                         { key: "Y", glyph: "󰋩" },  // geeqie (image viewer)
                         { key: "U", glyph: "󰄄" }   // darktable (photo dev)
+                    ]
+                    delegate: AppRow { required property var modelData; key: modelData.key; glyph: modelData.glyph }
+                }
+            }
+        }
+
+        // ── Right strip: the shell's popouts (niri/binds.nix → Popouts IPC) ──
+        Rectangle {
+            anchors { right: parent.right; rightMargin: Theme.pad * 2; verticalCenter: parent.verticalCenter }
+            implicitWidth: rightCol.implicitWidth + Theme.pad * 3
+            implicitHeight: rightCol.implicitHeight + Theme.pad * 2
+            radius: Theme.radiusL
+            color: Theme.surface
+            border.width: 1
+            border.color: Theme.outline
+
+            ColumnLayout {
+                id: rightCol
+                anchors.centerIn: parent
+                spacing: Theme.gap + 2
+
+                Repeater {
+                    model: [
+                        { key: "A", glyph: "󰒓" },   // control centre
+                        { key: "M", glyph: "󰇮" },   // mail
+                        { key: "⇧N", glyph: "󰂚" },  // notifications
+                        { key: "T", glyph: "󰃭" },   // calendar / clock
+                        { key: "P", glyph: "󰓅" },   // processes
+                        { key: "X", glyph: "󰅌" }    // clipboard
                     ]
                     delegate: AppRow { required property var modelData; key: modelData.key; glyph: modelData.glyph }
                 }

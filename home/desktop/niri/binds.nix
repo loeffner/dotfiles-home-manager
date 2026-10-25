@@ -33,6 +33,15 @@
       Mod+R         { spawn "sh" "-c" "pkill wofi || wofi --show drun"; }
       Mod+Space     { spawn "sh" "-c" "pkill wofi || wofi --show drun"; }
       Mod+Shift+R   { spawn "shell-restart"; }          // restart the Quickshell bar
+
+      // Quickshell popouts on the focused monitor (pressing again closes).
+      // Mod+A like Windows' Win+A; notifications on Shift+N (Mod+N = zennotes).
+      Mod+A       { spawn "qs" "ipc" "call" "popouts" "toggle" "control"; }
+      Mod+M       { spawn "qs" "ipc" "call" "popouts" "toggle" "mail"; }
+      Mod+Shift+N { spawn "qs" "ipc" "call" "popouts" "toggle" "notifications"; }
+      Mod+T       { spawn "qs" "ipc" "call" "popouts" "toggle" "clock"; }
+      Mod+P       { spawn "qs" "ipc" "call" "popouts" "toggle" "processes"; }
+      Mod+X       { spawn "qs" "ipc" "call" "popouts" "toggle" "clipboard"; }
       Mod+Ctrl+R    { spawn "kitty" "--app-id" "hms-runner" "-e" "bash" "-c" "home-manager switch --flake ~/dotfiles#terra; echo; read -rp 'Press Enter to close...'"; }
 
       // Window lifecycle.

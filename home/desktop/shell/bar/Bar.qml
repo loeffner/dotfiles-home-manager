@@ -33,6 +33,13 @@ PanelWindow {
             "processes": sysIcon,
             "clock": clock
         })
+    // …and for the keyboard (Popouts' IPC, the niri binds), handed over on request.
+    Connections {
+        target: Popouts
+        function onAnchorsRequested() {
+            Popouts.registerAnchors(bar.modelData, bar.triggers);
+        }
+    }
 
     MouseArea {
         anchors.fill: parent

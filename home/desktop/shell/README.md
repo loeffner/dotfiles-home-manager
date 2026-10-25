@@ -51,8 +51,9 @@ Imports use the `qs.*` module root: `import qs.services`, `import qs.components`
 
 - IPC: `qs ipc call cheatsheet open|close|toggle` (niri/super-cheatsheet-watch.py,
   Mod+/), `qs ipc call cameraImport start|filing|progress|finish|fail`
-  (camera-import) and `qs ipc call mail refresh` (the notmuch post-new hook,
-  home/mail.nix).
+  (camera-import), `qs ipc call mail refresh` (the notmuch post-new hook,
+  home/mail.nix), and `qs ipc call popouts toggle <id>` / `close` (the niri
+  popout binds, niri/binds.nix: Mod+A/M/T/P/X, Mod+Shift+N).
 - Mail reads the notmuch index of `~/Maildir` (`folder:outlook/Inbox`) through
   `scripts/mail.sh` (needs notmuch, jq, w3m — installed by home/mail.nix), and
   starts `mbsync.service` (systemd user unit) to sync.
@@ -88,7 +89,8 @@ morph, tray menu, clock, cheatsheet + cameraImport IPC), `osd` (volume OSD:
 placement under the pill, hide delay, suppressed while a panel is open), `frames` (island
 render timing per panel, `PANEL=<id>`), `mail` (conversations: list, folded history,
 quoted text, filter + empty state, archive/delete on the mock
-inbox; `--real-home` for your real index), `full` (load check).
+inbox; `--real-home` for your real index), `popouts` (keyboard toggles via IPC +
+the cheatsheet's popout strip), `full` (load check).
 
 Visual checks need the monitor on: while it is blanked (swayidle / DPMS) niri
 sends no frame callbacks, windows render about once a second, and screenshots
