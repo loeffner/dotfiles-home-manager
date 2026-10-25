@@ -60,6 +60,16 @@ Singleton {
         const terminal = /^(kitty|foot|alacritty|wezterm|st|[Xx]?term.*)$/.test(w?.appId ?? "");
         Quickshell.execDetached(["sh", Quickshell.shellPath("scripts/clip-paste.sh"), terminal ? "terminal" : "app"]);
     }
+    // Delete one entry: from cliphist's history (by id; `delete` reads list
+    // lines, of which it only uses the id), or for a pin, unpin it.
+    function remove(entry) {
+        if (entry.pinKey !== undefined) {
+            unpin(entry);
+            return;
+        }
+        Quickshell.execDetached(["sh", "-c", 'printf "%s\\t\\n" "$1" | cliphist delete', "_", String(entry.id)]);
+        history = history.filter(e => e.uid !== entry.uid);
+    }
     // Wipes cliphist's history; pins are kept.
     function wipe() {
         Quickshell.execDetached(["cliphist", "wipe"]);

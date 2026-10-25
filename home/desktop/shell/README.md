@@ -90,16 +90,18 @@ placement under the pill, hide delay, suppressed while a panel is open), `frames
 render timing per panel, `PANEL=<id>`), `mail` (conversations: list, folded history,
 quoted text, filter + empty state, archive/delete on the mock
 inbox; `--real-home` for your real index), `popouts` (keyboard toggles via IPC +
-the cheatsheet's popout strip), `full` (load check).
+the cheatsheet's popout strip), `keys` (every popout's shortcuts and "?" sheet
+with real key events via wtype — the island must keep the keyboard, so don't
+type or click while it runs), `full` (load check).
 
 Visual checks need the monitor on: while it is blanked (swayidle / DPMS) niri
 sends no frame callbacks, windows render about once a second, and screenshots
 show stale frames. Logic checks (TEST lines) are unaffected.
 
 After deploying, check `qs log` for `Failed to load configuration`: a failed
-live reload keeps the previous config running silently. Adding an inline
-`component` to a file the running shell already loaded can fail that way
-("X is not a type") although a fresh start (and `dev/run`) loads it fine;
+live reload keeps the previous config running silently. A new type — a new
+file in a module dir, or an inline `component` added to a loaded file — fails
+that way ("X is not a type") although a fresh start (and `dev/run`) loads it;
 restart with Mod+Shift+R.
 
 ## Migration from the previous shell

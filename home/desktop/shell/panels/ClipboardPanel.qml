@@ -1,9 +1,9 @@
 // Clipboard panel ("clipboard", Mod+X): history (refreshed on open) with pins
-// floating to the top, filterable by type and searchable (the search box is
-// focused on open). Picking an entry — click, or ↑/↓ then Enter — inserts it
-// into the window you came from (copy + paste, Clip.paste); right-click only
-// copies it. The pin toggles pinning; the trash wipes cliphist history (pins are
-// kept). Images get lazily decoded thumbnails.
+// floating to the top, filterable by type and searchable. Picking an entry —
+// click, or j/k then Enter — inserts it into the window you came from (copy +
+// paste, Clip.paste); right-click only copies it. The pin toggles pinning, d
+// deletes an entry (a pin is unpinned); the trash wipes cliphist history (pins
+// are kept). Images get lazily decoded thumbnails. Keys: IslandPanel's rules.
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -16,15 +16,15 @@ IslandPanel {
     id: root
     panelId: "clipboard"
     panelWidth: 400
+    searchField: search
 
     property int typeFilter: 0 // 0 All, 1 Text, 2 Images
-    property int current: 0 // the entry Enter inserts (↑/↓ move it)
+    property int current: 0 // the entry Enter inserts (j/k move it)
 
     onOpened: {
         search.clear();
         current = 0;
         Clip.refresh();
-        Qt.callLater(() => search.focusInput());
     }
     onEntriesChanged: current = Math.max(0, Math.min(current, entries.length - 1))
 
@@ -37,9 +37,52 @@ IslandPanel {
         close();
     }
 
-    // ↑/↓ reach here from the search field (a single-line input passes them on).
-    Keys.onUpPressed: current = Math.max(0, current - 1)
-    Keys.onDownPressed: current = Math.min(entries.length - 1, current + 1)
+    // ── Keyboard (IslandPanel: "?" shows this) ───────────────────────────────
+    shortcuts: [
+        {
+            "title": "Clipboard",
+            "keys": [
+                [["Tab", "⇧Tab"], "All / Text / Images"],
+                [["j", "k"], "Move down / up"],
+                [["Enter", "Space"], "Insert into your window"],
+                [["p"], "Pin / unpin"],
+                [["d", "Del"], "Delete (unpin a pin)"]
+            ]
+        }
+    ]
+    function handleKey(e) {
+        const entry = entries[current];
+        switch (e.key) {
+        case Qt.Key_Tab:
+        case Qt.Key_Backtab:
+            typeFilter = (typeFilter + 3 + tabStep(e)) % 3;
+            return true;
+        case Qt.Key_J:
+        case Qt.Key_Down:
+            current = Math.min(entries.length - 1, current + 1);
+            return true;
+        case Qt.Key_K:
+        case Qt.Key_Up:
+            current = Math.max(0, current - 1);
+            return true;
+        case Qt.Key_Return:
+        case Qt.Key_Enter:
+        case Qt.Key_Space:
+            if (entry)
+                insert(entry);
+            return true;
+        case Qt.Key_P:
+            if (entry)
+                Clip.togglePin(entry);
+            return true;
+        case Qt.Key_D:
+        case Qt.Key_Delete:
+            if (entry)
+                Clip.remove(entry);
+            return true;
+        }
+        return false;
+    }
 
     readonly property var entries: {
         const q = search.text.toLowerCase();
@@ -181,7 +224,7 @@ IslandPanel {
         visible: root.entries.length > 0
         Layout.fillWidth: true
         horizontalAlignment: Text.AlignHCenter
-        text: "Click or Enter inserts  ·  right-click copies"
+        text: "Click or Enter inserts  ·  right-click copies  ·  ? for shortcuts"
         sizeDelta: -3
         muted: true
     }

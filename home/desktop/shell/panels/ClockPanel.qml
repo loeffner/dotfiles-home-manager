@@ -19,6 +19,40 @@ IslandPanel {
 
     onOpened: cal.reset()
 
+    // ── Keyboard (IslandPanel: "?" shows this) ───────────────────────────────
+    shortcuts: [
+        {
+            "title": "Calendar & media",
+            "keys": [
+                [["←", "→"], "Previous / next month"],
+                [["t"], "Back to today"],
+                [["Space"], "Play / pause"],
+                [["p", "n"], "Previous / next track"]
+            ]
+        }
+    ]
+    function handleKey(e) {
+        switch (e.key) {
+        case Qt.Key_Left:
+        case Qt.Key_Right:
+            cal.step(e.key === Qt.Key_Right ? 1 : -1);
+            return true;
+        case Qt.Key_T:
+            cal.reset();
+            return true;
+        case Qt.Key_Space:
+            player?.togglePlaying();
+            return true;
+        case Qt.Key_P:
+            Player.previousOrRewind();
+            return true;
+        case Qt.Key_N:
+            player?.next();
+            return true;
+        }
+        return false;
+    }
+
     SystemClock {
         id: clock
         precision: SystemClock.Minutes

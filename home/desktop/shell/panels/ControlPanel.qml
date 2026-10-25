@@ -55,6 +55,85 @@ IslandPanel {
     function toggleSection(key) {
         expanded = expanded === key ? "" : key;
     }
+    // Next / previous entry of a settings list (accents, background presets).
+    function cycle(list, cur, back) {
+        const i = list.indexOf(cur);
+        return list[(i + (back ? list.length - 1 : 1)) % list.length];
+    }
+
+    // ── Keyboard (IslandPanel: "?" shows this) ───────────────────────────────
+    shortcuts: [
+        {
+            "title": "Controls",
+            "keys": [
+                [["←", "→"], "Volume down / up"],
+                [["⇧←", "⇧→"], "Mic volume down / up"],
+                [["m", "⇧M"], "Mute speakers / mic"],
+                [["o", "i"], "Output / input device"],
+                [["w", "⇧W"], "Wi-Fi on/off / networks"],
+                [["b", "⇧B"], "Bluetooth on/off / devices"],
+                [["z"], "Do Not Disturb"],
+                [["c", "⇧C"], "Next / previous accent"],
+                [["t"], "Next background"],
+                [["l", "s"], "Lock / suspend"],
+                [["r", "p"], "Reboot / power off…"]
+            ]
+        }
+    ]
+    function handleKey(e) {
+        const shift = (e.modifiers & Qt.ShiftModifier) !== 0;
+        switch (e.key) {
+        case Qt.Key_Left:
+        case Qt.Key_Right:
+            {
+                const d = e.key === Qt.Key_Right ? 0.05 : -0.05;
+                if (shift)
+                    Audio.setMicVolume(Audio.micVolume + d);
+                else
+                    Audio.setVolume(Audio.volume + d);
+                return true;
+            }
+        case Qt.Key_M:
+            shift ? Audio.toggleMicMute() : Audio.toggleMute();
+            return true;
+        case Qt.Key_O:
+            toggleSection("out");
+            return true;
+        case Qt.Key_I:
+            toggleSection("in");
+            return true;
+        case Qt.Key_W:
+            shift ? toggleSection("wifi") : Network.setWifiEnabled(!Network.wifiEnabled);
+            return true;
+        case Qt.Key_B:
+            shift ? toggleSection("bt") : Bluetooth.setEnabled(!Bluetooth.enabled);
+            return true;
+        case Qt.Key_Z:
+            Notifications.dnd = !Notifications.dnd;
+            return true;
+        case Qt.Key_C:
+            Settings.accent = cycle(Theme.accentOrder, Settings.accent, shift);
+            return true;
+        case Qt.Key_T:
+            Settings.background = cycle(Theme.backgroundOrder, Settings.background, shift);
+            return true;
+        case Qt.Key_L:
+            Session.lock();
+            close();
+            return true;
+        case Qt.Key_S:
+            Session.suspend();
+            close();
+            return true;
+        case Qt.Key_R:
+            requestPower("reboot");
+            return true;
+        case Qt.Key_P:
+            requestPower("poweroff");
+            return true;
+        }
+        return false;
+    }
     function requestPower(action) {
         Session.request(action);
         Popouts.open(screen, "confirm", Popouts.anchorOf(screen));

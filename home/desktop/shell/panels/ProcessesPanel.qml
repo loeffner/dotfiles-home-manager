@@ -1,9 +1,10 @@
 // Processes panel ("processes"): host / distro / CPU / GPU info beside CPU,
 // Memory and GPU gauges (inner ring = temperature); clicking the CPU gauge
-// reveals fan control. Below: All / Mine / System filter, search (focused on
-// open) and a sortable, killable process list. Click a row to copy its PID. The
-// list keeps its rows (and scroll position) across refreshes and freezes while
-// the pointer is over it, so rows don't shuffle out from under the cursor.
+// reveals fan control. Below: All / Mine / System filter, search and a sortable,
+// killable process list. Click a row (or select it with j/k, then Enter) to copy
+// its PID. The list keeps its rows (and scroll position) across refreshes and
+// freezes while the pointer is over it or a row is selected, so rows don't
+// shuffle out from under the cursor. Keys: IslandPanel's rules.
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -16,12 +17,77 @@ IslandPanel {
     id: root
     panelId: "processes"
     panelWidth: 540
+    searchField: search
 
     property int filter: 0 // 0 All, 1 Mine, 2 System
     property int sortKey: 0 // 0 CPU, 1 MEM
     property string copiedPid: ""
+    property string selectedPid: "" // the keyboard selection (j/k), by PID
 
-    onOpened: Qt.callLater(() => search.focusInput())
+    onOpened: selectedPid = ""
+
+    function copyPid(pid) {
+        Quickshell.execDetached(["wl-copy", "--", pid]);
+        copiedPid = pid;
+        copiedTimer.restart();
+    }
+
+    // ── Keyboard (IslandPanel: "?" shows this) ───────────────────────────────
+    shortcuts: [
+        {
+            "title": "Processes",
+            "keys": [
+                [["Tab", "⇧Tab"], "All / Mine / System"],
+                [["j", "k"], "Move down / up"],
+                [["Enter", "Space"], "Copy its PID"],
+                [["d", "Del"], "Kill it"],
+                [["s"], "Sort by CPU / memory"],
+                [["f"], "Fan control"]
+            ]
+        }
+    ]
+    function handleKey(e) {
+        const i = shownRows.findIndex(p => p.pid === selectedPid);
+        switch (e.key) {
+        case Qt.Key_Tab:
+        case Qt.Key_Backtab:
+            filter = (filter + 3 + tabStep(e)) % 3;
+            return true;
+        case Qt.Key_J:
+        case Qt.Key_Down:
+        case Qt.Key_K:
+        case Qt.Key_Up:
+            {
+                const down = e.key === Qt.Key_J || e.key === Qt.Key_Down;
+                const next = i < 0 ? 0 : Math.max(0, Math.min(shownRows.length - 1, i + (down ? 1 : -1)));
+                if (shownRows[next]) {
+                    selectedPid = shownRows[next].pid;
+                    procList.positionViewAtIndex(next, ListView.Contain);
+                }
+                return true;
+            }
+        case Qt.Key_Return:
+        case Qt.Key_Enter:
+        case Qt.Key_Space:
+            if (i >= 0)
+                copyPid(selectedPid);
+            return true;
+        case Qt.Key_D:
+        case Qt.Key_Delete:
+            if (i >= 0) {
+                SystemStats.killProcess(selectedPid);
+                selectedPid = ""; // unfreeze, so the list drops it
+            }
+            return true;
+        case Qt.Key_S:
+            sortKey = 1 - sortKey;
+            return true;
+        case Qt.Key_F:
+            Fans.expanded = !Fans.expanded;
+            return true;
+        }
+        return false;
+    }
 
     // top may truncate an owner to 8 chars with a trailing "+".
     function isMine(u) {
@@ -42,9 +108,11 @@ IslandPanel {
         list.sort((a, b) => sortKey === 0 ? b.cpu - a.cpu : b.mem - a.mem);
         return list.slice(0, 100);
     }
-    // What the list shows: `rows`, except frozen while hovered.
+    // What the list shows: `rows`, except frozen while hovered or while a row is
+    // selected with the keys (rows would shuffle out from under either).
     property var shownRows: []
-    property bool frozen: false
+    property bool hovering: false
+    readonly property bool frozen: hovering || selectedPid !== ""
     onRowsChanged: if (!frozen)
         shownRows = rows
     onFrozenChanged: if (!frozen)
@@ -221,6 +289,7 @@ IslandPanel {
     }
 
     ListView {
+        id: procList
         Layout.fillWidth: true
         Layout.preferredHeight: 280
         clip: true
@@ -233,7 +302,7 @@ IslandPanel {
         }
 
         HoverHandler {
-            onHoveredChanged: root.frozen = hovered
+            onHoveredChanged: root.hovering = hovered
         }
 
         add: Transition { NumberAnimation { property: "opacity"; from: 0; to: 1; duration: Theme.durShort } }
@@ -248,12 +317,8 @@ IslandPanel {
 
             width: ListView.view.width
             implicitHeight: 26
-            selected: copied
-            onClicked: {
-                Quickshell.execDetached(["wl-copy", "--", modelData.pid]);
-                root.copiedPid = modelData.pid;
-                copiedTimer.restart();
-            }
+            selected: copied || modelData.pid === root.selectedPid
+            onClicked: root.copyPid(modelData.pid)
 
             RowLayout {
                 anchors { fill: parent; leftMargin: 6; rightMargin: 4 }

@@ -2,20 +2,27 @@
 // and a reveal toggle for passwords. Popouts hold keyboard focus while open, so
 // pressing the field (or focusInput()) just gives the input active focus.
 // Escape emits canceled(); unless `consumeEscape` is set it then propagates up
-// to the popout, which closes.
+// to the popout, which closes. With `helpKey`, "?" typed into the empty field
+// emits helpRequested() instead (toggle the popout's shortcut sheet), and while
+// `helpOpen` (the sheet is up) every key, Escape included, does — so the sheet
+// closes on any key though the field holds the focus.
 import QtQuick
 import qs.config
 
 Rectangle {
     id: root
     property alias text: input.text
+    readonly property bool editing: input.activeFocus // the caret is in the field
     property string placeholder: ""
     property string icon: ""
     property bool password: false
     property bool consumeEscape: false
+    property bool helpKey: false
+    property bool helpOpen: false
     property bool _reveal: false
     signal accepted
     signal canceled
+    signal helpRequested
 
     function clear() {
         input.text = "";
@@ -55,8 +62,18 @@ Rectangle {
             echoMode: (root.password && !root._reveal) ? TextInput.Password : TextInput.Normal
             onAccepted: root.accepted()
             Keys.onEscapePressed: e => {
+                if (root.helpOpen) {
+                    root.helpRequested(); // closes the sheet, not the popout
+                    return;
+                }
                 root.canceled();
                 e.accepted = root.consumeEscape;
+            }
+            // While the sheet is up any key closes it (and isn't typed).
+            Keys.onPressed: e => {
+                e.accepted = root.helpKey && (root.helpOpen || (e.text === "?" && input.text === ""));
+                if (e.accepted)
+                    root.helpRequested();
             }
 
             MText {

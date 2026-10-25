@@ -7,7 +7,9 @@
 //   • settings (gear) — per-urgency timeouts (on-screen time + auto-clear, a
 //     default plus per-app overrides; right-click a chip to reset), muted apps,
 //     and a builder for title / text / app silence rules.
-// Right-clicking the bar bell toggles Do Not Disturb.
+// Right-clicking the bar bell toggles Do Not Disturb. Keys: IslandPanel's
+// rules (j/k select a card, Enter goes to its app, d dismisses, ⌫ leaves
+// settings) plus the panel's own in `shortcuts`.
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -29,6 +31,7 @@ IslandPanel {
     onClosed: {
         view = 0;
         editCrit = false;
+        selectedId = "";
     }
 
     // Cycle presets; per-app lists lead with `undefined` = inherit the default.
@@ -96,6 +99,109 @@ IslandPanel {
         if (op === "not_contains")
             return noun + " excludes “" + r.pattern + "”";
         return noun + " contains “" + r.pattern + "”";
+    }
+
+    // ── Keyboard (IslandPanel: "?" shows this) ───────────────────────────────
+    // The selection runs over the cards as shown (a folded group shows one), by
+    // id; it's highlighted only once the keys move it.
+    property string selectedId: ""
+    property var expandedApps: ({}) // appName -> true: "Show N more" unfolded
+    readonly property var shownEntries: groups.reduce((all, g) => all.concat(expandedApps[g.appName] ? g.items : g.items.slice(0, 1)), [])
+
+    function toggleExpanded(app) {
+        const m = Object.assign({}, expandedApps);
+        m[app] = !m[app];
+        expandedApps = m;
+    }
+    // Scroll the list so a card is in view.
+    function reveal(item) {
+        const y = item.mapToItem(groupsCol, 0, 0).y;
+        if (y < flick.contentY)
+            flick.contentY = y;
+        else if (y + item.height > flick.contentY + flick.height)
+            flick.contentY = Math.min(y + item.height - flick.height, flick.contentHeight - flick.height);
+    }
+
+    shortcuts: [
+        {
+            "title": "Notifications",
+            "keys": [
+                [["Tab", "⇧Tab"], "Active / History"],
+                [["j", "k"], "Move down / up"],
+                [["Enter", "Space"], "Go to the app"],
+                [["d", "Del"], "Dismiss"],
+                [["m"], "Show more / less of that app"],
+                [["f"], "Next history filter"],
+                [["c"], "Clear all"],
+                [["z"], "Do Not Disturb"],
+                [["s"], "Settings"],
+                [["⌫"], "Back from settings"]
+            ]
+        }
+    ]
+    function back() {
+        if (view !== 1)
+            return false;
+        view = 0;
+        return true;
+    }
+    function handleKey(e) {
+        const i = shownEntries.findIndex(n => n.id === selectedId);
+        const sel = shownEntries[i];
+        switch (e.key) {
+        case Qt.Key_Tab:
+        case Qt.Key_Backtab: // two tabs: both directions just switch
+            view = 0;
+            tab = 1 - tab;
+            selectedId = "";
+            return true;
+        case Qt.Key_J:
+        case Qt.Key_Down:
+        case Qt.Key_K:
+        case Qt.Key_Up:
+            {
+                const down = e.key === Qt.Key_J || e.key === Qt.Key_Down;
+                const next = shownEntries[i < 0 ? 0 : Math.max(0, Math.min(shownEntries.length - 1, i + (down ? 1 : -1)))];
+                if (view === 0 && next)
+                    selectedId = next.id;
+                return true;
+            }
+        case Qt.Key_Return:
+        case Qt.Key_Enter:
+        case Qt.Key_Space:
+            if (sel && Niri.focusByApp(sel.desktopEntry, sel.appName))
+                close();
+            return true;
+        case Qt.Key_D:
+        case Qt.Key_Delete:
+            if (sel) {
+                // Keep a selection: the next card, else the previous one.
+                const after = shownEntries[i + 1] ?? shownEntries[i - 1];
+                selectedId = after ? after.id : "";
+                const id = sel.id;
+                Qt.callLater(() => Notifications.remove(id));
+            }
+            return true;
+        case Qt.Key_M:
+            if (sel)
+                toggleExpanded(sel.appName);
+            return true;
+        case Qt.Key_F:
+            view = 0;
+            tab = 1;
+            histFilter = (histFilter + 1) % 4;
+            return true;
+        case Qt.Key_C:
+            Qt.callLater(() => Notifications.clearAll());
+            return true;
+        case Qt.Key_Z:
+            Notifications.dnd = !Notifications.dnd;
+            return true;
+        case Qt.Key_S:
+            view = view === 0 ? 1 : 0;
+            return true;
+        }
+        return false;
     }
 
     // ── Header ───────────────────────────────────────────────────────────────
@@ -213,7 +319,7 @@ IslandPanel {
     component GroupView: ColumnLayout {
         id: group
         required property var modelData
-        property bool expanded: false
+        readonly property bool expanded: root.expandedApps[modelData.appName] === true
         Layout.fillWidth: true
         spacing: 4
 
@@ -295,7 +401,7 @@ IslandPanel {
                 anchors.margins: -3
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
-                onClicked: group.expanded = !group.expanded
+                onClicked: root.toggleExpanded(group.modelData.appName)
             }
         }
     }
@@ -312,6 +418,9 @@ IslandPanel {
         property bool silenceBlock: false
         property real swipeOffset: 0
         property bool dismissing: false
+        readonly property bool selected: root.selectedId === modelData.id
+        onSelectedChanged: if (selected)
+            Qt.callLater(() => root.reveal(entry))
 
         Layout.fillWidth: true
         Layout.leftMargin: 10
@@ -367,8 +476,8 @@ IslandPanel {
             opacity: Math.max(0.2, 1 - Math.abs(entry.swipeOffset) / entry.width)
             radius: Theme.radiusM
             color: Theme.surfaceContainer
-            border.width: 1
-            border.color: entry.critical ? Theme.urgent : Theme.outline
+            border.width: entry.selected ? 2 : 1
+            border.color: entry.selected ? Theme.primary : entry.critical ? Theme.urgent : Theme.outline
             Behavior on x {
                 enabled: !swipe.active && !entry.dismissing
                 NumberAnimation { duration: Theme.durShort; easing.type: Easing.OutCubic }
