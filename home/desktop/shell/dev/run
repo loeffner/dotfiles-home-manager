@@ -65,6 +65,8 @@ if [ "$real_home" = 0 ]; then
   fi
   export HOME=$fake
   unset XDG_STATE_HOME XDG_CACHE_HOME
+  # services/Mail serves dev/mail-mock.json and never touches notmuch.
+  export QS_MAIL_MOCK=1
 fi
 export QS_DEV_OUT=$out
 # Screenshots: grim from PATH, else from the flake's nixpkgs (cached in the store).

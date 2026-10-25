@@ -4,7 +4,7 @@ pragma Singleton
 // opening another panel on the same screen replaces it (the island window morphs
 // between them). Keyed by screen name so monitors never open each other's
 // panels. Panel ids: "control", "notifications", "clipboard", "processes",
-// "clock", "traymenu", "confirm".
+// "clock", "traymenu", "confirm", "mail".
 import QtQuick
 import Quickshell
 

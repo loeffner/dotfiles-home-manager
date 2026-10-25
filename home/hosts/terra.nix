@@ -35,9 +35,11 @@ in
 
   # terra is a desktop: pull in the niri desktop environment.
   # ../ssh.nix is the personal SSH client config (terra + ocean only).
+  # ../mail.nix syncs the Outlook account for the shell's mail panel.
   imports = [
     ../personal.nix
     ../desktop
     ../ssh.nix
+    ../mail.nix
   ];
 }

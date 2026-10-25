@@ -50,8 +50,12 @@ Imports use the `qs.*` module root: `import qs.services`, `import qs.components`
 ## External contracts
 
 - IPC: `qs ipc call cheatsheet open|close|toggle` (niri/super-cheatsheet-watch.py,
-  Mod+/) and `qs ipc call cameraImport start|filing|progress|finish|fail`
-  (camera-import).
+  Mod+/), `qs ipc call cameraImport start|filing|progress|finish|fail`
+  (camera-import) and `qs ipc call mail refresh` (the notmuch post-new hook,
+  home/mail.nix).
+- Mail reads the notmuch index of `~/Maildir` (`folder:outlook/Inbox`) through
+  `scripts/mail.sh` (needs notmuch, jq, w3m — installed by home/mail.nix), and
+  starts `mbsync.service` (systemd user unit) to sync.
 - `swaylock-themed` (niri/default.nix) reads `.accent` from settings.json and
   maps it through palette.json.
 - `shell-restart` (Mod+Shift+R) restarts the `quickshell` process.
@@ -67,7 +71,8 @@ dev/compare <scene-a> <scene-b>
 `dev/scenes/<scene>.qml` as the entry point, so a scene can build any part of
 the shell and drive it (`Popouts.open(...)`, service calls, `qs ipc`). By
 default `HOME` is a throwaway copy of your real quickshell state and cliphist
-db, so tests never write real state. `--private-bus` runs under
+db, so tests never write real state; the mail service then serves
+`dev/mail-mock.json` instead of notmuch (`QS_MAIL_MOCK=1`). `--private-bus` runs under
 `dbus-run-session` (to own the notification server while the real bar holds
 it); `--old` runs the scene against the previous shell (`../quickshell`) for
 side-by-side checks. Scenes take screenshots with `Snap` (grim) into the
@@ -81,11 +86,19 @@ real Escape via wtype — set `QS_DEV_WTYPE`), `notify` (daemon, rules, updates,
 bursts; needs `--private-bus`), `clip` (pins), `fans` (write-hold logic, no hardware writes), `misc` (settings view, confirm
 morph, tray menu, clock, cheatsheet + cameraImport IPC), `osd` (volume OSD:
 placement under the pill, hide delay, suppressed while a panel is open), `frames` (island
-render timing per panel, `PANEL=<id>`), `full` (load check).
+render timing per panel, `PANEL=<id>`), `mail` (conversations: list, folded history,
+quoted text, filter + empty state, archive/delete on the mock
+inbox; `--real-home` for your real index), `full` (load check).
 
 Visual checks need the monitor on: while it is blanked (swayidle / DPMS) niri
 sends no frame callbacks, windows render about once a second, and screenshots
 show stale frames. Logic checks (TEST lines) are unaffected.
+
+After deploying, check `qs log` for `Failed to load configuration`: a failed
+live reload keeps the previous config running silently. Adding an inline
+`component` to a file the running shell already loaded can fail that way
+("X is not a type") although a fresh start (and `dev/run`) loads it fine;
+restart with Mod+Shift+R.
 
 ## Migration from the previous shell
 

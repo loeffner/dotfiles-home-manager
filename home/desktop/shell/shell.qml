@@ -26,6 +26,7 @@ ShellRoot {
                 ConfirmPanel {}
                 NotificationsPanel {}
                 ClipboardPanel {}
+                MailPanel {}
                 ProcessesPanel {}
                 ClockPanel {}
                 TrayMenuPanel {}

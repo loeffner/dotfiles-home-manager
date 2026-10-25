@@ -1,7 +1,7 @@
 // The top bar of one screen. Reserves its height (layershell exclusive zone) so
 // niri tiles below it, and never takes keyboard focus. Left: workspaces +
-// minimap. Centre: the clock pinned to the exact centre, flanked by the bell
-// and the play button (anchored to it, so it never moves). Right: keyboard
+// minimap. Centre: the clock pinned to the exact centre, flanked by mail + the
+// bell and the play button (anchored to it, so it never moves). Right: keyboard
 // layout · tray · clipboard · system · control pill. Clicking empty bar space
 // closes this screen's popout.
 import QtQuick
@@ -28,6 +28,7 @@ PanelWindow {
     readonly property var triggers: ({
             "control": controlPill,
             "notifications": bell,
+            "mail": mailBtn,
             "clipboard": clipIcon,
             "processes": sysIcon,
             "clock": clock
@@ -56,6 +57,11 @@ PanelWindow {
         id: bell
         screen: bar.modelData
         anchors { right: clock.left; rightMargin: Theme.pad + 6; verticalCenter: parent.verticalCenter }
+    }
+    MailButton {
+        id: mailBtn
+        screen: bar.modelData
+        anchors { right: bell.left; rightMargin: Theme.pad + 6; verticalCenter: parent.verticalCenter }
     }
     MediaButton {
         anchors { left: clock.right; leftMargin: Theme.pad + 6; verticalCenter: parent.verticalCenter }

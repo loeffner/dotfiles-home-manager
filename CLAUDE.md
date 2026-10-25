@@ -64,7 +64,27 @@ home-manager wires them via `launchd.agents` there instead of systemd. `work`
 (a directory at `home/hosts/work/default.nix`) has its own identity and adds
 copilot CLI, git signing + a `~/.gitconfig.work` include, `umask 0027`,
 sources `.zsh-work-env` / `.zsh-work-aliases`, points atuin at a network home.
-`terra` imports `home/desktop` for a niri desktop environment.
+`terra` imports `home/desktop` for a niri desktop environment, and
+`home/mail.nix` for mail.
+
+### Mail (`home/mail.nix`, terra)
+
+The Outlook.com account over IMAP with OAuth2 (Microsoft disabled password
+logins): **oama** does the Microsoft login (Thunderbird's public client ID,
+browser `authorize` endpoint) and keeps the refresh token in gnome-keyring;
+**mbsync** (isync built with the cyrus-sasl XOAUTH2 plugin) syncs two-way into
+`~/Maildir/outlook/` every 3 minutes via a systemd timer, then runs
+`notmuch new`; **notmuch** is the index the Quickshell mail panel reads
+(`shell/services/Mail.qml` + `shell/scripts/mail.sh`), and its post-new hook
+sends a notification for new mail and calls `qs ipc call mail refresh`.
+Sending and anything else the panel can't do goes to Outlook on the web (the
+panel's open-in-browser button). One-time login after a fresh setup:
+`oama authorize microsoft <address>`.
+
+The keyring must be unlocked for oama, but greetd autologins (no password, so
+PAM can't unlock it at login). Instead the startup swaylock does it: terra's
+NixOS config needs `security.pam.services.swaylock.enableGnomeKeyring = true;`,
+and the `login` keyring password must equal the user password.
 
 Unfree packages are gated by an `allowUnfreePredicate` allowlist set in
 `pkgsFor` (flake.nix), which reads `home/unfree.nix`. To allow a new unfree
@@ -90,7 +110,9 @@ wrapper that injects the bar's current accent), a Quickshell desktop shell
 (terminal), swaylock (screen lock — Mod+Escape / control-center button / idle
 timeout / before-sleep; carries `swaylock-auto-submit.patch` for unlocking
 without pressing Enter; needs `security.pam.services.swaylock = { };` plus
-`.nodelay = true` on the NixOS side, see `default.nix`), cursor theme, and the
+`.nodelay = true` on the NixOS side, see `default.nix` — and
+`.enableGnomeKeyring = true` so the startup lock unlocks the keyring for mail),
+cursor theme, and the
 swaybg wallpaper + swayidle autostarts. All styled with Gruvbox dark.
 
 The **Quickshell shell** (`home/desktop/shell/`) is a from-scratch QML config
