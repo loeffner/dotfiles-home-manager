@@ -1,7 +1,7 @@
 # niri compositor — hand-written KDL config (no home-manager module needed).
 # Split by concern: ./settings.nix (input/layout/env/autostart) and ./binds.nix
-# (keybinds) are assembled into config.kdl below; ./clipboard.nix carries the
-# Win+V clipboard picker. Reference:
+# (keybinds) are assembled into config.kdl below; ./clipboard.nix installs the
+# clipboard-history tools the shell's clipboard panel uses. Reference:
 # https://github.com/YaLTeR/niri/wiki/Configuration:-Overview
 {
   config,

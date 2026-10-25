@@ -104,7 +104,7 @@ Imported by hosts that run the **niri** desktop (currently `terra`).
 Contains: niri config (hand-written KDL, split by concern across `niri/` —
 `default.nix` assembles `settings.nix` + `binds.nix` into `config.kdl`, plus
 `clipboard.nix` and the packaged helper scripts: shell-restart, run-or-raise,
-clipboard-picker, the filtered cliphist store, swaylock-themed — the lock
+the filtered cliphist store, swaylock-themed — the lock
 wrapper that injects the bar's current accent), a Quickshell desktop shell
 (hand-written QML, `shell/`), Wofi (app launcher, `wofi.nix`), Kitty
 (terminal), swaylock (screen lock — Mod+Escape / control-center button / idle

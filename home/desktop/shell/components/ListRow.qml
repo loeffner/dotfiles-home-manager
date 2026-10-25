@@ -3,7 +3,7 @@
 // sits on (`restColor`, default the popout background), never "transparent" —
 // Qt interpolates toward transparent as rgba(0,0,0,0), which flashes black when
 // leaving hover. Hover is tracked with a HoverHandler so it stays lit over child
-// controls. Emits clicked() for presses on the row background.
+// controls. Emits clicked() / rightClicked() for presses on the row background.
 import QtQuick
 import qs.config
 
@@ -15,6 +15,7 @@ Rectangle {
     property color selectedColor: Theme.surfaceContainerHigh
     readonly property bool hovered: hover.hovered
     signal clicked
+    signal rightClicked
 
     radius: Theme.radiusS
     color: selected ? selectedColor : hovered ? hoverColor : restColor
@@ -25,6 +26,7 @@ Rectangle {
         anchors.fill: parent
         z: -1
         cursorShape: Qt.PointingHandCursor
-        onClicked: root.clicked()
+        acceptedButtons: Qt.LeftButton | Qt.RightButton
+        onClicked: e => e.button === Qt.RightButton ? root.rightClicked() : root.clicked()
     }
 }

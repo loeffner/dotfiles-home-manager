@@ -1,7 +1,9 @@
-// Clipboard panel ("clipboard"): history (refreshed on open) with pins floating
-// to the top, filterable by type and searchable (the search box is focused on
-// open). Click an entry to copy it back; the pin toggles pinning; the trash wipes
-// cliphist history (pins are kept). Images get lazily decoded thumbnails.
+// Clipboard panel ("clipboard", Mod+X): history (refreshed on open) with pins
+// floating to the top, filterable by type and searchable (the search box is
+// focused on open). Picking an entry — click, or ↑/↓ then Enter — inserts it
+// into the window you came from (copy + paste, Clip.paste); right-click only
+// copies it. The pin toggles pinning; the trash wipes cliphist history (pins are
+// kept). Images get lazily decoded thumbnails.
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
@@ -16,12 +18,28 @@ IslandPanel {
     panelWidth: 400
 
     property int typeFilter: 0 // 0 All, 1 Text, 2 Images
+    property int current: 0 // the entry Enter inserts (↑/↓ move it)
 
     onOpened: {
         search.clear();
+        current = 0;
         Clip.refresh();
         Qt.callLater(() => search.focusInput());
     }
+    onEntriesChanged: current = Math.max(0, Math.min(current, entries.length - 1))
+
+    function insert(entry) {
+        Clip.paste(entry);
+        close();
+    }
+    function copyOnly(entry) {
+        Clip.copy(entry);
+        close();
+    }
+
+    // ↑/↓ reach here from the search field (a single-line input passes them on).
+    Keys.onUpPressed: current = Math.max(0, current - 1)
+    Keys.onDownPressed: current = Math.min(entries.length - 1, current + 1)
 
     readonly property var entries: {
         const q = search.text.toLowerCase();
@@ -62,6 +80,9 @@ IslandPanel {
         Layout.fillWidth: true
         icon: "search"
         placeholder: "Search clipboard"
+        onTextChanged: root.current = 0
+        onAccepted: if (root.entries[root.current])
+            root.insert(root.entries[root.current])
     }
 
     MText {
@@ -75,12 +96,16 @@ IslandPanel {
     }
 
     ListView {
+        id: list
         Layout.fillWidth: true
         Layout.preferredHeight: Math.min(contentHeight, 380)
         visible: root.entries.length > 0
         clip: true
         boundsBehavior: Flickable.StopAtBounds
         spacing: 2
+        currentIndex: root.current
+        highlightFollowsCurrentItem: false
+        onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
         model: ScriptModel {
             objectProp: "uid"
             values: root.entries
@@ -89,15 +114,15 @@ IslandPanel {
         delegate: ListRow {
             id: row
             required property var modelData
+            required property int index
             readonly property bool pinned: Clip.isPinned(modelData)
             property string thumb: ""
 
             width: ListView.view.width
             implicitHeight: modelData.isImage ? 42 : 30
-            onClicked: {
-                Clip.copy(modelData);
-                root.close();
-            }
+            selected: index === root.current
+            onClicked: root.insert(modelData)
+            onRightClicked: root.copyOnly(modelData)
             Component.onCompleted: if (modelData.isImage)
                 Clip.thumbnail(modelData, url => row.thumb = url)
 
@@ -150,5 +175,14 @@ IslandPanel {
                 }
             }
         }
+    }
+
+    MText {
+        visible: root.entries.length > 0
+        Layout.fillWidth: true
+        horizontalAlignment: Text.AlignHCenter
+        text: "Click or Enter inserts  ·  right-click copies"
+        sizeDelta: -3
+        muted: true
     }
 }

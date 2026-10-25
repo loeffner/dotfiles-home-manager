@@ -52,6 +52,14 @@ Singleton {
             Quickshell.execDetached(["sh", "-c", 'cliphist decode "$1" | wl-copy', "_", String(entry.id)]);
         }
     }
+    // Copy, then paste into the window that had focus before the popout took
+    // the keyboard (niri's focused window is unaffected by layer surfaces).
+    function paste(entry) {
+        copy(entry);
+        const w = Niri.windows.find(w => w.focused);
+        const terminal = /^(kitty|foot|alacritty|wezterm|st|[Xx]?term.*)$/.test(w?.appId ?? "");
+        Quickshell.execDetached(["sh", Quickshell.shellPath("scripts/clip-paste.sh"), terminal ? "terminal" : "app"]);
+    }
     // Wipes cliphist's history; pins are kept.
     function wipe() {
         Quickshell.execDetached(["cliphist", "wipe"]);

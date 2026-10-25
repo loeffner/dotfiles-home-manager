@@ -41,6 +41,8 @@
       Mod+Shift+N { spawn "qs" "ipc" "call" "popouts" "toggle" "notifications"; }
       Mod+T       { spawn "qs" "ipc" "call" "popouts" "toggle" "clock"; }
       Mod+P       { spawn "qs" "ipc" "call" "popouts" "toggle" "processes"; }
+      // Clipboard history, Win+V style: picking an entry pastes it into the
+      // window you came from (shell/services/Clip.qml).
       Mod+X       { spawn "qs" "ipc" "call" "popouts" "toggle" "clipboard"; }
       Mod+Ctrl+R    { spawn "kitty" "--app-id" "hms-runner" "-e" "bash" "-c" "home-manager switch --flake ~/dotfiles#terra; echo; read -rp 'Press Enter to close...'"; }
 
@@ -88,11 +90,6 @@
       // Floating layer.
       Mod+V       { toggle-window-floating; }
       Mod+Shift+V { switch-focus-between-floating-and-tiling; }
-
-      // Clipboard history — Win+V-style popup of past clipboard entries
-      // (cliphist + wofi). On Ctrl+Alt+V so it stays clear of kitty's own
-      // Ctrl+Shift+V paste. Pressing it again closes an already-open picker.
-      Ctrl+Alt+V { spawn "sh" "-c" "pkill wofi || clipboard-picker"; }
 
       // Workspaces 1-5: switch and move active column.
       Mod+1 { focus-workspace 1; }
