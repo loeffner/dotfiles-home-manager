@@ -84,7 +84,10 @@ panel's open-in-browser button). One-time login after a fresh setup:
 The keyring must be unlocked for oama, but greetd autologins (no password, so
 PAM can't unlock it at login). Instead the startup swaylock does it: terra's
 NixOS config needs `security.pam.services.swaylock.enableGnomeKeyring = true;`,
-and the `login` keyring password must equal the user password.
+and the `login` keyring password must equal the user password. Until that
+unlock, the mbsync service skips its runs (`ExecCondition` reads the
+keyring's `Locked` property, which never prompts); otherwise oama would open
+gnome-keyring's own unlock dialog over the lock screen.
 
 Unfree packages are gated by an `allowUnfreePredicate` allowlist set in
 `pkgsFor` (flake.nix), which reads `home/unfree.nix`. To allow a new unfree

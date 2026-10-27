@@ -7,7 +7,8 @@
 # reach.
 #
 #   oama    — the Microsoft OAuth login. Keeps the refresh token in gnome-keyring
-#             (unlocked by swaylock at login, see CLAUDE.md) and prints a fresh
+#             (unlocked by swaylock at login, see CLAUDE.md; mbsync skips its
+#             runs until then instead of prompting) and prints a fresh
 #             access token on `oama access <address>`. One-time setup:
 #             `oama authorize microsoft <address>` (browser login).
 #   mbsync  — two-way IMAP <-> ~/Maildir sync (XOAUTH2), every 3 minutes via the
@@ -27,6 +28,13 @@ let
   notmuch = "${pkgs.notmuch}/bin/notmuch";
   jq = "${pkgs.jq}/bin/jq";
   notifySend = "${pkgs.libnotify}/bin/notify-send";
+  # Succeeds only while the keyring holding oama's token is unlocked. Reading
+  # the Locked property never prompts (asking oama for the token would: it opens
+  # gnome-keyring's own password dialog on top of the startup lock screen).
+  keyringUnlocked = pkgs.writeShellScript "keyring-unlocked" ''
+    [ "$(${pkgs.systemd}/bin/busctl --user get-property org.freedesktop.secrets \
+      /org/freedesktop/secrets/aliases/default org.freedesktop.Secret.Collection Locked 2>/dev/null)" = "b false" ]
+  '';
 in
 {
   # jq + w3m: the shell's mail helper (desktop/shell/scripts/mail.sh).
@@ -86,6 +94,9 @@ in
   # Index after every run, not only successful ones (postExec would be
   # ExecStartPost): one broken folder must not hold back the rest of the mail.
   systemd.user.services.mbsync.Service.ExecStopPost = "${notmuch} new";
+  # Skip (not fail) runs while the keyring is still locked, i.e. before the PIN
+  # at the startup swaylock unlocks it; the first tick after that syncs.
+  systemd.user.services.mbsync.Service.ExecCondition = "${keyringUnlocked}";
 
   programs.notmuch = {
     enable = true;
