@@ -88,7 +88,7 @@ vscrelease() {
 # Halcon Builds (hardcoded)
 ###############################################################################
 
-alias bmaster="$HOME/halcon/current/tools/build/hmake.pl --arch x64-linux-clang21_1 --debug --target ' ' --archdir $HOME/halcon/current/build/master -DWITH_DL_GRAPH_API_INTERNAL"
+alias bmaster="$HOME/halcon/current/tools/build/hmake.pl --arch x64-linux-clang21_1 --debug --target ' ' --archdir $HOME/halcon/current/build/master -DWITH_DL_GRAPH_API_INTERNAL -DWITH_CCACHE=ON --thirdparty-libs /opt/home/buildbot/halcon/thirdparty --thirdparty-tools /opt/home/buildbot/halcon/thirdparty/tools --install -DWITHOUT_SBOM=OFF"
 alias brelease="$HOME/halcon/current/tools/build/hmake.pl --arch x64-linux-icx-latest --release --target ' ' --archdir $HOME/halcon/current/build/release"
 
 

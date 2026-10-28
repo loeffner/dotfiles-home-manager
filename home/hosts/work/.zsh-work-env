@@ -80,7 +80,9 @@ _halcon_ai2_interfaces() {
 # Query the quota and put it into an env variable for use in my prompt
 
 _query_quota() {
-  export DISK_QUOTA="$(quota --human-readable | awk '/^\// { next } /^[[:space:]]+[0-9]/ { printf "%.0f/%.0f GB", $1, $2; exit }')"
+  # Raw 1K-block counts (-w: no line wrap); --human-readable would show GiB.
+  # A trailing '*' marks an exceeded quota.
+  export DISK_QUOTA="$(quota -w | awk 'NR > 2 && NF >= 3 { sub(/\*$/, "", $2); printf "%.0f/%.0f GB", $2 / 1e6, $3 / 1e6; exit }')"
 }
 _query_quota
 
