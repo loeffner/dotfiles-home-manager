@@ -4,6 +4,26 @@
   lib,
   ...
 }:
+let
+  hostSssdModule =
+    if pkgs.stdenv.hostPlatform.isAarch64 then
+      "/lib/aarch64-linux-gnu/libnss_sss.so.2"
+    else
+      "/lib/x86_64-linux-gnu/libnss_sss.so.2";
+
+  withHostSssd =
+    package: executable:
+    pkgs.runCommand "${executable}-host-sssd"
+      {
+        nativeBuildInputs = [ pkgs.makeWrapper ];
+        meta.mainProgram = executable;
+      }
+      ''
+        mkdir -p "$out/bin"
+        makeWrapper ${lib.getExe' package executable} "$out/bin/${executable}" \
+          --prefix LD_PRELOAD : ${lib.escapeShellArg hostSssdModule}
+      '';
+in
 {
   home.username = lib.mkDefault "loesela";
   home.homeDirectory = lib.mkDefault "/home/loesela";
@@ -37,4 +57,8 @@
   '';
 
   programs.atuin.settings.dbPath = lib.mkForce "/mvtec/home/loesela/atuin/atuin.db";
+
+  programs.eza.package = withHostSssd pkgs.eza "eza";
+  services.ssh-agent.package = withHostSssd pkgs.openssh "ssh-agent";
+
 }
