@@ -12,12 +12,9 @@ environments (shell, git, neovim, CLI tools) — not full NixOS systems.
 home-manager switch --flake .#ocean            # personal host (NixOS)
 home-manager switch --flake .#terra            # personal host, niri desktop (NixOS)
 home-manager switch --flake .#island           # personal MacBook (macOS, aarch64-darwin)
-home-manager switch --flake .#work-x86_64-linux
-home-manager switch --flake .#work-aarch64-linux
 
-# The `hms` zsh alias wraps this for the work setup, auto-picking the system
-# from `uname -m`:   hms            -> work-<arch>-linux
-#                    hms terra      -> explicit target
+# The `hms` zsh function wraps this: hms       -> the config named after this host
+#                                    hms terra -> explicit target
 
 # Build/evaluate without activating
 nix build .#homeConfigurations.terra.activationPackage
@@ -41,10 +38,12 @@ repo must be staged (`git add <file>`) before `nix build` or
 
 - **`homeConfigurations`** — standalone `homeManagerConfiguration`s applied
   with `home-manager switch --flake`. Each is built by `mkConfig`, which
-  layers `common` + the host module. `work` is generated for every
-  system in `workSystems` (x86_64-linux, aarch64-linux).
+  layers `common` + the host module.
 - **`checks`** — each host's activation package, under the host's system.
 - **`formatter`** — `nixfmt-tree`, for `nix fmt`.
+- **`homeManagerModules.common`, `lib.pkgsFor`** — for private flakes that take
+  this repo as an input and add their own hosts. Don't rename them lightly, and
+  keep anything employer-specific out of this public repo.
 
 These are standalone configs only — there is no NixOS-integrated path. NixOS
 hosts just install the `home-manager` CLI and apply these configs out-of-band.
@@ -62,10 +61,7 @@ The layering that every config goes through:
 `island` is the only macOS host (`aarch64-darwin`, standalone home-manager —
 not nix-darwin) and overrides `homeDirectory` to `/Users/loeffner`. The shared
 `common.nix` services (`ssh-agent`, `gpg-agent`) work on Darwin too —
-home-manager wires them via `launchd.agents` there instead of systemd. `work`
-(a directory at `home/hosts/work/default.nix`) has its own identity and adds
-copilot CLI, git signing + a `~/.gitconfig.work` include, `umask 0027`,
-sources `.zsh-work-env` / `.zsh-work-aliases`, points atuin at a network home.
+home-manager wires them via `launchd.agents` there instead of systemd.
 `terra` imports `home/desktop` for a niri desktop environment, and
 `home/mail.nix` for mail.
 
@@ -98,10 +94,9 @@ package, add its name there.
 ### Shell config
 
 `home/.zsh-aliases` is the shared, host-agnostic alias/function file, sourced
-from `common.nix`. Work-only shell bits live in
-`home/hosts/work/.zsh-work-*`. zsh `initContent` is assembled with
+from `common.nix`. zsh `initContent` is assembled with
 `lib.mkBefore`/`mkAfter` ordering — e.g. the `exec zellij` guard must run last
-(`mkAfter`), and work additions append with `mkAfter`.
+(`mkAfter`).
 
 ### Desktop (`home/desktop`)
 

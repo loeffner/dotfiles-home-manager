@@ -42,25 +42,17 @@
           ];
         };
 
-      # Systems on which the `work` setup must build. Selected at activation
-      # time via `home-manager switch --flake .#work-<system>` (see the `hms`
-      # zsh alias, which auto-picks based on `uname -m`).
-      workSystems = [
+      allSystems = [
         "x86_64-linux"
-        "aarch64-linux"
+        "aarch64-darwin"
       ];
-
-      allSystems = workSystems ++ [ "aarch64-darwin" ];
     in
     {
       homeConfigurations = {
         ocean = mkConfig "x86_64-linux" ./home/hosts/ocean.nix;
         terra = mkConfig "x86_64-linux" ./home/hosts/terra.nix;
         island = mkConfig "aarch64-darwin" ./home/hosts/island.nix;
-      }
-      // lib.genAttrs (map (s: "work-${s}") workSystems) (
-        name: mkConfig (lib.removePrefix "work-" name) ./home/hosts/work
-      );
+      };
 
       # `nix flake check` builds nothing without this: one check per host,
       # under the system that host runs on.
@@ -75,8 +67,8 @@
 
       formatter = lib.genAttrs allSystems (system: (pkgsFor system).nixfmt-tree);
 
-      # For flakes that build on this one (the private work config): the shared
-      # environment, and nixpkgs with this repo's unfree allowlist.
+      # For private flakes that build on this one: the shared environment, and
+      # nixpkgs with this repo's unfree allowlist.
       homeManagerModules.common = ./home/common.nix;
       lib = { inherit pkgsFor; };
     };

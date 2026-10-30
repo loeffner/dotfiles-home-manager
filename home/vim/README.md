@@ -288,7 +288,7 @@ ignored. Edits to either file take effect on the next run; no reload needed.
 
 ```sh
 git add -A home/vim          # flakes ignore untracked files!
-home-manager switch --flake "git+file://$HOME/dotfiles#work"
+hms
 ```
 
 `programs.neovim` is single-instance per user under home-manager; the vim

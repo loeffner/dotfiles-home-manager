@@ -51,7 +51,7 @@ alias svim="nvim --clean -n --cmd 'set nobackup nowritebackup'"
 ###############################################################################
 
 hms() {
-  local target="${1:-work-$(uname -m)-linux}"
+  local target="${1:-${HOST%%.*}}"
   home-manager switch --flake "git+file://$HOME/dotfiles#${target}"
 }
 
