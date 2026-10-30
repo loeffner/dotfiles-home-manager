@@ -95,8 +95,8 @@ require("hlslens").setup({
 local function lens_map(lhs, cmd)
   vim.keymap.set("n", lhs, cmd, { silent = true, noremap = true })
 end
-lens_map("n",  [[<Cmd>execute('normal! ' . v:count1 . 'n')<CR><Cmd>lua require('hlslens').start()<CR>]])
-lens_map("N",  [[<Cmd>execute('normal! ' . v:count1 . 'N')<CR><Cmd>lua require('hlslens').start()<CR>]])
+lens_map("n",  [[<Cmd>execute('normal! ' . v:count1 . 'nzzzv')<CR><Cmd>lua require('hlslens').start()<CR>]])
+lens_map("N",  [[<Cmd>execute('normal! ' . v:count1 . 'Nzzzv')<CR><Cmd>lua require('hlslens').start()<CR>]])
 lens_map("*",  [[*<Cmd>lua require('hlslens').start()<CR>]])
 lens_map("#",  [[#<Cmd>lua require('hlslens').start()<CR>]])
 lens_map("g*", [[g*<Cmd>lua require('hlslens').start()<CR>]])

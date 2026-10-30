@@ -2,7 +2,6 @@ local map = vim.keymap.set
 
 -- Quality of life
 map("i", "jk", "<Esc>", { desc = "Exit insert mode" })
-map("n", "<Esc>", "<cmd>noh<cr>", { desc = "Clear search highlight" })
 map({ "n", "v" }, "<leader>s", "<cmd>w<cr>", { desc = "Save" })
 map("n", "<leader>q", function()
   local bufs = vim.tbl_filter(function(b)
@@ -45,8 +44,6 @@ map("v", ">", ">gv")
 -- Center on half-page jumps
 map("n", "<C-d>", "<C-d>zz")
 map("n", "<C-u>", "<C-u>zz")
-map("n", "n", "nzzzv")
-map("n", "N", "Nzzzv")
 
 -- Better paste over selection (don't yank replaced text)
 map("v", "p", '"_dP')

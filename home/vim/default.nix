@@ -128,7 +128,7 @@
       initLua = ''
         vim.g.copilot_enabled = ${if config.custom.copilot.enable then "true" else "false"}
         vim.g.copilot_node_command = "${pkgs.nodejs}/bin/node"
-        vim.g.sqlite_clib_path = "${pkgs.sqlite.out}/lib/libsqlite3.so"
+        vim.g.sqlite_clib_path = "${pkgs.sqlite.out}/lib/libsqlite3${pkgs.stdenv.hostPlatform.extensions.sharedLibrary}"
         require("config.options")
         require("config.keymaps")
         require("config.autocmds")

@@ -36,7 +36,7 @@ require("gitsigns").setup({
     end, "Toggle full inline diff")
 
     map("n", "<leader>gB", function()
-      vim.ui.input({ prompt = "Gitsigns base ref: ", default = "main" }, function(ref)
+      vim.ui.input({ prompt = "Gitsigns base ref: ", default = require("config.util").default_branch() }, function(ref)
         if ref and ref ~= "" then gs.change_base(ref, true) end
       end)
     end, "Set gitsigns base ref")
@@ -105,7 +105,7 @@ vim.keymap.set("n", "<leader>gr", function()
     return
   end
 
-  vim.ui.input({ prompt = "Diff against ref: ", default = "main" }, function(ref)
+  vim.ui.input({ prompt = "Diff against ref: ", default = require("config.util").default_branch() }, function(ref)
     if not ref or ref == "" then return end
 
     local git_root = vim.fn.systemlist({ "git", "rev-parse", "--show-toplevel" })[1]

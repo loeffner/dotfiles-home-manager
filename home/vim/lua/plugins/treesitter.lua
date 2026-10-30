@@ -9,23 +9,19 @@ vim.opt.foldexpr = "v:lua.vim.treesitter.foldexpr()"
 vim.opt.foldlevel = 99
 vim.opt.foldenable = true
 
--- Treesitter textobjects (separate plugin) — minimal setup.
-local ok_to, to = pcall(require, "nvim-treesitter.configs")
-if ok_to then
-  to.setup({
-    textobjects = {
-      select = {
-        enable = true,
-        lookahead = true,
-        keymaps = {
-          ["af"] = "@function.outer",
-          ["if"] = "@function.inner",
-          ["ac"] = "@class.outer",
-          ["ic"] = "@class.inner",
-          ["aa"] = "@parameter.outer",
-          ["ia"] = "@parameter.inner",
-        },
-      },
-    },
-  })
+-- Treesitter textobjects (separate plugin, also on its main-branch API).
+require("nvim-treesitter-textobjects").setup({ select = { lookahead = true } })
+
+local select = require("nvim-treesitter-textobjects.select")
+for lhs, query in pairs({
+  af = "@function.outer",
+  ["if"] = "@function.inner",
+  ac = "@class.outer",
+  ic = "@class.inner",
+  aa = "@parameter.outer",
+  ia = "@parameter.inner",
+}) do
+  vim.keymap.set({ "x", "o" }, lhs, function()
+    select.select_textobject(query, "textobjects")
+  end, { desc = "Select " .. query })
 end
