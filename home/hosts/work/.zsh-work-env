@@ -73,38 +73,15 @@ _halcon_ai2_interfaces() {
 }
 
 
-###############################################################################
-# Quota (prompt segment)
-###############################################################################
-#
-# Query the quota and put it into an env variable for use in my prompt
-
-_query_quota() {
-  # Raw 1K-block counts (-w: no line wrap); --human-readable would show GiB.
-  # A trailing '*' marks an exceeded quota.
-  export DISK_QUOTA="$(quota -w | awk 'NR > 2 && NF >= 3 { sub(/\*$/, "", $2); printf "%.0f/%.0f GB", $2 / 1e6, $3 / 1e6; exit }')"
-}
-_query_quota
-
-
-# Run the quota query only every 5 prompts
-_query_quota_throttled() {
-  (( ++_query_quota_counter < 5 )) && return
-  _query_quota_counter=0
-  _query_quota
-}
-
 # Register hooks (remove existing registrations first to avoid duplicates)
 autoload -Uz add-zsh-hook
 
 # Remove any existing registrations.
 precmd_functions=(${precmd_functions:#_halcon_ai2_interfaces})
-precmd_functions=(${precmd_functions:#_query_quota_throttled})
 
 # Register exactly once, before Oh My Posh.
 precmd_functions=(
   _halcon_ai2_interfaces
-  _query_quota_throttled
   $precmd_functions
 )
 
