@@ -57,7 +57,7 @@ The layering that every config goes through:
 2. `home/hosts/<host>` — host-specific extras. The personal hosts (ocean,
    terra, island) share `home/personal.nix` for identity (username,
    homeDirectory, stateVersion — `lib.mkDefault`, so a host can override),
-   git user/email and `claude-code` (unfree).
+   git user/email, atuin sync and `claude-code` (unfree).
 
 `island` is the only macOS host (`aarch64-darwin`, standalone home-manager —
 not nix-darwin) and overrides `homeDirectory` to `/Users/loeffner`. The shared

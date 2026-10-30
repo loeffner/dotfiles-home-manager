@@ -103,11 +103,9 @@
     enableZshIntegration = true;
     settings = {
       inline_height = 20;
-      # Self-hosted sync server on ocean, reachable LAN-only via AdGuard DNS.
-      # One-time bootstrap per machine: `atuin register`/`atuin login` + `atuin sync`.
-      sync_address = "http://atuin.beehive";
-      auto_sync = true;
-      sync_frequency = "3m";
+      # Off unless a host opts in (personal.nix): without a sync_address, atuin
+      # would default to its public server.
+      auto_sync = lib.mkDefault false;
     };
   };
 
