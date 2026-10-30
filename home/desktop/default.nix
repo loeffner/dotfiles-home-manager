@@ -111,6 +111,12 @@
   # Static QML, so the tree is symlinked verbatim — minus the dev/ harness,
   # which runs from the repo. Autostarted from niri (see niri/settings.nix).
   # NOTE: new files here must be `git add`-ed before the flake will see them.
+  # The shell's state holds notification history, so message contents: this
+  # user only. The directory, as files in it get rewritten.
+  home.activation.quickshellStatePrivate = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run install -d -m 700 "${config.xdg.stateHome}/quickshell"
+  '';
+
   xdg.configFile."quickshell" = {
     source = lib.cleanSourceWith {
       src = ./shell;

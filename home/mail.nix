@@ -19,7 +19,12 @@
 #             panel and sends a notification for new unread mail.
 # Sending and anything else the panel can't do happens in Outlook on the web
 # (the panel's open-in-browser button).
-{ pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 let
   address = "andreas.loesel@outlook.com";
   # mbsync speaks XOAUTH2 only through the cyrus-sasl plugin (off by default).
@@ -46,6 +51,11 @@ in
     pkgs.zenity
     pkgs.libnotify
   ];
+
+  # The synced mail and its full-text index (.notmuch) are for this user only.
+  home.activation.maildirPrivate = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    run install -d -m 700 "${config.home.homeDirectory}/Maildir"
+  '';
 
   # Thunderbird's public Azure client ID (a public client: no secret). This
   # oama version waits on a localhost redirect, so it needs the browser
