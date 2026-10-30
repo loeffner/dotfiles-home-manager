@@ -56,7 +56,6 @@ in
         client_id: 9e5f94bc-e8a4-4e73-b8be-63364c29d753
         auth_endpoint: https://login.microsoftonline.com/common/oauth2/v2.0/authorize
         auth_scope: https://outlook.office.com/IMAP.AccessAsUser.All
-          https://outlook.office.com/SMTP.Send
           offline_access
         tenant: common
   '';
@@ -94,8 +93,8 @@ in
   # Index after every run, not only successful ones (postExec would be
   # ExecStartPost): one broken folder must not hold back the rest of the mail.
   systemd.user.services.mbsync.Service.ExecStopPost = "${notmuch} new";
-  # Skip (not fail) runs while the keyring is still locked, i.e. before the PIN
-  # at the startup swaylock unlocks it; the first tick after that syncs.
+  # Skip (not fail) runs while the keyring is still locked, i.e. before the
+  # password at the startup swaylock unlocks it; the first tick after that syncs.
   systemd.user.services.mbsync.Service.ExecCondition = "${keyringUnlocked}";
 
   programs.notmuch = {
@@ -109,15 +108,12 @@ in
     ];
     hooks.postNew = ''
       q="tag:new and tag:unread and folder:outlook/Inbox"
-      n=$(${notmuch} count -- "$q")
-      # Skip the flood on a first sync.
-      if [ "$n" -gt 0 ] && [ "$n" -le 20 ]; then
-        if [ "$n" -eq 1 ]; then
-          body=$(${notmuch} search --format=json --limit=1 -- "$q" | ${jq} -r '.[0] | "\(.authors) — \(.subject)"')
-          ${notifySend} -a Mail -i mail-unread "New mail" "$body"
-        else
-          ${notifySend} -a Mail -i mail-unread "$n new mails"
-        fi
+      n=$(${notmuch} count -- "$q") || n=0
+      if [ "$n" -eq 1 ]; then
+        body=$(${notmuch} search --format=json --limit=1 -- "$q" | ${jq} -r '.[0] | "\(.authors) — \(.subject)"')
+        ${notifySend} -a Mail -i mail-unread "New mail" "$body"
+      elif [ "$n" -gt 1 ]; then
+        ${notifySend} -a Mail -i mail-unread "$n new mails"
       fi
       ${notmuch} tag -new -- tag:new
       ${pkgs.quickshell}/bin/qs ipc call mail refresh >/dev/null 2>&1 || true
