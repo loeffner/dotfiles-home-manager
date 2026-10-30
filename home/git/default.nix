@@ -36,7 +36,7 @@
         uncommit = "reset --soft HEAD~1";
 
         # Cleanup
-        clean-merged = "!git branch --merged master | grep -v 'master' | xargs -n 1 git branch -d";
+        clean-merged = ''!f() { base=$(git symbolic-ref -q --short refs/remotes/origin/HEAD) || { echo "origin/HEAD is not set, run: git remote set-head origin -a" >&2; return 1; }; git branch --merged "$base" --format='%(refname:short)' | grep -vx "''${base#origin/}" | xargs -r -n 1 git branch -d; }; f'';
       };
       rerere.enabled = true;
 
