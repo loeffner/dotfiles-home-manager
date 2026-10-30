@@ -135,7 +135,7 @@ IslandPanel {
     }
     // Plain-text body → rich text: escaped, links clickable, quoted lines muted.
     function bodyHtml(text) {
-        const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        const esc = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
         const link = s => s.replace(/(https?:\/\/[^\s<]+)/g, `<a href="$1" style="color:${Theme.primary};text-decoration:none">$1</a>`);
         return text.split("\n").map(l => {
             const h = link(esc(l));
