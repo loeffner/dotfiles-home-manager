@@ -97,13 +97,6 @@
           "min_width": 55
         },
         {
-          "foreground": "#d65d0e",
-          "style": "plain",
-          "template": "{{ if .Env.DISK_QUOTA }} \uf4d3 {{ .Env.DISK_QUOTA }} {{ end }}",
-          "type": "text",
-          "min_width": 12
-        },
-        {
           "foreground": "#d79921",
           "style": "plain",
           "template": " \uf252 {{ .FormattedMs }} ",
