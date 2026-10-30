@@ -74,5 +74,10 @@
       );
 
       formatter = lib.genAttrs allSystems (system: (pkgsFor system).nixfmt-tree);
+
+      # For flakes that build on this one (the private work config): the shared
+      # environment, and nixpkgs with this repo's unfree allowlist.
+      homeManagerModules.common = ./home/common.nix;
+      lib = { inherit pkgsFor; };
     };
 }
