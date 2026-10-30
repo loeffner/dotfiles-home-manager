@@ -37,11 +37,14 @@ let
   '';
 in
 {
-  # jq + w3m: the shell's mail helper (desktop/shell/scripts/mail.sh).
+  # jq, w3m, zenity, libnotify: the shell's mail helper
+  # (desktop/shell/scripts/mail.sh).
   home.packages = [
     pkgs.oama
     pkgs.jq
     pkgs.w3m
+    pkgs.zenity
+    pkgs.libnotify
   ];
 
   # Thunderbird's public Azure client ID (a public client: no secret). This

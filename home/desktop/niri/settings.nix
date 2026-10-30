@@ -81,6 +81,12 @@
     default-window-height { fixed 550; }
   }
 
+  // The mail panel's save-attachment dialog.
+  window-rule {
+    match app-id="^zenity$"
+    open-floating true
+  }
+
   window-rule {
     match app-id="^luajit$"
     match title="KOReader$"

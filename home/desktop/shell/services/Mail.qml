@@ -13,7 +13,7 @@ pragma Singleton
 // inbox: [ids in the inbox], all: [ids] }. Conversations load on demand into
 // `conversations` (thread id -> [message]); a message: { id, from, address,
 // mine, to, date, unread, starred, attachments: [{ name, part }], text }
-// (part: the MIME part number, for openAttachment()).
+// (part: the MIME part number, for saveAttachment()).
 //
 // Under the dev harness (QS_MAIL_MOCK=1, set by dev/run unless --real-home) it
 // serves dev/mail-mock.json and changes stay in memory.
@@ -137,14 +137,14 @@ Singleton {
         all[id] = msgs;
         conversations = all;
     }
-    // Unpack an attachment ({ name, part } of a conversation message) and open
-    // it with its default app.
-    function openAttachment(messageId, attachment) {
+    // Ask where to save an attachment ({ name, part } of a conversation message)
+    // with a file dialog. Mail never opens one by itself: it may be from a stranger.
+    function saveAttachment(messageId, attachment) {
         if (mock) {
-            console.log("mail: open attachment " + attachment.name);
+            console.log("mail: save attachment " + attachment.name);
             return;
         }
-        Quickshell.execDetached(_script(["open", messageId, String(attachment.part), attachment.name]));
+        Quickshell.execDetached(_script(["save", messageId, String(attachment.part), attachment.name]));
     }
     // Outlook on the web, for sending and whatever else the panel can't do.
     function openWebmail() {

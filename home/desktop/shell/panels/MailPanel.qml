@@ -177,15 +177,13 @@ IslandPanel {
         }
     }
 
-    // An attachment of one message: click to unpack and open it in its default
-    // app. Hover swaps the file-type icon for an open icon; a click shows
-    // "Opening…" briefly while the app starts.
+    // An attachment of one message: click to save it (file dialog). Hover swaps
+    // the file-type icon for a download icon.
     component AttachmentChip: Rectangle {
         id: chip
         required property var modelData // { name, part }
         required property string messageId
         readonly property bool hovered: chipHover.hovered
-        property bool opening: false
         implicitHeight: 28
         implicitWidth: chipRow.implicitWidth + 18
         radius: Theme.radiusS
@@ -196,16 +194,7 @@ IslandPanel {
             cursorShape: Qt.PointingHandCursor
         }
         TapHandler {
-            onTapped: {
-                Mail.openAttachment(chip.messageId, chip.modelData);
-                chip.opening = true;
-                openingTimer.restart();
-            }
-        }
-        Timer {
-            id: openingTimer
-            interval: 1500
-            onTriggered: chip.opening = false
+            onTapped: Mail.saveAttachment(chip.messageId, chip.modelData)
         }
         Row {
             id: chipRow
@@ -213,13 +202,13 @@ IslandPanel {
             spacing: 6
             MIcon {
                 anchors.verticalCenter: parent.verticalCenter
-                text: chip.hovered || chip.opening ? "open_in_new" : /\.pdf$/i.test(chip.modelData.name) ? "picture_as_pdf" : /\.(jpe?g|png|gif|webp|heic)$/i.test(chip.modelData.name) ? "image" : "description"
+                text: chip.hovered ? "download" : /\.pdf$/i.test(chip.modelData.name) ? "picture_as_pdf" : /\.(jpe?g|png|gif|webp|heic)$/i.test(chip.modelData.name) ? "image" : "description"
                 size: 15
                 color: Theme.primary
             }
             MText {
                 anchors.verticalCenter: parent.verticalCenter
-                text: chip.opening ? "Opening…" : chip.modelData.name
+                text: chip.modelData.name
                 sizeDelta: -1
             }
         }

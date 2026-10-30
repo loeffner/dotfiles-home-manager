@@ -1,6 +1,7 @@
 #!/bin/sh
 # Mail access for services/Mail, on top of the notmuch index of ~/Maildir
-# (synced by mbsync, see home/mail.nix). Needs notmuch, jq and w3m on PATH.
+# (synced by mbsync, see home/mail.nix). Needs notmuch, jq, w3m, zenity and
+# notify-send on PATH.
 # Mail is grouped into conversations (notmuch threads); a conversation's id is
 # its first message's id, which stays put as replies arrive.
 #   mail.sh list <query> <limit>   {"unread": N, "threads": [...]}, newest first:
@@ -10,10 +11,10 @@
 #   mail.sh move <folder> <message-id>...
 #                                  move them from <account>/Inbox to
 #                                  <account>/<folder> (Archive, or Deleted)
-#   mail.sh open <message-id> <part> <name>
-#                                  unpack that attachment (MIME part number, as
-#                                  `thread` lists it) into $XDG_RUNTIME_DIR and
-#                                  open it with its default app
+#   mail.sh save <message-id> <part> <name>
+#                                  ask with a file dialog where to save that
+#                                  attachment (MIME part number, as `thread`
+#                                  lists it); it is never opened
 # Read/star state is plain `notmuch tag` (flags sync to the maildir, mbsync
 # pushes them), so it needs no helper. Mail in the trash or junk folders is
 # left out of conversations.
@@ -133,15 +134,14 @@ case "$1" in
     done
     notmuch new --no-hooks --quiet
     ;;
-  open)
-    # One private folder per message (runtime dir: tmpfs, user-only, gone at
-    # logout), under the attachment's own name minus any path or control chars.
-    dir=${XDG_RUNTIME_DIR:?}/mail-attachments/$(printf %s "$2" | sha1sum | cut -c1-16)
+  save)
+    # Suggest the attachment's own name minus any path or control chars. The
+    # dialog asks before overwriting; cancelling it saves nothing.
     name=$(basename -- "$4" | tr -d '\000-\037')
     [ -n "$name" ] || name="attachment-$3"
-    mkdir -p "$dir"
-    chmod 700 "${XDG_RUNTIME_DIR}/mail-attachments"
-    notmuch show --format=raw --part="$3" -- "$(idq "$2")" > "$dir/$name" &&
-      xdg-open "$dir/$name"
+    path=$(zenity --file-selection --save --title="Save attachment" \
+      --filename="$HOME/Downloads/$name") || exit 0
+    notmuch show --format=raw --part="$3" -- "$(idq "$2")" > "$path" ||
+      notify-send -a Mail -i dialog-error "Could not save attachment" "$path"
     ;;
 esac
