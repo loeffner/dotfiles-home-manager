@@ -49,6 +49,8 @@
         "x86_64-linux"
         "aarch64-linux"
       ];
+
+      allSystems = workSystems ++ [ "aarch64-darwin" ];
     in
     {
       homeConfigurations = {
@@ -59,5 +61,18 @@
       // lib.genAttrs (map (s: "work-${s}") workSystems) (
         name: mkConfig (lib.removePrefix "work-" name) ./home/hosts/work
       );
+
+      # `nix flake check` builds nothing without this: one check per host,
+      # under the system that host runs on.
+      checks = lib.genAttrs allSystems (
+        system:
+        lib.mapAttrs (_: config: config.activationPackage) (
+          lib.filterAttrs (
+            _: config: config.pkgs.stdenv.hostPlatform.system == system
+          ) self.homeConfigurations
+        )
+      );
+
+      formatter = lib.genAttrs allSystems (system: (pkgsFor system).nixfmt-tree);
     };
 }

@@ -63,9 +63,7 @@ let
   # timeout, before-sleep) go through this wrapper.
   palette = builtins.fromJSON (builtins.readFile ../shell/config/palette.json);
   accentCases = lib.concatStringsSep "\n" (
-    lib.mapAttrsToList (
-      name: hex: "  ${name}) accent=${lib.removePrefix "#" hex} ;;"
-    ) palette.accents
+    lib.mapAttrsToList (name: hex: "  ${name}) accent=${lib.removePrefix "#" hex} ;;") palette.accents
   );
   swaylockThemed = pkgs.writeShellApplication {
     name = "swaylock-themed";

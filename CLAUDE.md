@@ -9,7 +9,6 @@ environments (shell, git, neovim, CLI tools) — not full NixOS systems.
 
 ```sh
 # Apply a configuration (standalone home-manager)
-home-manager switch --flake .#beehive          # personal host (NixOS)
 home-manager switch --flake .#ocean            # personal host (NixOS)
 home-manager switch --flake .#terra            # personal host, niri desktop (NixOS)
 home-manager switch --flake .#island           # personal MacBook (macOS, aarch64-darwin)
@@ -18,18 +17,19 @@ home-manager switch --flake .#work-aarch64-linux
 
 # The `hms` zsh alias wraps this for the work setup, auto-picking the system
 # from `uname -m`:   hms            -> work-<arch>-linux
-#                    hms beehive    -> explicit target
+#                    hms terra      -> explicit target
 
 # Build/evaluate without activating
-nix build .#homeConfigurations.beehive.activationPackage
-nix flake check
+nix build .#homeConfigurations.terra.activationPackage
+nix flake check                        # builds every host of this system
+nix flake check --all-systems --no-build   # evaluates all hosts, no builds
 
-# Format Nix files (formatter used throughout)
-nixfmt **/*.nix
+# Format Nix files (nixfmt, via the flake's formatter)
+nix fmt
 ```
 
-There is no test suite. Validation = the config evaluates and builds
-(`nix build` / `nix flake check`).
+There is no test suite. Validation = every host evaluates and builds
+(`nix flake check`, through the `checks` output).
 
 **Flake gotcha**: Nix flakes ignore untracked files. Any new file added to the
 repo must be staged (`git add <file>`) before `nix build` or
@@ -37,12 +37,14 @@ repo must be staged (`git add <file>`) before `nix build` or
 
 ## Architecture
 
-`flake.nix` is the single entry point and exposes one output set:
+`flake.nix` is the single entry point:
 
 - **`homeConfigurations`** — standalone `homeManagerConfiguration`s applied
   with `home-manager switch --flake`. Each is built by `mkConfig`, which
   layers `common` + the host module. `work` is generated for every
   system in `workSystems` (x86_64-linux, aarch64-linux).
+- **`checks`** — each host's activation package, under the host's system.
+- **`formatter`** — `nixfmt-tree`, for `nix fmt`.
 
 These are standalone configs only — there is no NixOS-integrated path. NixOS
 hosts just install the `home-manager` CLI and apply these configs out-of-band.
@@ -52,8 +54,8 @@ The layering that every config goes through:
 1. `home/common.nix` — the bulk of the environment: zsh (with keybindings and
    auto-`exec zellij`), oh-my-posh, fzf, atuin, zoxide (aliased to `cd`), eza,
    zellij, ssh/gpg agents. It `imports` `./git` and `./vim`.
-2. `home/hosts/<host>` — host-specific extras. The personal hosts (beehive,
-   ocean, terra, island) share `home/personal.nix` for identity (username,
+2. `home/hosts/<host>` — host-specific extras. The personal hosts (ocean,
+   terra, island) share `home/personal.nix` for identity (username,
    homeDirectory, stateVersion — `lib.mkDefault`, so a host can override),
    git user/email and `claude-code` (unfree).
 
