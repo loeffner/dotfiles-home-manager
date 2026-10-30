@@ -26,9 +26,9 @@ vim.lsp.config("clangd", {
 vim.lsp.config("nil_ls", {
   settings = {
     ["nil"] = {
-      -- Auto-fetch missing flake inputs instead of prompting on startup.
-      -- Set to false to silently ignore missing inputs instead.
-      nix = { flake = { autoArchive = true } },
+      -- Never fetch a flake's inputs just because it was opened. Completion for
+      -- missing inputs needs a manual `nix flake archive`.
+      nix = { flake = { autoArchive = false } },
     },
   },
 })

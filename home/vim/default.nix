@@ -5,8 +5,6 @@
   ...
 }:
 {
-  options.custom.copilot.enable = lib.mkEnableOption "GitHub Copilot inline completion in Neovim";
-
   config = {
     # A from-scratch Neovim configuration.
     # No LazyVim, no lazy.nvim, no plugin manager.
@@ -26,9 +24,6 @@
         # Build / parser tools
         tree-sitter
         gcc
-
-        # Copilot inline completion runtime
-        nodejs
 
         # Debugger backend for nvim-dap (GDB >= 14 speaks DAP natively via
         # `gdb --interpreter=dap`).
@@ -105,9 +100,6 @@
         luasnip
         friendly-snippets
 
-        # LLM autocompletion (inline ghost text; gated per host via copilot_enabled)
-        copilot-lua
-
         # Debugging (DAP) — breakpoints, stepping and a UI driven by GDB
         nvim-dap
         nvim-dap-ui
@@ -126,8 +118,6 @@
       ];
 
       initLua = ''
-        vim.g.copilot_enabled = ${if config.custom.copilot.enable then "true" else "false"}
-        vim.g.copilot_node_command = "${pkgs.nodejs}/bin/node"
         vim.g.sqlite_clib_path = "${pkgs.sqlite.out}/lib/libsqlite3${pkgs.stdenv.hostPlatform.extensions.sharedLibrary}"
         require("config.options")
         require("config.keymaps")

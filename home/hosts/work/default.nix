@@ -35,8 +35,6 @@ in
     github-copilot-cli
   ];
 
-  custom.copilot.enable = false;
-
   programs.git = {
     settings.user.name = "Andreas Lösel";
     settings.user.email = "andreas.loesel@mvtec.com";

@@ -4,7 +4,6 @@
 [
   "claude-code"
   "github-copilot-cli"
-  "copilot-language-server"
   "discord"
   "discord-unwrapped"
   "git-conflict.nvim"
