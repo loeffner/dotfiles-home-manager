@@ -194,7 +194,7 @@ PanelWindow {
                                 text: toast.modelData.body
                                 muted: true
                                 wrapMode: Text.WordWrap
-                                textFormat: Text.MarkdownText
+                                textFormat: Text.PlainText // a stranger's text: markup could fetch remote images
                             }
                             Flow {
                                 Layout.fillWidth: true

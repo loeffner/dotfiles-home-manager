@@ -306,7 +306,7 @@ Singleton {
         bodySupported: true
         actionsSupported: true
         imageSupported: true
-        bodyMarkupSupported: true
+        bodyMarkupSupported: false // bodies render as plain text
 
         onNotification: n => {
             const app = n.appName ?? "";

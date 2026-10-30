@@ -528,7 +528,7 @@ IslandPanel {
                     muted: true
                     sizeDelta: -1
                     wrapMode: Text.WordWrap
-                    textFormat: Text.MarkdownText
+                    textFormat: Text.PlainText // a stranger's text: markup could fetch remote images
                     maximumLineCount: entry.expandedGroup ? 6 : 2
                     elide: Text.ElideRight
                 }
