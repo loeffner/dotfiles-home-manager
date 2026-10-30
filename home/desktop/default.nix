@@ -17,6 +17,13 @@
     ./default-apps.nix
   ];
 
+  assertions = [
+    {
+      assertion = pkgs.stdenv.hostPlatform.isLinux;
+      message = "home/desktop is Linux-only (niri, systemd user units).";
+    }
+  ];
+
   # Cursor theme — sets XCURSOR_THEME/XCURSOR_SIZE/HYPRCURSOR_* and wires up GTK.
   home.pointerCursor = {
     enable = true;
@@ -69,8 +76,8 @@
 
   dconf.settings."org/gnome/desktop/interface".color-scheme = "prefer-dark";
 
-  # When SSHing from Kitty, copy the xterm-kitty terminfo to the remote
-  # automatically so the remote shell knows how to handle the terminal.
+  # Remote hosts usually lack kitty's terminfo, so ssh claims a common TERM
+  # instead of xterm-kitty; the remote shell then knows how to handle the terminal.
   home.shellAliases.ssh = "TERM=xterm-256color ssh";
 
   # Hide terminal-only apps from the launcher — override the system .desktop
@@ -107,16 +114,16 @@
     dgop # system-metrics helper; backs SystemStats / the Processes panel
   ];
 
-  # Quickshell desktop shell (hand-written QML, see ./shell and its README).
-  # Static QML, so the tree is symlinked verbatim — minus the dev/ harness,
-  # which runs from the repo. Autostarted from niri (see niri/settings.nix).
-  # NOTE: new files here must be `git add`-ed before the flake will see them.
   # The shell's state holds notification history, so message contents: this
   # user only. The directory, as files in it get rewritten.
   home.activation.quickshellStatePrivate = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     run install -d -m 700 "${config.xdg.stateHome}/quickshell"
   '';
 
+  # Quickshell desktop shell (hand-written QML, see ./shell and its README).
+  # Static QML, so the tree is symlinked verbatim — minus the dev/ harness,
+  # which runs from the repo. Autostarted from niri (see niri/settings.nix).
+  # NOTE: new files here must be `git add`-ed before the flake will see them.
   xdg.configFile."quickshell" = {
     source = lib.cleanSourceWith {
       src = ./shell;
