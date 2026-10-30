@@ -28,6 +28,25 @@ vim.api.nvim_create_autocmd("BufReadPost", {
   end,
 })
 
+-- Temp files may be decrypted secrets (`agenix -e`): keep no undo file and, for
+-- the rest of this session, no ShaDa and no system clipboard (cliphist stores it).
+local temp_dirs = { "/tmp", "/dev/shm", vim.env.TMPDIR, vim.env.XDG_RUNTIME_DIR }
+
+vim.api.nvim_create_autocmd({ "BufReadPre", "BufNewFile", "BufWritePre" }, {
+  group = augroup("temp_files_private"),
+  callback = function(args)
+    local path = vim.fn.fnamemodify(args.match, ":p")
+    for _, dir in pairs(temp_dirs) do
+      if vim.fs.relpath(dir, path) then
+        vim.bo[args.buf].undofile = false
+        vim.o.shada = ""
+        vim.o.clipboard = ""
+        return
+      end
+    end
+  end,
+})
+
 -- Trim trailing whitespace on save (everywhere except markdown)
 vim.api.nvim_create_autocmd("BufWritePre", {
   group = augroup("trim_whitespace"),

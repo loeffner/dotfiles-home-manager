@@ -125,6 +125,11 @@ If syntax highlighting looks broken, check in this order:
   configs (root markers, cmd, filetypes).
 - **Clipboard** is OSC 52 so SSH from any terminal that supports it (e.g.
   Windows PowerShell with conhost or Windows Terminal) just works.
+- **Sensitive files**: files under `/tmp`, `/dev/shm`, `$TMPDIR` and
+  `$XDG_RUNTIME_DIR` (such as `agenix -e`'s decrypted copy) get no undo file,
+  and that session stops writing ShaDa and using the system clipboard. For
+  anything else, the `svim` shell alias starts Neovim with no config or plugins
+  and records nothing.
 - **Diff highlights** override Diffview groups to be background-only so the
   Treesitter foreground colors stay intact in diff splits.
 - **Sidebar explorer** is `neo-tree.nvim` — toggle with `<leader>e`

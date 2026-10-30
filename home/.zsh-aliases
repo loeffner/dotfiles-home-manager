@@ -42,6 +42,9 @@ alias zshrc="source $HOME/.zshrc"
 # ###############################################################################
 
 alias v="vim ."
+# No-trace editing for sensitive files: no config or plugins, so no undo file,
+# ShaDa, swap file, backup, system clipboard or LSP.
+alias svim="nvim --clean -n --cmd 'set nobackup nowritebackup'"
 
 ###############################################################################
 # Home Manager
