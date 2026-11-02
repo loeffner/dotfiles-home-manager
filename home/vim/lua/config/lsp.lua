@@ -43,8 +43,22 @@ vim.lsp.config("lua_ls", {
   },
 })
 
+-- When the rustc on PATH is the fallback from default.nix (no project
+-- toolchain), point rust-analyzer at the std sources nixpkgs' rustc lacks.
+-- Any other toolchain finds its own rust-src through its sysroot.
+local nix_rust = vim.g.nix_rust
+vim.lsp.config("rust_analyzer", {
+  cmd_env = (nix_rust and vim.fn.exepath("rustc") == nix_rust.rustc)
+    and { RUST_SRC_PATH = nix_rust.src } or nil,
+  settings = {
+    ["rust-analyzer"] = {
+      check = { command = "clippy" }, -- clippy lints on save instead of plain `cargo check`
+    },
+  },
+})
+
 -- Enable (auto-start when a matching filetype opens).
-vim.lsp.enable({ "clangd", "lua_ls", "nil_ls", "pyright" })
+vim.lsp.enable({ "clangd", "lua_ls", "nil_ls", "pyright", "rust_analyzer" })
 
 -- ---------------------------------------------------------------------------
 -- clangd inactive-region decoration.

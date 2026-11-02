@@ -39,6 +39,16 @@
         nil # Nix LSP
         clang-tools # clangd + clang-format
         pyright
+        rust-analyzer
+
+        # Fallback Rust toolchain. extraPackages are *suffixed* to nvim's PATH,
+        # so a project's own toolchain (devshell, rustup) always wins; this only
+        # makes rust-analyzer work from a plain shell. nixpkgs' rustc ships no
+        # rust-src, so lsp.lua hands rust-analyzer `rustLibSrc` when (and only
+        # when) this rustc is the one in use.
+        cargo
+        rustc
+        clippy
 
         # Formatters
         stylua
@@ -46,6 +56,7 @@
         black
         ruff
         prettierd
+        rustfmt
       ];
 
       plugins = with pkgs.vimPlugins; [
@@ -118,6 +129,7 @@
       ];
 
       initLua = ''
+        vim.g.nix_rust = { rustc = "${pkgs.rustc}/bin/rustc", src = "${pkgs.rustPlatform.rustLibSrc}" }
         vim.g.sqlite_clib_path = "${pkgs.sqlite.out}/lib/libsqlite3${pkgs.stdenv.hostPlatform.extensions.sharedLibrary}"
         require("config.options")
         require("config.keymaps")
@@ -156,6 +168,7 @@
           "lua"
           "nix"
           "python"
+          "rust"
           "markdown"
           "markdown_inline"
           "vim"

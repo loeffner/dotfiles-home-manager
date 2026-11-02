@@ -5,6 +5,7 @@ require("conform").setup({
     c        = { "clang_format" },
     cpp      = { "clang_format" },
     python   = { "ruff_format", "black", stop_after_first = true },
+    rust     = { "rustfmt" },
     json     = { "prettierd" },
     yaml     = { "prettierd" },
     markdown = { "prettierd" },
