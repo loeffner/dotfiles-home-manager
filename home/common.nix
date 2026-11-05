@@ -165,6 +165,7 @@
 
     extraConfig = ''
       support_kitty_keyboard_protocol true
+      stacked_pane_list false
 
       keybinds {
           shared_except "move" "locked" {
