@@ -111,7 +111,7 @@
     material-symbols # Material Symbols Rounded — icon font for the bar cluster
     libcanberra-gtk3 # canberra-gtk-play — notification sound effects (Sound.qml)
     sound-theme-freedesktop # the freedesktop sound theme canberra plays from
-    dgop # system-metrics helper; backs SystemStats / the Processes panel
+    dux-gop # system-metrics helper; backs SystemStats / the Processes panel
   ];
 
   # The shell's state holds notification history, so message contents: this
