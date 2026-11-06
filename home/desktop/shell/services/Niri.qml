@@ -16,6 +16,10 @@ Singleton {
     property int focusedWorkspaceId: -1
     // [{ id, workspaceId, focused, floating, appId, title, col, row, tileWidth, tileHeight }]
     property var windows: []
+    // The window that last held focus. niri reports *no* focused window while a
+    // layer surface (an island popout) has the keyboard, so anything acting on
+    // "the window the user came from" (Clip.paste) reads this instead.
+    property int lastFocusedWindowId: -1
     // Widest logical output width (niri px); the minimap scales tile widths by it.
     property int outputWidth: 1920
     // Configured xkb layout names and the active index (0 = the default).
@@ -106,6 +110,9 @@ Singleton {
     }
     function _publish() {
         windows = Object.keys(_wins).map(k => _wins[k]);
+        const f = windows.find(w => w.focused);
+        if (f)
+            lastFocusedWindowId = f.id;
     }
 
     function _handle(ev) {

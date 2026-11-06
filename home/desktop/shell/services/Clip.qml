@@ -53,10 +53,11 @@ Singleton {
         }
     }
     // Copy, then paste into the window that had focus before the popout took
-    // the keyboard (niri's focused window is unaffected by layer surfaces).
+    // the keyboard. While the popout holds it niri reports no focused window,
+    // hence lastFocusedWindowId rather than the live focus flag.
     function paste(entry) {
         copy(entry);
-        const w = Niri.windows.find(w => w.focused);
+        const w = Niri.windows.find(w => w.id === Niri.lastFocusedWindowId);
         const terminal = /^(kitty|foot|alacritty|wezterm|st|[Xx]?term.*)$/.test(w?.appId ?? "");
         Quickshell.execDetached(["sh", Quickshell.shellPath("scripts/clip-paste.sh"), terminal ? "terminal" : "app"]);
     }
