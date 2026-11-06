@@ -35,6 +35,14 @@ in
 
   programs.direnv.enable = true;
 
+  programs.vscode = {
+    enable = true;
+    # Electron picks its secret store from XDG_CURRENT_DESKTOP and doesn't know
+    # "niri", so it falls back to plain-text "basic" storage. Point it at
+    # gnome-keyring (the Secret Service already running for mail) explicitly.
+    package = pkgs.vscode.override { commandLineArgs = "--password-store=gnome-libsecret"; };
+  };
+
   # terra is a desktop: pull in the niri desktop environment.
   # ../ssh.nix is the personal SSH client config (terra + ocean only).
   # ../mail.nix syncs the Outlook account for the shell's mail panel.

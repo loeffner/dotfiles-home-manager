@@ -2,6 +2,7 @@
 # Consumed by `pkgsFor` in flake.nix. A name listed here is allowed
 # everywhere; per-host distinctions are intentionally not supported.
 [
+  "vscode"
   "claude-code"
   "github-copilot-cli"
   "discord"
