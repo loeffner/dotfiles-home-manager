@@ -15,7 +15,7 @@
   programs.atuin.settings = {
     # Self-hosted sync server on ocean, reachable LAN-only via AdGuard DNS.
     # One-time bootstrap per machine: `atuin register`/`atuin login` + `atuin sync`.
-    sync_address = "http://atuin.beehive";
+    sync_address = "https://atuin.lan.loesel.me";
     auto_sync = true;
     sync_frequency = "3m";
   };
